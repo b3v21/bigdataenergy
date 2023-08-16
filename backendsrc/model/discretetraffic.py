@@ -18,10 +18,6 @@ class BusStop:
             
         #self.mon_proc = env.process(self.monitor_tank(env))
 
-    
-    
-
-
     """
     Would include this monitor process if we want to simulate people coming into the stop after other people have been taken
     def monitor_tank(self, env):
@@ -50,23 +46,24 @@ class BusRoute:
         self.start = stops[0]
         self.end = stops[-1]
         self.env = env
-        #self.start.bus_spawn(self)
-        #self.start.bus_proc = self.env.process(self.start.bus_spawn(self))
         self.running = self.env.process(self.initiate())
 
     def initiate(self):
+        """
+        A function to initiate the route. Will spawn busses on the accoridng time intervals.
+        """
         stop = self.start
         while True:
-            if stop.buses_spawned == stop.bus_spawn_max:
+            if stop.buses_spawned == stop.bus_spawn_max: #Dont keep spawning if got too many
                 break
             if self.env.now % stop.timing == 0:
-                #Spawn a bus lol
+                #Spawn a bus out of thin air
                 stop.buses_spawned += 1
                 name = f'B{stop.buses_spawned}_{self.name}'
-                self.env.process(Bus(self.env, name, self).bus())
+                self.env.process(Bus(self.env, name, self).bus()) #Start bus running process after initiating the object
                 print(f'({self.env.now}): Bus {name} is starting on route {self.name}')
             yield self.env.timeout(1)
-                #bus.bus()
+
 
 class Bus:
     """
@@ -78,15 +75,11 @@ class Bus:
     If the stop is emptied, it will leave.
     """
     def __init__(self, env, name, route, location_index=0, passengers=0, capacity=50):
-        self.passengers = simpy.Container(env, init=passengers, capacity=capacity)
+        self.passengers = simpy.Container(env, init=passengers, capacity=capacity) #Container for passengers on it
         self.name = name
         self.route = route
         self.env = env
         self.location = location_index
-        
-        #Now add the object to the simulation with its actions
-        #self.env.process(self.bus())
-
 
     def bus(self):
         """
@@ -98,17 +91,16 @@ class Bus:
         """
         while True:
             print(f'({self.env.now}): Bus {self.name} is arriving stop {self.route.stops[self.location].name}')
-            #Load people
-            with self.route.stops[self.location].stops.request() as req:
-                if self.route.stops[(self.location)] != self.route.end:
+            with self.route.stops[self.location].stops.request() as req: #Request to get on of the "stops" at the bus stop
+                if self.route.stops[(self.location)] != self.route.end: #If not at tne of the route, loading people
                     print(f'({self.env.now}): Bus {self.name} is loading people from stop {self.route.stops[self.location].name}')
                     can_load = self.passengers.capacity - self.passengers.level
-                    will_load = min(can_load, self.route.stops[self.location].people.level)
-                    if (will_load != 0):
+                    will_load = min(can_load, self.route.stops[self.location].people.level) #Calc nums
+                    if (will_load != 0): #Can't load with 0 --> currently not handling the 0 case
                         yield self.route.stops[self.location].people.get(will_load) #Can I do this without the yield? :shrug: --> May cause issues if two buses "getting" people from same stop at the same time, bus people dont regen?
                         yield self.passengers.put(will_load)
                         load_time = will_load * PERSON_BOARD_TIME
-                        yield self.env.timeout(load_time) ##########
+                        yield self.env.timeout(load_time) #Timeout till time passed
                         print(f'({self.env.now}): Bus {self.name} has loaded {will_load} people from {self.route.stops[self.location].name}')
                 else:
                     print(f'({self.env.now}): Bus {self.name} is dropping people off at {self.route.stops[self.location].name}')
