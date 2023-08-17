@@ -105,8 +105,9 @@ class Bus:
                 else:
                     print(f'({self.env.now}): Bus {self.name} is dropping people off at {self.route.stops[self.location].name}')
                     get_off = self.passengers.level
-                    yield self.route.stops[self.location].people.put(get_off) #YIELD?
-                    yield self.passengers.get(get_off)
+                    if get_off > 0:
+                        yield self.route.stops[self.location].people.put(get_off) #YIELD
+                        yield self.passengers.get(get_off)
                     off_time = get_off * PERSON_BOARD_TIME
                     yield self.env.timeout(off_time)
                     print(f'({self.env.now}): Bus {self.name} has dropped off {get_off} people at {self.route.stops[self.location].name}')
@@ -131,7 +132,7 @@ env = simpy.Environment()
 ### Create Stuff ###
 # Manual Atm, will change to based off input or something 
 
-cultural_centre_bus_station = BusStop(env, "Cultural Centre Station", (0,0), 4, 100, 400, 30, 2)
+cultural_centre_bus_station = BusStop(env, "Cultural Centre Station", (0,0), 4, 100, 400, 3, 20)
 king_george_square_bus_station = BusStop(env, "King George Square Bus Station", (0, 3), 2, 100, 200)
 roma_street_busway_station = BusStop(env, "Roma Street Busway Station", (0,5), 3, 100, 300)
 given_tce_bus_stop = BusStop(env, "Given Tce Bus Stop", (0, 7), 1, 0, 1000)
@@ -140,4 +141,4 @@ bus_route_385 = BusRoute(env, "385", [cultural_centre_bus_station, king_george_s
 
 ###--------------###
 
-env.run(60)
+env.run(90)
