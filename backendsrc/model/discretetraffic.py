@@ -211,7 +211,12 @@ class Bus:
         )
         
     def passenger_count(self):
-        return sum(group.get_count() for group in self.passengers)
+        sum = 0
+        for group_of_groups in self.passengers: #Because self.passengers is an array of array of people, maybe splat this out in the append section to remove the need for nested for loops
+            for group in group_of_groups:
+                sum += group.get_count()
+        return sum
+        #return sum(group.get_count() for group in self.passengers)
 
 
 if __name__ == "__main__":
@@ -237,6 +242,16 @@ if __name__ == "__main__":
     bus_route_385 = BusRoute(
         env,
         "385",
+        [
+            cultural_centre_bus_station,
+            king_george_square_bus_station,
+            roma_street_busway_station,
+            given_tce_bus_stop,
+        ],
+    )
+    bus_route_385B = BusRoute(
+        env,
+        "385B",
         [
             cultural_centre_bus_station,
             king_george_square_bus_station,
