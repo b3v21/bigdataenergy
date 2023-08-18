@@ -60,7 +60,7 @@ class BusRoute:
                 #Spawn a bus out of thin air
                 stop.buses_spawned += 1
                 name = f'B{stop.buses_spawned}_{self.name}'
-                self.env.process(Bus(self.env, name, self).bus()) #Start bus running process after initiating the object
+                self.env.process(Bus(self.env, name, self).start()) #Start bus running process after initiating the object
                 print(f'({self.env.now}): Bus {name} is starting on route {self.name}')
             yield self.env.timeout(1)
 
@@ -81,7 +81,7 @@ class Bus:
         self.env = env
         self.location = location_index
 
-    def bus(self):
+    def start(self):
         """
         Logic of a bus:
         When spawned --> Pick up people from current stop
