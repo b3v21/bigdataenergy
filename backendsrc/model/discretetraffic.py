@@ -23,24 +23,25 @@ class People:
         self.count = count
         self.start_time = start_time
         self.start_location = None
-        
+
     def get_count(self):
         return self.count
-        
+
     def add_start_loc(self, location):
         self.start_location = location
-        
+
     def change_count(self, change):
-        self.count += change 
-        
+        self.count += change
+
     def get_start_time(self):
         return self.start_time
 
+
 class BusStop:
-    def __init__(
-        self, env, name, pos, bays, people, timing=None, bus_spawn_max=0
-    ):
-        self.bays = simpy.Resource(env, capacity=bays) # Numbers of spots the bus can pull into at the stop
+    def __init__(self, env, name, pos, bays, people, timing=None, bus_spawn_max=0):
+        self.bays = simpy.Resource(
+            env, capacity=bays
+        )  # Numbers of spots the bus can pull into at the stop
         self.people = [people]
         self.name = name
         self.pos = pos
@@ -48,48 +49,50 @@ class BusStop:
         self.buses_spawned = 0
         self.bus_spawn_max = bus_spawn_max
         self.env = env
-        
+
     # For adding more groups of people to stops (if more rock up at a different time)
     def add_people(self, new_people):
         self.people.append(new_people)
-        
+
     def get(self, amount):
         current_index = 0
         amount_removed = 0
         people_to_get = []
-        
+
         while self.people and amount_removed != amount:
-            removable = -min(amount,self.people[current_index].get_count())
-            
+            removable = -min(amount, self.people[current_index].get_count())
+
             if self.people[current_index].get_count() + removable == 0:
                 # If whole group is collected, add to bus and remove from stop
                 people_to_get.append(self.people[current_index])
-                
+
                 self.people[current_index].add_start_loc(self.pos)
                 self.people.remove(self.people[current_index])
 
                 if -removable == amount:
                     return people_to_get
-                
+
                 else:
                     amount_removed -= removable
                     current_index += 1
                     continue
-        
+
             else:
                 # If portion is collected, create new people that get on bus and edit size of old people
-                new_people = People(env, -removable, self.people[current_index].get_start_time())
+                new_people = People(
+                    env, -removable, self.people[current_index].get_start_time()
+                )
                 new_people.add_start_loc(self.pos)
-                
+
                 people_to_get.append(new_people)
                 self.people[current_index].change_count(removable)
-                
+
                 return people_to_get
-            
+
     def put(self, passengers):
         self.people += passengers
-        
-                
+
+
 class BusRoute:
     """
     Object to store series of routes, needs to spawn the initial stops bus spawn process.
@@ -135,7 +138,7 @@ class Bus:
     """
 
     def __init__(self, env, name, route, location_index=0, passengers=0, capacity=50):
-        self.passengers = [] # Container for passengers on it
+        self.passengers = []  # Container for passengers on it
         self.name = name
         self.route = route
         self.capacity = capacity
@@ -180,13 +183,14 @@ class Bus:
         print(
             f"({self.env.now}): Bus {self.name} is loading people from stop {self.route.stops[self.location].name}"
         )
-        can_load = self.capacity- self.passenger_count()
+        can_load = self.capacity - self.passenger_count()
         will_load = min(
-            can_load, sum(group.get_count() for group in self.route.stops[self.location].people)
+            can_load,
+            sum(group.get_count() for group in self.route.stops[self.location].people),
         )  # Calc nums
         if will_load != 0:  # Can't load with 0 --> currently not handling the 0 case
             # Get as many passengers as possible from the stop
-            self.passengers += (self.route.stops[self.location].get(will_load))
+            self.passengers += self.route.stops[self.location].get(will_load)
             load_time = will_load * PERSON_BOARD_TIME
             yield self.env.timeout(load_time)  # Timeout till time passed
             print(
@@ -209,20 +213,19 @@ class Bus:
         print(
             f"({self.env.now}): Bus {self.name} has dropped off {get_off} people at {self.route.stops[self.location].name}"
         )
-        
+
     def passenger_count(self):
         return sum(group.get_count() for group in self.passengers)
 
 
 if __name__ == "__main__":
     env = simpy.Environment()
-    
-    group1 = People(env, random.randint(0,50), 0)
-    group2 = People(env, random.randint(0,50), 4)
-    group3 = People(env, random.randint(0,50), 8)
-    group4 = People(env, random.randint(0,50), 16)
-    
-    
+
+    group1 = People(env, random.randint(0, 50), 0)
+    group2 = People(env, random.randint(0, 50), 4)
+    group3 = People(env, random.randint(0, 50), 8)
+    group4 = People(env, random.randint(0, 50), 16)
+
     cultural_centre_bus_station = BusStop(
         env, "Cultural Centre Station", (0, 0), 4, group1, 10, 2
     )
