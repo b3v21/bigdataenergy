@@ -105,9 +105,11 @@ class Bus:
                 else:
                     print(f'({self.env.now}): Bus {self.name} is dropping people off at {self.route.stops[self.location].name}')
                     get_off = self.passengers.level
-                    if get_off > 0:
+                    try: # Not sure if this is better as a exception catcher or just check if > 0 but I'm just playing around
                         yield self.route.stops[self.location].people.put(get_off) #YIELD
                         yield self.passengers.get(get_off)
+                    except ValueError:
+                        print("No passengers got off the bus...")
                     off_time = get_off * PERSON_BOARD_TIME
                     yield self.env.timeout(off_time)
                     print(f'({self.env.now}): Bus {self.name} has dropped off {get_off} people at {self.route.stops[self.location].name}')
