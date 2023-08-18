@@ -186,7 +186,7 @@ class Bus:
         )  # Calc nums
         if will_load != 0:  # Can't load with 0 --> currently not handling the 0 case
             # Get as many passengers as possible from the stop
-            self.passengers.append(self.route.stops[self.location].get(will_load))
+            self.passengers += (self.route.stops[self.location].get(will_load))
             load_time = will_load * PERSON_BOARD_TIME
             yield self.env.timeout(load_time)  # Timeout till time passed
             print(
@@ -198,7 +198,7 @@ class Bus:
             f"({self.env.now}): Bus {self.name} is dropping people off at {self.route.stops[self.location].name}"
         )
         # Currently all passengers get off...
-        # get_off = self.passenger_count()
+        get_off = self.passenger_count()
         try:  # Not sure if this is better as a exception catcher or just check if > 0 but I'm just playing around
             self.route.stops[self.location].put(self.passengers)
             self.passengers.remove(all)
@@ -211,12 +211,7 @@ class Bus:
         )
         
     def passenger_count(self):
-        sum = 0
-        for group_of_groups in self.passengers: #Because self.passengers is an array of array of people, maybe splat this out in the append section to remove the need for nested for loops
-            for group in group_of_groups:
-                sum += group.get_count()
-        return sum
-        #return sum(group.get_count() for group in self.passengers)
+        return sum(group.get_count() for group in self.passengers)
 
 
 if __name__ == "__main__":
