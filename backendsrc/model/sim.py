@@ -26,6 +26,40 @@ class People:
         return self.start_time
 
 
+"""
+Class for holding a 'block' of walking
+I Imagine down the line all the calculations in here will be done by Google Maps API
+
+I feel like this could be done in several ways but for now I'm thinking we create
+instances of the 'walking' class which can be assigned groups of people, then SOMEHOW
+down the line we can gather a walking congestion coefficient if multiple instances of walking
+that are within a certain proximity and pass some quantity threshold occur...
+"""
+class Walking:
+    def __init__(
+        self,
+        env : Enviroment,
+        start_pos : Optional[tuple[int, int], BusStop], #Think about this later
+        end_pos : Optional[tuple[int, int], BusStop],
+        people : list[People]
+    ) -> None:
+        self.env = env
+        self.start_pos = start_pos
+        self.end_pos = end_pos
+        self.people = people
+
+    """
+    Walking process
+    """
+    def walk(self) -> None:
+        yield self.env.timeout(self.walk_time())
+            
+    """
+    Reponsible for calculating the walk time between two locations (use google maps api)
+    """
+    def walk_time(self) -> int:
+        pass
+
 class BusStop:
     def __init__(
         self,
