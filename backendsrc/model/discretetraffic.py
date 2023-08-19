@@ -188,9 +188,6 @@ class Bus:
     def load_passengers(self) -> None:
         current_stop = self.route.stops[self.location_index].name
 
-        print(
-            f"({self.env.now}): Bus {self.name} is loading people from stop {current_stop}"
-        )
         can_load = self.capacity - self.passenger_count()
         will_load = min(
             can_load,
@@ -199,21 +196,21 @@ class Bus:
                 for group in self.route.stops[self.location_index].people
             ),
         )
-        if will_load != 0:  # Can't load with 0 --> currently not handling the 0 case
-            # Get as many passengers as possible from the stop
-            self.passengers += self.route.stops[self.location_index].get(will_load)
-            load_time = will_load * PERSON_BOARD_TIME
-            yield self.env.timeout(load_time)  # Timeout till time passed
-            print(
-                f"({self.env.now}): Bus {self.name} has loaded {will_load} people from {current_stop}"
-            )
+
+        if not will_load:
+            print(f"({self.env.now}): No passengers getting on the bus {self.name}")
+            return
+
+        # Get as many passengers as possible from the stop
+        self.passengers += self.route.stops[self.location_index].get(will_load)
+        load_time = will_load * PERSON_BOARD_TIME
+        yield self.env.timeout(load_time)  # Timeout till time passed
+        print(
+            f"({self.env.now}): Bus {self.name} has loaded {will_load} people from {current_stop}"
+        )
 
     def deload_passengers(self) -> None:
         current_stop = self.route.stops[self.location_index].name
-
-        print(
-            f"({self.env.now}): Bus {self.name} is dropping people off at {current_stop}"
-        )
 
         # Currently all passengers get off...
         get_off = self.passenger_count()
