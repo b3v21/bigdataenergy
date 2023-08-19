@@ -160,6 +160,7 @@ class Bus:
             with self.route.stops[
                 self.location
             ].bays.request() as req:  # Request to get on of the "stops" at the bus stop
+                yield req #Make sure wait till bay is available
                 if (
                     self.route.stops[(self.location)] != self.route.end
                 ):  # If not at tne of the route, loading people
@@ -170,14 +171,14 @@ class Bus:
                 next = (self.location + 1) % len(
                     self.route.stops
                 )  # Update moving to next
-                print(
-                    f"({self.env.now}): Bus {self.name} is leaving from stop {self.route.stops[self.location].name} to go to {self.route.stops[next].name}"
-                )
-                time_to_travel = distance_between(
-                    self.route.stops[self.location], self.route.stops[next]
-                )
-                self.location = next
-                yield self.env.timeout(time_to_travel)
+            print(
+                f"({self.env.now}): Bus {self.name} is leaving from stop {self.route.stops[self.location].name} to go to {self.route.stops[next].name}"
+            )
+            time_to_travel = distance_between(
+                self.route.stops[self.location], self.route.stops[next]
+            )
+            self.location = next
+            yield self.env.timeout(time_to_travel)
 
     def load_passengers(self):
         print(
@@ -227,7 +228,7 @@ if __name__ == "__main__":
     group4 = People(env, random.randint(0, 50), 16)
 
     cultural_centre_bus_station = BusStop(
-        env, "Cultural Centre Station", (0, 0), 4, group1, 10, 2
+        env, "Cultural Centre Station", (0, 0), 1, group1, 10, 2
     )
     king_george_square_bus_station = BusStop(
         env, "King George Square Bus Station", (0, 3), 2, group2
