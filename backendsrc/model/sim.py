@@ -1,30 +1,42 @@
+from __future__ import annotations
 import itertools
 import random
 from simpy import Environment, Resource
 import math
 
+
 PERSON_BOARD_TIME = 0.1
 
 
 class People:
-    def __init__(self, env: Environment, count: int, start_time: int) -> None:
+    def __init__(self, env: Environment, count: int, start_time: int, start_location: BusStop) -> None:
         self.env = env
         self.count = count
         self.start_time = start_time
-        self.start_location = None
+        self.start_location = start_location
+        self.end_time = None
+        self.travel_route = None #To come later
+
+    def __str__(self) -> str:
+        return f'Count: {self.count}, Start Time: {self.get_start_time()}, End Time: {self.get_end_time()}, Journey Time: {self.get_end_time() - self.get_start_time() if self.get_end_time() != None else "N/A"}, Start Loc: {self.start_location.name}'
 
     def get_count(self) -> int:
         return self.count
 
-    def add_start_loc(self, location: tuple[int, int]) -> None:
+    def add_start_loc(self, location: BusStop) -> None: #Changed Location to busStop, for now
         self.start_location = location
 
     def change_count(self, change: int) -> None:
         self.count += change
 
-    def get_start_time(self) -> int:
+    def get_start_time(self) -> float:
         return self.start_time
+    
+    def set_end_time(self, time: float) -> None:
+        self.end_time = time
 
+    def get_end_time(self) -> float:
+        return self.end_time
 
 class BusStop:
     def __init__(
@@ -48,6 +60,13 @@ class BusStop:
         self.bus_spawn_max = bus_spawn_max
         self.env = env
 
+    def __str__(self) -> str:
+        output = f'{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}'
+        for people in self.people:
+            output += f'\n{str(people)}'
+        return output
+
+
     # For adding more groups of people to stops (if more rock up at a different time)
     def add_people(self, new_people: People) -> None:
         self.people.append(new_people)
@@ -57,44 +76,31 @@ class BusStop:
         Given an amount, this method returns a list 'people_to_get' containing the people
         which a bus can collect from this stop.
         """
-
-        current_index = 0
-        amount_removed = 0
+        cur_total = 0
         people_to_get = []
+        
+        for people in self.people:
+            if people.get_count() + cur_total > amount:
+                #Would be adding too many people --> Split
+                excess = (people.get_count() + cur_total) - amount
+                split = People(self.env, excess, people.start_time, people.start_location)
+                people.change_count(-excess)
+                self.people.extend([split])
+                people_to_get.append(people)
+                break
+            people_to_get.append(people)
+            cur_total += people.get_count()
+            if cur_total == amount:
+                break
+        return people_to_get
+        
+    def put(self, passengers: list[People]) -> None:
+        for people in passengers:
+            people.set_end_time(self.env.now)
+        self.people.extend(passengers)
 
-        while amount_removed != amount:
-            removable = min(amount, self.people[current_index].get_count())
-
-            if self.people[current_index].get_count() - removable == 0:
-                # If whole group is collected, add to bus and remove from stop
-                people_to_get.append(self.people[current_index])
-
-                self.people[current_index].add_start_loc(self.pos)
-                self.people.remove(self.people[current_index])
-
-                if removable == amount:
-                    return people_to_get
-
-                else:
-                    amount_removed += removable
-                    current_index += 1
-                    continue
-
-            else:
-                # If portion is collected, create new people that get on bus and edit size
-                # of old people
-                new_people = People(
-                    self.env, removable, self.people[current_index].get_start_time()
-                )
-                new_people.add_start_loc(self.pos)
-
-                people_to_get.append(new_people)
-                self.people[current_index].change_count(-removable)
-
-                return people_to_get
-
-    def put(self, passengers: int) -> None:
-        self.people += passengers
+    def num_people(self) -> int:
+        return sum([people.count for people in self.people])
 
 
 class BusRoute:
@@ -173,6 +179,7 @@ class Bus:
                 else:
                     yield self.env.process(self.deload_passengers())
 
+                print(f'Bus has {self.passenger_count()}')
                 next = (self.location_index + 1) % len(
                     self.route.stops
                 )  # Update moving to next
@@ -202,7 +209,7 @@ class Bus:
             return
 
         # Get as many passengers as possible from the stop
-        self.passengers += self.route.stops[self.location_index].get(will_load)
+        self.passengers.extend(self.route.stops[self.location_index].get(will_load))
         load_time = will_load * PERSON_BOARD_TIME
         yield self.env.timeout(load_time)  # Timeout till time passed
         print(
@@ -229,6 +236,49 @@ class Bus:
 
     def passenger_count(self) -> int:
         return sum(group.get_count() for group in self.passengers)
+
+class Suburb:
+    def __init__(self, 
+                 env: Environment, 
+                 name: str, 
+                 bus_stops: dict[BusStop:float], 
+                 population: int, 
+                 frequency: int,
+                 max_distributes: int):
+        self.env = env
+        self.name = name
+        self.bus_stops = bus_stops #Dictionary of bustops and percentages of population to take
+        self.population = population
+        self.frequency = frequency #How often to try and distribute the population
+        self.max_distributes = max_distributes
+
+        #Start process
+        self.pop_proc = self.env.process(self.suburb())
+
+    def suburb(self):
+        """
+        Process for the existence of the suburb object.
+        Every frequency minutes, will distribute random* amount of population to nearby suburbs.
+        """
+        distributes = 0
+
+        while distributes <= self.max_distributes:
+            if self.env.now % self.frequency == 0:
+                #Distribute population
+                to_dist = random.randint(0, self.population) if distributes < self.max_distributes else self.population
+                have_distributed = 0
+                for stop in self.bus_stops.keys(): #Will need to change when handling different stop types
+                    num_for_stop = math.floor(self.bus_stops[stop]/100 * (to_dist-have_distributed))
+                    if num_for_stop == 0:
+                        continue
+                    if stop == list(self.bus_stops.keys())[-1]: 
+                        num_for_stop = to_dist - have_distributed #To account for rounding
+                    stop.put([People(self.env, num_for_stop, self.env.now, stop)])
+                    have_distributed += num_for_stop
+                    if num_for_stop != 0:
+                        print(f'({self.env.now}): {num_for_stop} new people have just arrived at {stop.name} in {self.name}')
+            yield self.env.timeout(1)
+    
 
 
 def distance_between(stop1: BusStop, stop2: BusStop) -> int:
@@ -288,17 +338,20 @@ def complex_example() -> None:
     )
     env.run(30)
 
-
 def simple_example() -> None:
     env = Environment()
 
-    group1 = People(env, 15, 0)
+    #group1 = People(env, 15, 0, first_stop)
 
-    first_stop = BusStop(env, "first_stop", (0, 0), 1, [group1], 1, 1)
+    first_stop = BusStop(env, "first_stop", (0, 0), 1, [], 1, 1)
     last_stop = BusStop(env, "last_stop", (2, 2), 1, [], 3)
 
+    simple_suburb = Suburb(env, "Simple Suburb", {first_stop:100, last_stop:0}, 100, 10, 4)
+
     BusRoute(env, "the_route", [first_stop, last_stop])
-    env.run(10)
+    env.run(60)
+    print(first_stop)
+    print(last_stop)
 
 
 if __name__ == "__main__":
