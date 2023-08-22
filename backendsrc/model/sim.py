@@ -15,14 +15,14 @@ class People:
     """
     def __init__(self, env: Environment, count: int, start_time: int, start_location: BusStop) -> None:
         self.env = env
-        self.num_people = num_people
+        self.num_people = count
         self.start_time = start_time
         self.start_location = start_location
         self.end_time = None
         self.travel_route = None #To come later
 
     def __str__(self) -> str:
-        return f'Count: {self.count}, Start Time: {self.get_start_time()}, End Time: {self.get_end_time()}, Journey Time: {self.get_end_time() - self.get_start_time() if self.get_end_time() != None else "N/A"}, Start Loc: {self.start_location.name}'
+        return f'Count: {self.get_num_people()}, Start Time: {self.get_start_time()}, End Time: {self.get_end_time()}, Journey Time: {self.get_end_time() - self.get_start_time() if self.get_end_time() != None else "N/A"}, Start Loc: {self.start_location.name}'
 
     def get_num_people(self) -> int:
         return self.num_people
@@ -96,17 +96,17 @@ class BusStop:
         people_to_get = []
         
         for people in self.people:
-            if people.get_count() + cur_total > amount:
+            if people.get_num_people() + cur_total > num_people_to_board:
                 #Would be adding too many people --> Split
-                excess = (people.get_count() + cur_total) - amount
+                excess = (people.get_num_people() + cur_total) - num_people_to_board
                 split = People(self.env, excess, people.start_time, people.start_location)
-                people.change_count(-excess)
+                people.change_num_people(-excess)
                 self.people.extend([split])
                 people_to_get.append(people)
                 break
             people_to_get.append(people)
-            cur_total += people.get_count()
-            if cur_total == amount:
+            cur_total += people.get_num_people()
+            if cur_total == num_people_to_board:
                 break
         return people_to_get
         
@@ -116,7 +116,7 @@ class BusStop:
         self.people.extend(passengers)
 
     def num_people(self) -> int:
-        return sum([people.count for people in self.people])
+        return sum([people.get_num_people() for people in self.people])
 
 
 
