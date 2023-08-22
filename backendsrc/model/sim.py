@@ -135,7 +135,7 @@ class BusRoute:
 
     def initiate(self) -> None:
         """
-        A function to initiate the route. Will spawn busses on the accoridng time
+        A function to initiate the route. Will spawn busses on the according time
         intervals.
         """
 
