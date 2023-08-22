@@ -67,7 +67,6 @@ class BusStop:
         people: list[People],
         bus_timings: dict[str, list[int]],
         bus_spawn_max: int = 0,
-        # timing: int = None,
     ) -> None:
         self.env = env
         self.name = name
@@ -75,7 +74,6 @@ class BusStop:
         self.bays = Resource(env, capacity=bays)
         self.people = people
         self.bus_timings = bus_timings
-        # self.timing = timing
         self.bus_spawn_max = bus_spawn_max
         self.buses_spawned = 0
 
