@@ -1,7 +1,8 @@
 from django.db import models
 
 
-# Import models from backend/src/models
+
+# THESE CLASSES SHOULD BE CREATED IN models.py, ive just made them here for now
 class Station(models.Model):
     station_id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255)
