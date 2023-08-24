@@ -9,3 +9,25 @@ Our goal is to build a website with an interactive map and other visualisations 
 - A predictive model to estimate expected number of commuters from certain locations based on mathematical simulations. Python libraries
 - Summary tools that allow the review of data and results through different lenses, such as station specific graphs and data summaries. Python to aggregate and display via JS libraries 
 - Back end server to process and simulate the flow of traffic along different routes. Django REST framework + Some Database that Django supports (Either MySQL, PostgreSql or SQLLite)
+
+
+# Database Setup
+1. create user / db on MySQL command line client 
+download and install MySQL 8.0
+create root user with password root. to change the password of root user use below:
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
+
+create the database
+CREATE DATABASE transport_db; 
+
+2. python dependencies and migration 
+in python virtual environment install the MySQL dependency 
+pip install mysqlclient
+
+these commands migrate the classes in src/model.py to the database schema 
+py manage.py makemigrations
+py manage.py migrate src
+
+3. see results in MySQL command line client 
+use transport_db;
+show tables;
