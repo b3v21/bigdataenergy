@@ -1,12 +1,11 @@
-import { PlotlyDataLayoutConfig } from 'plotly.js';
 import { PlotParams } from 'react-plotly.js';
 
 const layout: PlotParams['layout'] = {
 	dragmode: 'zoom',
 	mapbox: {
-		style: 'open-street-map',
+		style: 'dark',
 		center: { lat: -27.5, lon: 153 },
-		zoom: 8
+		zoom: 9
 	},
 	margin: { r: 0, t: 0, b: 0, l: 0 }
 };
@@ -52,4 +51,4 @@ const data: PlotParams['data'] = [
 		}
 	}
 ];
-export { layout, data };
+export { data, layout };
