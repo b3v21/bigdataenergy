@@ -26,7 +26,7 @@ class Itinerary:
         return f"Itinerary: ID: {self.id}, Routes: {self.routes}, Index: {self.index}"
 
     def get_current_type(self) -> str:
-        return self.routes[self.index].type
+        return self.routes[self.index].transport_type
 
     def get_current_route(self) -> Route:
         return self.routes[self.index]
@@ -56,9 +56,9 @@ class People:
         env: Environment,
         count: int,
         start_time: int,
-        start_location: BusStop,
-        env_start: int,
+        start_location: Station,
         itinerary: Itinerary,
+        env_start: int,
     ) -> None:
         self.env_start = start_time
         self.env = env
@@ -76,7 +76,7 @@ class People:
         return self.num_people
 
     def add_start_loc(
-        self, location: BusStop
+        self, location: Station
     ) -> None:  # Changed Location to busStop, for now
         self.start_location = location
 
@@ -96,7 +96,56 @@ class People:
         return self.end_time
 
 
-class BusStop:
+class Walking:
+    """
+    Class for holding a 'block' of walking
+    I Imagine down the line all the calculations in here will be done by Google Maps API
+
+    I feel like this could be done in several ways but for now I'm thinking we create
+    instances of the 'walking' class which can be assigned groups of people, then SOMEHOW
+    down the line we can gather a walking congestion coefficient if multiple instances of walking
+    that are within a certain proximity and pass some quantity threshold occur...
+    """
+
+    WALKING_CONGESTION = 1  # Temp
+
+    def __init__(
+        self,
+        env: Environment,
+        start_pos: tuple[int, int] | Station,  # Think about this later
+        end_pos: tuple[int, int] | Station,
+        people: list[People],
+    ) -> None:
+        self.env = env
+        self.start_pos = start_pos
+        self.end_pos = end_pos
+        self.people = people
+
+    def walk(self) -> None:
+        """
+        Walking process
+        """
+        walk_time = self.walk_time() * Walking.WALKING_CONGESTION
+        print(
+            f"({self.env.now}): {self.get_num_people()} have started walking from {self.start_pos.name} to {self.end_pos.name} (Expect to take {walk_time})"
+        )
+        yield self.env.timeout(walk_time)
+        print(
+            f"({self.env.now}): {self.get_num_people()} have finished walking from {self.start_pos.name} to {self.end_pos.name}"
+        )
+        self.end_pos.put(self.people)
+
+    def get_num_people(self) -> int:
+        return sum(group.get_num_people() for group in self.people)
+
+    def walk_time(self) -> int:
+        """
+        Reponsible for calculating the walk time between two locations (use google maps api)
+        """
+        return random.randint(5, 20)
+
+
+class Station:
     """
     Each Station object contains a SimPy Resource which represents the number of bus
     bays available at the stop. Also a list of People objects representing the people
@@ -105,13 +154,13 @@ class BusStop:
 
     def __init__(
         self,
-        env_start: int,
         env: Environment,
         name: str,
-        type: str,
+        transport_type: str,
         pos: tuple[int, int],
         bays: int,
         people: list[People],
+        env_start: int,
         bus_timings: dict[str, list[int]],
         bus_spawn_max: int = 0,
     ) -> None:
@@ -124,7 +173,7 @@ class BusStop:
         self.bus_timings = bus_timings
         self.bus_spawn_max = bus_spawn_max
         self.buses_spawned = 0
-        self.type = type
+        self.transport_type = transport_type
 
     def __str__(self) -> str:
         output = f"{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}"
@@ -153,6 +202,7 @@ class BusStop:
                     excess,
                     people.start_time,
                     people.start_location,
+                    people.itinerary.duplicate(),
                     self.env_start,
                 )
                 split.itinerary.index = people.itinerary.index
@@ -199,17 +249,22 @@ class Route:
     """
 
     def __init__(
-        self, env: Environment, name: str, stops: list[BusStop], env_start: int
+        self,
+        env: Environment,
+        name: str,
+        transport_type: str,
+        stops: list[Station],
+        env_start: int,
     ) -> None:
-        self.env_start = env_start
         self.name = name
         self.stops = stops
-        self.type = type
+        self.transport_type = transport_type
         self.first_stop = stops[0]
         self.last_stop = stops[-1]
         self.env = env
+        self.env_start = env_start
 
-        if self.type == "Bus":
+        if self.transport_type == "Bus":
             self.running = self.env.process(self.initiate_bus_route())
 
     def initiate_bus_route(self) -> None:
@@ -223,7 +278,7 @@ class Route:
                 self.first_stop.buses_spawned += 1
                 name = f"B{self.first_stop.buses_spawned}_{self.name}"
                 self.env.process(
-                    Bus(self.env_start, self.env, name, self).start_driving()
+                    Bus(self.env, name, self, self.env_start).start_driving()
                 )
                 print(
                     f"({self.env.now+self.env_start}): Bus {name} is starting on route {self.name}"
@@ -243,10 +298,10 @@ class Bus:
 
     def __init__(
         self,
-        env_start: str,
         env: Environment,
         name: str,
         route: Route,
+        env_start: str,
         location_index: int = 0,
         capacity: int = 50,
     ) -> None:
@@ -328,7 +383,7 @@ class Bus:
             # add functionality in here
             return
 
-        people_to_ride = self.route.stops[self.location_index].board_bus(
+        people_to_ride = self.route.stops[self.location_index].board(
             min(people_at_stop, bus_seats_left)
         )
 
@@ -367,19 +422,19 @@ class Bus:
 class Suburb:
     def __init__(
         self,
-        env_start: int,
         env: Environment,
         name: str,
-        bus_stops: dict[BusStop:float],
+        stations: dict[Station, float],
         population: int,
         frequency: int,
         max_distributes: int,
         iteneraries: list[Itinerary],
+        env_start: int,
     ) -> None:
         self.env = env
         self.env_start = env_start
         self.name = name
-        self.bus_stops = bus_stops
+        self.stations = stations
         self.population = population
         self.frequency = frequency  # How often to try and distribute the population
         self.max_distributes = max_distributes
@@ -405,13 +460,13 @@ class Suburb:
                 )
                 have_distributed = 0
                 # Will need to change when handling different stop types
-                for stop in self.bus_stops.keys():
+                for stop in self.stations.keys():
                     num_for_stop = math.floor(
-                        self.bus_stops[stop] / 100 * (to_dist - have_distributed)
+                        self.stations[stop] / 100 * (to_dist - have_distributed)
                     )
                     if num_for_stop == 0:
                         continue
-                    if stop == list(self.bus_stops.keys())[-1]:
+                    if stop == list(self.stations.keys())[-1]:
                         num_for_stop = (
                             to_dist - have_distributed
                         )  # To account for rounding
@@ -422,10 +477,10 @@ class Suburb:
                                 num_for_stop,
                                 self.env.now,
                                 stop,
-                                self.env_start,
                                 self.itenteraries[
                                     random.randint(0, len(self.itenteraries) - 1)
                                 ].duplicate(suburb=True),
+                                self.env_start,
                             )
                         ]
                     )
@@ -439,7 +494,7 @@ class Suburb:
             yield self.env.timeout(1)
 
 
-def distance_between(stop1: BusStop, stop2: BusStop) -> int:
+def distance_between(stop1: Station, stop2: Station) -> int:
     """
     This may be based off of calculation or database of data, effectively, return the
     time it takes to travel between two locations
@@ -500,31 +555,68 @@ def complex_example() -> None:
 def simple_example(env_start: int) -> None:
     env = Environment()
 
-    first_stop = BusStop(
-        env_start,
+    first_stop = Station(
         env,
         "first_stop",
+        "Bus",
         (0, 0),
         1,
         [],
+        env_start,
         {"the_route": list(range(1, 60, 15))},
         2,
     )
-    last_stop = BusStop(
-        env_start,
+    last_stop = Station(
         env,
         "last_stop",
+        "Bus",
         (2, 2),
         1,
         [],
+        env_start,
         {"the_route": list(range(1, 60, 15))},
         0,
     )
 
-    Suburb(env_start, env, "Simple Suburb", {first_stop: 100, last_stop: 0}, 100, 10, 0)
+    bus = Route(env, "the_route", "Bus", [first_stop, last_stop], env_start)
 
-    BusRoute(env, "the_route", [first_stop, last_stop], env_start)
+    itinerary = Itinerary(env, 0, [bus])
+
+    Suburb(
+        env,
+        "Simple Suburb",
+        {first_stop: 100, last_stop: 0},
+        100,
+        10,
+        0,
+        [itinerary],
+        env_start,
+    )
+
     env.run(60)
+
+    print(first_stop)
+    print(last_stop)
+
+
+# def simple_example() -> None:
+#     env = Environment()
+
+#     first_stop = Station(env, "first_stop", "Bus", (0, 0), 1, [], 1, 1)
+#     last_stop = Station(env, "last_stop", "Bus", (2, 2), 1, [], 3)
+#     stadium = Station(env, "stadium", "Finish", (4, 4), 1, [])
+
+#     bus = Route(env, "the_route", "Bus", [first_stop, last_stop])
+#     walking = Route(env, "the walk", "Walking", [last_stop, stadium])
+#     itinerary = Itinerary(env, 0, [bus, walking])
+
+#     simple_suburb = Suburb(
+#         env, "Simple Suburb", {first_stop: 100, last_stop: 0}, 100, 10, 0, [itinerary]
+#     )
+#     env.run(30)
+#     print(first_stop)
+#     print(last_stop)
+#     print(stadium)
 
 
 if __name__ == "__main__":
