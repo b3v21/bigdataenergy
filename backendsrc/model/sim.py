@@ -3,9 +3,12 @@ import itertools
 import random
 from simpy import Environment, Resource
 import math
+import numpy as np
 
 
+START_TIME = 12
 PERSON_BOARD_TIME = 0.1
+MINUTES_IN_DAY = 1440
 
 
 class People:
@@ -15,8 +18,14 @@ class People:
     """
 
     def __init__(
-        self, env: Environment, count: int, start_time: int, start_location: BusStop
+        self,
+        env: Environment,
+        count: int,
+        start_time: int,
+        start_location: BusStop,
+        env_start: int,
     ) -> None:
+        self.env_start = start_time
         self.env = env
         self.num_people = count
         self.start_time = start_time
@@ -60,6 +69,7 @@ class BusStop:
 
     def __init__(
         self,
+        env_start: int,
         env: Environment,
         name: str,
         pos: tuple[int, int],
@@ -68,6 +78,7 @@ class BusStop:
         bus_timings: dict[str, list[int]],
         bus_spawn_max: int = 0,
     ) -> None:
+        self.env_start = env_start
         self.env = env
         self.name = name
         self.pos = pos
@@ -104,7 +115,11 @@ class BusStop:
                 # Would be adding too many people --> Split
                 excess = (people.get_num_people() + cur_total) - num_people_to_board
                 split = People(
-                    self.env, excess, people.start_time, people.start_location
+                    self.env,
+                    excess,
+                    people.start_time,
+                    people.start_location,
+                    self.env_start,
                 )
                 people.change_num_people(-excess)
                 self.people.extend([split])
@@ -130,7 +145,10 @@ class BusRoute:
     Object to store series of routes, needs to spawn the initial stops bus spawn process.
     """
 
-    def __init__(self, env: Environment, name: str, stops: list[BusStop]) -> None:
+    def __init__(
+        self, env: Environment, name: str, stops: list[BusStop], env_start: int
+    ) -> None:
+        self.env_start = env_start
         self.name = name
         self.stops = stops
         self.first_stop = stops[0]
@@ -148,8 +166,12 @@ class BusRoute:
             if self.env.now in self.first_stop.bus_timings.get(self.name):
                 self.first_stop.buses_spawned += 1
                 name = f"B{self.first_stop.buses_spawned}_{self.name}"
-                self.env.process(Bus(self.env, name, self).start_driving())
-                print(f"({self.env.now}): Bus {name} is starting on route {self.name}")
+                self.env.process(
+                    Bus(self.env_start, self.env, name, self).start_driving()
+                )
+                print(
+                    f"({self.env.now+self.env_start}): Bus {name} is starting on route {self.name}"
+                )
             yield self.env.timeout(1)
 
 
@@ -165,19 +187,23 @@ class Bus:
 
     def __init__(
         self,
+        env_start: str,
         env: Environment,
         name: str,
         route: BusRoute,
         location_index: int = 0,
         capacity: int = 50,
     ) -> None:
+        self.env_start = env_start
         self.passengers = []  # Container for passengers on it
         self.name = name
         self.route = route
         self.capacity = capacity
         self.env = env
         self.location_index = location_index
-        self.current_stop = self.route.stops[self.location_index].name
+
+    def get_current_stop(self) -> str:
+        return self.route.stops[self.location_index].name
 
     def start_driving(self) -> None:
         """
@@ -189,7 +215,7 @@ class Bus:
         """
         while True:
             print(
-                f"({self.env.now}): Bus {self.name} is arriving stop {self.current_stop}"
+                f"({self.env.now+self.env_start}): Bus {self.name} is arriving stop {self.get_current_stop()}"
             )
             with self.route.stops[self.location_index].bays.request() as req:
                 yield req
@@ -201,13 +227,28 @@ class Bus:
                 next = (self.location_index + 1) % len(self.route.stops)
 
             print(
-                f"({self.env.now}): Bus {self.name} is leaving from stop {self.current_stop} to go to {self.route.stops[next].name}"
+                f"({self.env.now+self.env_start}): Bus {self.name} is leaving from stop {self.get_current_stop()} to go to {self.route.stops[next].name}"
             )
-            time_to_travel = distance_between(
-                self.route.stops[self.location_index], self.route.stops[next]
-            )
+
+            stop_times = self.route.stops[
+                (self.location_index + 1) % len(self.route.stops)
+            ].bus_timings.get(self.route.name)
+
+            next_stop_times = [
+                x for x in stop_times if x > int(self.env.now + self.env_start) % 60
+            ]
+
+            if not next_stop_times:
+                travel_time = (
+                    60 - int(self.env.now + self.env_start) % 60 + stop_times[0]
+                )
+            else:
+                travel_time = (
+                    next_stop_times[0] - int(self.env.now + self.env_start) % 60
+                )
+
             self.location_index = next
-            yield self.env.timeout(time_to_travel)
+            yield self.env.timeout(travel_time)
 
     def load_passengers(self) -> None:
         """Load passengers from the current stop onto this bus."""
@@ -219,11 +260,11 @@ class Bus:
         )
 
         if not people_at_stop:
-            print(f"({self.env.now}): No passengers at stop {self.name}")
+            print(f"({self.env.now+self.env_start}): No passengers at stop {self.name}")
             return
 
         if not bus_seats_left:
-            print(f"({self.env.now}): No seats left on bus {self.name}")
+            print(f"({self.env.now+self.env_start}): No seats left on bus {self.name}")
             # add functionality in here
             return
 
@@ -238,7 +279,7 @@ class Bus:
         yield self.env.timeout(load_time)
 
         print(
-            f"({self.env.now}): Bus {self.name} has loaded {num_people_to_board} people from {self.current_stop}"
+            f"({self.env.now+self.env_start}): Bus {self.name} has loaded {num_people_to_board} people from {self.get_current_stop()}"
         )
 
     def deload_passengers(self) -> None:
@@ -246,7 +287,9 @@ class Bus:
         get_off = self.passenger_count()
 
         if not get_off:
-            print(f"({self.env.now}): No passengers got off the bus {self.name}")
+            print(
+                f"({self.env.now+self.env_start}): No passengers got off the bus {self.name}"
+            )
             return
 
         self.route.stops[self.location_index].put(self.passengers)
@@ -254,7 +297,7 @@ class Bus:
         off_time = get_off * PERSON_BOARD_TIME
         yield self.env.timeout(off_time)
         print(
-            f"({self.env.now}): Bus {self.name} has dropped off {get_off} people at {self.current_stop}"
+            f"({self.env.now+self.env_start}): Bus {self.name} has dropped off {get_off} people at {self.get_current_stop()}"
         )
 
     def passenger_count(self) -> int:
@@ -264,26 +307,24 @@ class Bus:
 class Suburb:
     def __init__(
         self,
+        env_start: int,
         env: Environment,
         name: str,
         bus_stops: dict[BusStop:float],
         population: int,
         frequency: int,
         max_distributes: int,
-    ):
+    ) -> None:
         self.env = env
+        self.env_start = env_start
         self.name = name
-        self.bus_stops = (
-            bus_stops  # Dictionary of bustops and percentages of population to take
-        )
+        self.bus_stops = bus_stops
         self.population = population
         self.frequency = frequency  # How often to try and distribute the population
         self.max_distributes = max_distributes
-
-        # Start process
         self.pop_proc = self.env.process(self.suburb())
 
-    def suburb(self):
+    def suburb(self) -> None:
         """
         Process for the existence of the suburb object.
         Every frequency minutes, will distribute random* amount of population to nearby suburbs.
@@ -299,11 +340,8 @@ class Suburb:
                     else self.population
                 )
                 have_distributed = 0
-                for (
-                    stop
-                ) in (
-                    self.bus_stops.keys()
-                ):  # Will need to change when handling different stop types
+                # Will need to change when handling different stop types
+                for stop in self.bus_stops.keys():
                     num_for_stop = math.floor(
                         self.bus_stops[stop] / 100 * (to_dist - have_distributed)
                     )
@@ -313,12 +351,23 @@ class Suburb:
                         num_for_stop = (
                             to_dist - have_distributed
                         )  # To account for rounding
-                    stop.put([People(self.env, num_for_stop, self.env.now, stop)])
+                    stop.put(
+                        [
+                            People(
+                                self.env,
+                                num_for_stop,
+                                self.env.now,
+                                stop,
+                                self.env_start,
+                            )
+                        ]
+                    )
                     have_distributed += num_for_stop
                     if num_for_stop != 0:
                         print(
-                            f"({self.env.now}): {num_for_stop} new people have just arrived at {stop.name} in {self.name}"
+                            f"({self.env.now+self.env_start}): {num_for_stop} new people have just arrived at {stop.name} in {self.name}"
                         )
+            distributes += 1
             yield self.env.timeout(1)
 
 
@@ -380,23 +429,35 @@ def complex_example() -> None:
     env.run(30)
 
 
-def simple_example() -> None:
+def simple_example(env_start: int) -> None:
     env = Environment()
 
     first_stop = BusStop(
-        env, "first_stop", (0, 0), 1, [], {"the_route": list(range(1, 60, 5))}, 2
+        env_start,
+        env,
+        "first_stop",
+        (0, 0),
+        1,
+        [],
+        {"the_route": list(range(1, 60, 15))},
+        2,
     )
     last_stop = BusStop(
-        env, "last_stop", (2, 2), 1, [], {"the_route": list(range(6, 60, 5))}, 0
+        env_start,
+        env,
+        "last_stop",
+        (2, 2),
+        1,
+        [],
+        {"the_route": list(range(1, 60, 15))},
+        0,
     )
 
-    Suburb(env, "Simple Suburb", {first_stop: 100, last_stop: 0}, 100, 10, 4)
+    Suburb(env_start, env, "Simple Suburb", {first_stop: 100, last_stop: 0}, 100, 10, 0)
 
-    BusRoute(env, "the_route", [first_stop, last_stop])
+    BusRoute(env, "the_route", [first_stop, last_stop], env_start)
     env.run(60)
-    print(first_stop)
-    print(last_stop)
 
 
 if __name__ == "__main__":
-    simple_example()
+    simple_example(START_TIME)
