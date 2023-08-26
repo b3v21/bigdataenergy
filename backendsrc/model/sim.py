@@ -221,7 +221,7 @@ class Station:
 
     def put(self, passengers: list[People], suburb=False) -> None:
         for people in passengers:
-            if not suburb:
+            if not suburb and not people.itinerary.last_leg():
                 people.itinerary.next()
             if people.itinerary.last_leg():
                 # Being put at end
