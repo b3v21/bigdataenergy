@@ -5,7 +5,7 @@ const layout: PlotParams['layout'] = {
 	mapbox: {
 		style: 'dark',
 		center: { lat: -27.5, lon: 153 },
-		zoom: 9
+		zoom: 10
 	},
 	margin: { r: 0, t: 0, b: 0, l: 0 }
 };
