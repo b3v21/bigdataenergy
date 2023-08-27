@@ -7,7 +7,7 @@ import Sidebar from './components/sidebar';
 
 const Simulation = () => {
 	return (
-		<div className="flex flex-row gap-8">
+		<div className="flex flex-row gap-4">
 			<Sidebar />
 			<div className="flex-1">
 				<Plot

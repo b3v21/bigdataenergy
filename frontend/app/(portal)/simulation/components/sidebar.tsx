@@ -14,10 +14,10 @@ const Sidebar = () => {
 				<TabsContent value="routes" className="flex-1">
 					<Status />
 				</TabsContent>
-				<TabsContent value="details">
+				<TabsContent value="details" className="flex-1">
 					<Details />
 				</TabsContent>
-				<TabsContent value="stops">
+				<TabsContent value="stops" className="flex-1">
 					<Routes />
 				</TabsContent>
 			</Tabs>
