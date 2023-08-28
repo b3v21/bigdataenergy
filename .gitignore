@@ -1,3 +1,3 @@
 # plz put ur random files and virtual envs in here so you don't contaminate repo :)
-
+/env/
 *.txt
