@@ -67,7 +67,6 @@ class People:
         self.start_location = start_location
         self.end_time = None
         self.travel_route = None  # To come later
-        self.itinerary = itinerary
 
     def __str__(self) -> str:
         return f'Count: {self.get_num_people()}, Start Time: {self.get_start_time()}, End Time: {self.get_end_time()}, Journey Time: {self.get_end_time() - self.get_start_time() if self.get_end_time() != None else "N/A"}, Start Loc: {self.start_location.name}'
@@ -94,7 +93,6 @@ class People:
 
     def get_end_time(self) -> float:
         return self.end_time
-
 
 class Walking:
     """
@@ -144,7 +142,6 @@ class Walking:
         """
         return random.randint(5, 20)
 
-
 class Station:
     """
     Each Station object contains a SimPy Resource which represents the number of bus
@@ -193,6 +190,7 @@ class Station:
         """
         cur_total = 0
         people_to_get = []
+
         for people in self.people:
             if people.get_num_people() + cur_total > num_people_to_board:
                 # Would be adding too many people --> Split
@@ -219,6 +217,7 @@ class Station:
 
         return people_to_get
 
+
     def put(self, passengers: list[People], suburb=False) -> None:
         for people in passengers:
             if not suburb and not people.itinerary.last_leg():
@@ -241,6 +240,7 @@ class Station:
 
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
+
 
 
 class Route:
@@ -384,6 +384,7 @@ class Bus:
             return
 
         people_to_ride = self.route.stops[self.location_index].board(
+
             min(people_at_stop, bus_seats_left)
         )
 
@@ -459,6 +460,7 @@ class Suburb:
                     else self.population
                 )
                 have_distributed = 0
+
                 # Will need to change when handling different stop types
                 for stop in self.stations.keys():
                     num_for_stop = math.floor(
@@ -579,8 +581,8 @@ def simple_example(env_start: int) -> None:
     )
 
     bus = Route(env, "the_route", "Bus", [first_stop, last_stop], env_start)
-
     itinerary = Itinerary(env, 0, [bus])
+
 
     Suburb(
         env,
