@@ -66,6 +66,7 @@ class People:
         self.start_time = start_time
         self.start_location = start_location
         self.end_time = None
+        self.itinerary = itinerary
         self.travel_route = None  # To come later
 
     def __str__(self) -> str:
