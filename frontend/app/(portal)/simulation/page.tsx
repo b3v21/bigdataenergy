@@ -2,8 +2,8 @@
 
 import Plot from 'react-plotly.js';
 
-import { data, layout } from './plot';
 import Sidebar from './components/sidebar';
+import { data, layout } from './plot';
 
 const Simulation = () => {
 	return (
