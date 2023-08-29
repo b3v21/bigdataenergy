@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
-from db.models import Station as StationModel
+from db.models import Station as StationM, Route as RouteM, Timetable as TimetableM
 
 
 START_TIME = 12
@@ -166,6 +166,7 @@ class Station:
     def __init__(
         self,
         env: Environment,
+        id: int,
         name: str,
         transport_type: str,
         pos: tuple[int, int],
@@ -177,6 +178,7 @@ class Station:
     ) -> None:
         self.env_start = env_start
         self.env = env
+        self.id = id
         self.name = name
         self.pos = pos
         self.bays = Resource(env, capacity=bays)
@@ -569,21 +571,42 @@ def simple_example(env_start: int) -> None:
     env = Environment()
 
     # DELETE CURRENT STATION
-    StationModel.objects.filter(station_id=1).delete()
+    # StationM.objects.all().delete()
 
-    # POST STATION TO DB
-    station = StationModel(station_id=1, name="first_stop", lat=0, long=0)
-    station.save()
+    # POST DATA TO DB (IN FUTURE THIS WOULD BE RUN ONCE ON STARTUP ELSEWHERE)
+    stations = []
+    stations.append(StationM(station_id=1, name="first_stop", lat=0, long=0))
+    stations.append(StationM(station_id=2, name="last_stop", lat=2, long=2))
+    for station in stations:
+        station.save()
 
-    # GET STATION DATA
-    station_return = StationModel.objects.get(station_id=1)
-    result = station_return.get()
+    routes = []
+    routes.append(
+        RouteM(
+            route_id=1,
+            name="the_route",
+            type="Bus",
+            start=stations[0],
+            end=stations[1],
+            station_sequence="[1,2]",
+        )
+    )
+    for route in routes:
+        route.save()
+
+    # GET DATA
+    station_return = StationM.objects.all()
+    stations = [station.get() for station in station_return]
+
+    route_return = RouteM.objects.all()
+    routes = [route.get() for route in route_return]
 
     first_stop = Station(
         env,
-        result["name"],
+        stations[0]["station_id"],
+        stations[0]["name"],
         "Bus",
-        (result["lat"], result["long"]),
+        (stations[0]["lat"], stations[0]["long"]),
         1,
         [],
         env_start,
@@ -592,9 +615,10 @@ def simple_example(env_start: int) -> None:
     )
     last_stop = Station(
         env,
-        "last_stop",
+        stations[1]["station_id"],
+        stations[1]["name"],
         "Bus",
-        (2, 2),
+        (stations[1]["lat"], stations[1]["long"]),
         1,
         [],
         env_start,
@@ -602,7 +626,7 @@ def simple_example(env_start: int) -> None:
         0,
     )
 
-    bus = Route(env, "the_route", "Bus", [first_stop, last_stop], env_start)
+    bus = Route(env, routes[0]["name"], "Bus", [first_stop, last_stop], env_start)
     itinerary = Itinerary(env, 0, [bus])
 
     Suburb(
