@@ -12,32 +12,12 @@ Our goal is to build a website with an interactive map and other visualisations 
 
 
 # Database Setup
-1. create user / db on MySQL command line client
-   
-download and install MySQL 8.0
+1. setup & activate a python venv if you haven't already
+2. <code>pip install django</code>
+   <code>pip install djangorestframework</code>
+3. enter backendsrc directory and run <code>python manage.py migrate</code>
+4. create a superuser with - <code>python manage.py createsuperuser --email admin@example.com --username admin</code>
+5. run python manage.py runserver
+6. good to go!
 
-create root user with password root.to change the password of root user use below
-
-ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
-
-create the database
-
-CREATE DATABASE transport_db; 
-
-2. python dependencies and migration
-   
-in python virtual environment install the MySQL dependency
-
-pip install mysqlclient
-
-these commands migrate the classes in src/model.py to the database schema 
-
-py manage.py makemigrations
-
-py manage.py migrate src
-
-3. see results in MySQL command line client
-   
-use transport_db;
-
-show tables;
+(https://www.django-rest-framework.org/tutorial/quickstart/)
