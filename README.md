@@ -13,8 +13,8 @@ Our goal is to build a website with an interactive map and other visualisations 
 
 # Database Setup
 1. setup & activate a python venv if you haven't already
-2. pip install django
-   pip install djangorestframework
+2. <code>pip install django</code>
+   <code>pip install djangorestframework</code>
 3. enter backendsrc directory and run <code>python manage.py migrate</code>
 4. create a superuser with - <code>python manage.py createsuperuser --email admin@example.com --username admin</code>
 5. run python manage.py runserver
