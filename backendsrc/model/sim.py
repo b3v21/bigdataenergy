@@ -95,6 +95,7 @@ class People:
     def get_end_time(self) -> float:
         return self.end_time
 
+
 class Walking:
     """
     Class for holding a 'block' of walking
@@ -142,6 +143,7 @@ class Walking:
         Reponsible for calculating the walk time between two locations (use google maps api)
         """
         return random.randint(5, 20)
+
 
 class Station:
     """
@@ -218,7 +220,6 @@ class Station:
 
         return people_to_get
 
-
     def put(self, passengers: list[People], suburb=False) -> None:
         for people in passengers:
             if not suburb and not people.itinerary.last_leg():
@@ -241,7 +242,6 @@ class Station:
 
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
-
 
 
 class Route:
@@ -385,7 +385,6 @@ class Bus:
             return
 
         people_to_ride = self.route.stops[self.location_index].board(
-
             min(people_at_stop, bus_seats_left)
         )
 
@@ -583,7 +582,6 @@ def simple_example(env_start: int) -> None:
 
     bus = Route(env, "the_route", "Bus", [first_stop, last_stop], env_start)
     itinerary = Itinerary(env, 0, [bus])
-
 
     Suburb(
         env,
