@@ -9,3 +9,6 @@ class Station(models.Model):
 
     class Meta:
         ordering = ['station_id']
+        
+    def get_station(self):
+        return {"station_id": self.station_id, "name":self.name, "lat":self.lat, "long":self.long}
