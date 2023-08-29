@@ -4,13 +4,14 @@ import random
 from simpy import Environment, Resource
 import math
 import numpy as np
-from pathlib import Path 
+from pathlib import Path
 import os
 import sys
 import django
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
 from db.models import Station as StationModel
@@ -566,23 +567,23 @@ def complex_example() -> None:
 
 def simple_example(env_start: int) -> None:
     env = Environment()
-    
+
     # DELETE CURRENT STATION
     StationModel.objects.filter(station_id=1).delete()
-    
+
     # POST STATION TO DB
-    station = StationModel(station_id = 1, name = "first_stop" , lat = 0, long = 0)
+    station = StationModel(station_id=1, name="first_stop", lat=0, long=0)
     station.save()
 
     # GET STATION DATA
     station_return = StationModel.objects.get(station_id=1)
-    result = station_return.get_station()
-    
+    result = station_return.get()
+
     first_stop = Station(
         env,
         result["name"],
         "Bus",
-        (result["lat"],result["long"]),
+        (result["lat"], result["long"]),
         1,
         [],
         env_start,

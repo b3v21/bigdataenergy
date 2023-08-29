@@ -5,4 +5,4 @@ from db.models import Station
 class StationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Station
-        fields = ['station_id','name','lat','long']
+        fields = ["station_id", "name", "lat", "long"]
