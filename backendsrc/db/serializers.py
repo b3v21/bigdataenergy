@@ -11,7 +11,14 @@ class StationSerializer(serializers.ModelSerializer):
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
-        fields = ["route_id", "station_id", "name", "transport_type", "next_st", "prev_st"]
+        fields = [
+            "route_id",
+            "station_id",
+            "name",
+            "transport_type",
+            "next_st",
+            "prev_st",
+        ]
 
 
 class TimetableSerializer(serializers.ModelSerializer):
