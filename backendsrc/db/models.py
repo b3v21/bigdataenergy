@@ -27,12 +27,9 @@ class Route(models.Model):
     transport_type = models.CharField(
         max_length=255
     )  # Type of route (i.e. bus, train, etc.)
-    next_st = models.ForeignKey(
-        Station, on_delete=models.CASCADE, related_name="next", default=99999999999
-    )
-    prev_st = models.ForeignKey(
-        Station, on_delete=models.CASCADE, related_name="prev", default=99999999999
-    )
+    capacity = models.IntegerField(null=True)
+    next_st = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="next")
+    prev_st = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="prev")
 
     class Meta:
         ordering = ["route_id"]
@@ -68,3 +65,10 @@ class Timetable(models.Model):
 
 class SimulationOutput(models.Model):
     simulation_id = models.IntegerField(primary_key=True)
+
+
+class TravelTimes(models.Model):
+    traveltime_id = models.IntegerField(primary_key=True)
+    from_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="from_station")
+    to_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="to_station")
+    duration = models.FloatField(default=0)
