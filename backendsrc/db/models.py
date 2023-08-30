@@ -22,11 +22,11 @@ class Station(models.Model):
 
 class Route(models.Model):
     route_id = models.IntegerField(primary_key=True)
-    station_id = models.IntegerField()
+    station_id = models.IntegerField(default=1)
     name = models.CharField(max_length=255)
     transport_type = models.CharField(max_length=255)  # Type of route (i.e. bus, train, etc.)
-    next_st = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="next")
-    prev_st = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="prev")
+    next_st = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="next", default=99999999999)
+    prev_st = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="prev", default=99999999999)
 
     class Meta:
         ordering = ["route_id"]
@@ -54,7 +54,7 @@ class Timetable(models.Model):
 
     def get(self):
         return {
-            "station_id": self.station_id,
+            "station_id": self,
             "route_id": self.route_id,
             "arrival_times": self.arrival_times,
         }
