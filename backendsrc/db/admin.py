@@ -1,5 +1,5 @@
 from django.contrib import admin
-from models import Timetable, Route, Station
+from db.models import Timetable, Route, Station
 
 
 class TimeTableAdmin(admin.ModelAdmin):
@@ -15,5 +15,5 @@ class StationAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Timetable, TimeTableAdmin)
-admin.site.register(Timetable, RouteAdmin)
-admin.site.register(Timetable, StationAdmin)
+admin.site.register(Route, RouteAdmin)
+admin.site.register(Station, StationAdmin)
