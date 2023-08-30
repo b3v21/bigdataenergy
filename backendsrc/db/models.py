@@ -69,6 +69,10 @@ class SimulationOutput(models.Model):
 
 class TravelTimes(models.Model):
     traveltime_id = models.IntegerField(primary_key=True)
-    from_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="from_station")
-    to_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="to_station")
+    from_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="from_station"
+    )
+    to_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="to_station"
+    )
     duration = models.FloatField(default=0)
