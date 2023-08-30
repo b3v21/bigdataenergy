@@ -57,3 +57,7 @@ class Timetable(models.Model):
             "route_id": self.route_id,
             "arrival_times": self.arrival_times,
         }
+
+
+class SimulationOutput(models.Model):
+    simulation_id = models.IntegerField(primary_key=True)

@@ -575,7 +575,7 @@ def simple_example(env_start: int) -> None:
 
     # import pdb; pdb.set_trace()
     # POST DATA TO DB (IN FUTURE THIS WOULD BE RUN ONCE ON STARTUP ELSEWHERE)
-    
+
     StationM.objects.create(name="first_stop", lat=0, long=0)
     StationM.objects.create(name="last_stop", lat=2, long=2)
 
