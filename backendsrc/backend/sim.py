@@ -168,7 +168,6 @@ class Station:
         env: Environment,
         id: int,
         name: str,
-        transport_type: str,
         pos: tuple[int, int],
         bays: int,
         people: list[People],
@@ -186,7 +185,6 @@ class Station:
         self.bus_timings = bus_timings
         self.bus_spawn_max = bus_spawn_max
         self.buses_spawned = 0
-        self.transport_type = transport_type
 
     def __str__(self) -> str:
         output = f"{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}"
@@ -649,6 +647,25 @@ def simple_example(env_start: int) -> None:
 #     print(first_stop)
 #     print(last_stop)
 #     print(stadium)
+
+
+def get_data(self, env):
+    stations = StationM.objects.all()
+
+    routes = RouteM.objects.all()
+
+    timetables = TimetableM.objects.all()
+
+    for station in stations:
+        Station(
+            env,
+            station.station_id,
+            station.name,
+            (station.lat, station.long),
+            0,
+            {"the_route": list(range(1, 60, 15))},
+            bus_spawn_max=0,
+        )
 
 
 if __name__ == "__main__":
