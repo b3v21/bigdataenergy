@@ -571,35 +571,20 @@ def simple_example(env_start: int) -> None:
     env = Environment()
 
     # DELETE CURRENT STATION
-    # StationM.objects.all().delete()
+    StationM.objects.all().delete()
 
+    # import pdb; pdb.set_trace()
     # POST DATA TO DB (IN FUTURE THIS WOULD BE RUN ONCE ON STARTUP ELSEWHERE)
-    stations = []
-    stations.append(StationM(station_id=1, name="first_stop", lat=0, long=0))
-    stations.append(StationM(station_id=2, name="last_stop", lat=2, long=2))
-    for station in stations:
-        station.save()
-
-    routes = []
-    routes.append(
-        RouteM(
-            route_id=1,
-            name="the_route",
-            type="Bus",
-            start=stations[0],
-            end=stations[1],
-            station_sequence="[1,2]",
-        )
-    )
-    for route in routes:
-        route.save()
+    
+    StationM.objects.create(name="first_stop", lat=0, long=0)
+    StationM.objects.create(name="last_stop", lat=2, long=2)
 
     # GET DATA
     station_return = StationM.objects.all()
     stations = [station.get() for station in station_return]
 
-    route_return = RouteM.objects.all()
-    routes = [route.get() for route in route_return]
+    # route_return = RouteM.objects.all()
+    # routes = [route.get() for route in route_return]
 
     first_stop = Station(
         env,
@@ -626,7 +611,7 @@ def simple_example(env_start: int) -> None:
         0,
     )
 
-    bus = Route(env, routes[0]["name"], "Bus", [first_stop, last_stop], env_start)
+    bus = Route(env, "the_route", "Bus", [first_stop, last_stop], env_start)
     itinerary = Itinerary(env, 0, [bus])
 
     Suburb(
