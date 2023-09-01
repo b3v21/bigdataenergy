@@ -257,6 +257,9 @@ class Station:
 
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
+    
+    def get_bus_timings(self) -> list[int]:
+        return self.bus_timings
 
 
 class Route:
@@ -576,9 +579,9 @@ def simple_example(
     env: Environment, env_start: int, data: tuple(list[Station], list[Route])
 ) -> None:
     stations, routes = data
-    ROUTE_ID = 0
+    ROUTE_ID = 66
 
-    itinerary = Itinerary(env, 0, [routes[0]])
+    itinerary = Itinerary(env, 0, [routes[ROUTE_ID]])
 
     Suburb(
         env,
@@ -594,7 +597,7 @@ def simple_example(
         env_start,
     )
 
-    env.run(60)
+    env.run(120)
 
 
 # def simple_example() -> None:
@@ -617,47 +620,48 @@ def simple_example(
 #     print(stadium)
 
 
-# def get_data(env, env_start=0):
-# stations = StationM.objects.all()
-# routes = RouteM.objects.all()
+def get_data(env, env_start=0):
+    stations = StationM.objects.all()
+    routes = RouteM.objects.all()
+    timetables = TimetableM.objects.all()
 
-# station_objects = {}
-# route_objects = {}
+    station_objects = {}
+    route_objects = {}
 
-# for station in stations:
-#     qs = TimetableM.objects.all().filter(station_id=station.station_id)
-#     timetables = {}
-#     for timetable in qs:
-#         timetables[timetable.route_id] = timetable.arrival_times
+    for station in stations:
+        qs = timetables.filter(station_id=station.station_id)
+        st_timetables = {}
+        for st_timetable in qs:
+            times_stripped = st_timetable.arrival_times.strip("[").strip("]").split(",")
+            formated_times = [round(float(time.strip(' \'').split(":")[0]) + (float(time.strip(' \'').split(":")[1]) / 60),2) for time in times_stripped]
+            st_timetables[st_timetable.route_id] = formated_times
+        
+        station_objects[station.station_id] = Station(
+            env,
+            station.station_id,
+            station.name,
+            (station.lat, station.long),
+            1,  # bays currently always 1
+            [],  # No initial people
+            env_start=env_start,
+            bus_timings= st_timetables,  # BUS TIMINGS FOR THIS STATION, FROM TIMETABLE TABLE
+            bus_spawn_max=0,
+        )
 
-#     station_objects[station.station_id] = Station(
-#         env,
-#         station.station_id,
-#         station.name,
-#         (station.lat, station.long),
-#         1,  # bays currently always 1
-#         [],  # No initial people
-#         env_start=env_start,
-#         bus_timings=timetables,  # BUS TIMINGS FOR THIS STATION, FROM TIMETABLE TABLE
-#         bus_spawn_max=0,
-#     )
+    for route in routes:
+        route_stations = timetables.filter(route_id=route.route_id).values_list("station_id")
+        route_stations_list = [station_objects[station[0]] for station in route_stations]
+        
+        route_objects[route.route_id] = Route(
+            env,
+            route.name,
+            "Bus", # Hard codied for now
+            route_stations_list, # GET STATIONS FOR A GIVEN ROUTE
+            env_start
+        )
 
-# for route in routes:
-#     route_stations = []
-#     current, next_st = routes.all().filter(route_id = route.route_id).filter(prev_st= "Null").values_list('station_id' 'next_st')[0]
-#     while next_st != "Null":
-#         route_stations += station_objects[current]
+    return (station_objects, route_objects)
 
-#     route_objects[route.route_id] = Route(
-#         env,
-#         route.name,
-#         route.transport_type,
-#         route_stations, # GET STATIONS FOR A GIVEN ROUTE
-#         env_start
-#     )
-
-# return (station_objects, route_objects)
-
-# if __name__ == "__main__":
-#     env = Environment()
-#     simple_example(env, START_TIME, get_data(env, env_start=START_TIME))
+if __name__ == "__main__":
+    env = Environment()
+    simple_example(env, START_TIME, get_data(env, env_start=START_TIME))
