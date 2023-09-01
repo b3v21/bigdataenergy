@@ -26,3 +26,6 @@ Our goal is to build a website with an interactive map and other visualisations 
 3. <code>python manage.py migrate</code>. This applies a migration which is currently unapplied (updates the database)
 
 (https://www.django-rest-framework.org/tutorial/quickstart/)
+
+#FYI
+If you're unable to migrate at any point, just delete the files in ./db/migrations that are numbered (0001_... etc) and you should be able to remigrate. This might happen now and again to to multiple people edited the db and forgetting to migrate before pushing each time.
