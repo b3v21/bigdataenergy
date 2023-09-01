@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
-from db.models import Station as StationM, Route as RouteM, Timetable as TimetableM
+from db.models import Station as StationM, Route as RouteM, Timetable as TimetableM  # noqa: E402
 
 
 START_TIME = 12
