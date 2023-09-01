@@ -13,7 +13,8 @@ class RouteSerializer(serializers.ModelSerializer):
         model = Route
         fields = [
             "route_id",
-            "translink_id" "name",
+            "translink_id",
+            "name",
             "transport_type",
             "capacity",
         ]
@@ -25,7 +26,8 @@ class TimetableSerializer(serializers.ModelSerializer):
         fields = [
             "timetable_id",
             "station_id",
-            "route_id" "translink_id",
+            "route_id",
+            "translink_id",
             "sequence",
             "arrival_times",
         ]
