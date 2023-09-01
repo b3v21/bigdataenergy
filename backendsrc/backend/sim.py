@@ -14,7 +14,11 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
-from db.models import Station as StationM, Route as RouteM, Timetable as TimetableM
+from db.models import (
+    Station as StationM,
+    Route as RouteM,
+    Timetable as TimetableM,
+)  # noqa: E402
 
 
 START_TIME = 12
@@ -168,7 +172,6 @@ class Station:
         env: Environment,
         id: int,
         name: str,
-        transport_type: str,
         pos: tuple[int, int],
         bays: int,
         people: list[People],
@@ -186,7 +189,6 @@ class Station:
         self.bus_timings = bus_timings
         self.bus_spawn_max = bus_spawn_max
         self.buses_spawned = 0
-        self.transport_type = transport_type
 
     def __str__(self) -> str:
         output = f"{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}"
@@ -298,6 +300,9 @@ class Route:
                     f"({self.env.now+self.env_start}): Bus {name} is starting on route {self.name}"
                 )
             yield self.env.timeout(1)
+
+    def get_stations(self):
+        return self.stops
 
 
 class Bus:
@@ -567,57 +572,21 @@ def complex_example() -> None:
     env.run(30)
 
 
-def simple_example(env_start: int) -> None:
-    env = Environment()
+def simple_example(
+    env: Environment, env_start: int, data: tuple(list[Station], list[Route])
+) -> None:
+    stations, routes = data
+    ROUTE_ID = 0
 
-    # DELETE CURRENT STATION
-    StationM.objects.all().delete()
-
-    # import pdb; pdb.set_trace()
-    # POST DATA TO DB (IN FUTURE THIS WOULD BE RUN ONCE ON STARTUP ELSEWHERE)
-
-    StationM.objects.create(name="first_stop", lat=0, long=0)
-    StationM.objects.create(name="last_stop", lat=2, long=2)
-
-    # GET DATA
-    station_return = StationM.objects.all()
-    stations = [station.get() for station in station_return]
-
-    # route_return = RouteM.objects.all()
-    # routes = [route.get() for route in route_return]
-
-    first_stop = Station(
-        env,
-        stations[0]["station_id"],
-        stations[0]["name"],
-        "Bus",
-        (stations[0]["lat"], stations[0]["long"]),
-        1,
-        [],
-        env_start,
-        {"the_route": list(range(1, 60, 15))},
-        2,
-    )
-    last_stop = Station(
-        env,
-        stations[1]["station_id"],
-        stations[1]["name"],
-        "Bus",
-        (stations[1]["lat"], stations[1]["long"]),
-        1,
-        [],
-        env_start,
-        {"the_route": list(range(1, 60, 15))},
-        0,
-    )
-
-    bus = Route(env, "the_route", "Bus", [first_stop, last_stop], env_start)
-    itinerary = Itinerary(env, 0, [bus])
+    itinerary = Itinerary(env, 0, [routes[0]])
 
     Suburb(
         env,
         "Simple Suburb",
-        {first_stop: 100, last_stop: 0},
+        {
+            routes[ROUTE_ID].get_stations()[0]: 100,
+            routes[ROUTE_ID].get_stations()[-1]: 0,
+        },
         100,
         10,
         0,
@@ -626,9 +595,6 @@ def simple_example(env_start: int) -> None:
     )
 
     env.run(60)
-
-    print(first_stop)
-    print(last_stop)
 
 
 # def simple_example() -> None:
@@ -651,5 +617,47 @@ def simple_example(env_start: int) -> None:
 #     print(stadium)
 
 
-if __name__ == "__main__":
-    simple_example(START_TIME)
+# def get_data(env, env_start=0):
+# stations = StationM.objects.all()
+# routes = RouteM.objects.all()
+
+# station_objects = {}
+# route_objects = {}
+
+# for station in stations:
+#     qs = TimetableM.objects.all().filter(station_id=station.station_id)
+#     timetables = {}
+#     for timetable in qs:
+#         timetables[timetable.route_id] = timetable.arrival_times
+
+#     station_objects[station.station_id] = Station(
+#         env,
+#         station.station_id,
+#         station.name,
+#         (station.lat, station.long),
+#         1,  # bays currently always 1
+#         [],  # No initial people
+#         env_start=env_start,
+#         bus_timings=timetables,  # BUS TIMINGS FOR THIS STATION, FROM TIMETABLE TABLE
+#         bus_spawn_max=0,
+#     )
+
+# for route in routes:
+#     route_stations = []
+#     current, next_st = routes.all().filter(route_id = route.route_id).filter(prev_st= "Null").values_list('station_id' 'next_st')[0]
+#     while next_st != "Null":
+#         route_stations += station_objects[current]
+
+#     route_objects[route.route_id] = Route(
+#         env,
+#         route.name,
+#         route.transport_type,
+#         route_stations, # GET STATIONS FOR A GIVEN ROUTE
+#         env_start
+#     )
+
+# return (station_objects, route_objects)
+
+# if __name__ == "__main__":
+#     env = Environment()
+#     simple_example(env, START_TIME, get_data(env, env_start=START_TIME))
