@@ -649,23 +649,34 @@ def simple_example(env_start: int) -> None:
 #     print(stadium)
 
 
-def get_data(self, env):
+def get_data(self, env, env_start = 0):
     stations = StationM.objects.all()
-
     routes = RouteM.objects.all()
-
     timetables = TimetableM.objects.all()
 
+    station_objects = []
+    route_objects = []
+    
     for station in stations:
-        Station(
+        station_objects.append(Station(
             env,
             station.station_id,
             station.name,
             (station.lat, station.long),
-            0,
-            {"the_route": list(range(1, 60, 15))},
+            1, # bays currently always 1
+            env_start,
+            TimetableM.objects.get(pk=1), # BUS TIMINGS FOR THIS STATION, FROM TIMETABLE TABLE
             bus_spawn_max=0,
-        )
+        ))
+        
+    for route in routes:
+        route_objects.append(Route(
+            env,
+            route.name,
+            route.transport_type,
+            None, # GET STATIONS FOR A GIVEN ROUTE
+            env_start
+        ))
 
 
 if __name__ == "__main__":

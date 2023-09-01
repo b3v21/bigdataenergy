@@ -47,7 +47,7 @@ class Route(models.Model):
 
 
 class Timetable(models.Model):
-    station_id = models.ForeignKey(Station, on_delete=models.CASCADE)
+    station_id = models.ForeignKey(Station, on_delete=models.CASCADE, primary_key=True)
     route_id = models.ForeignKey(Route, on_delete=models.CASCADE)
     arrival_times = models.CharField(max_length=255)
 
