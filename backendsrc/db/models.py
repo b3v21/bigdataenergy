@@ -14,6 +14,7 @@ class Station(models.Model):
 
 class Route(models.Model):
     route_id = models.IntegerField(primary_key=True)
+    stations = models.ManyToManyField(Station, through="Trip")
     translink_id = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
     transport_type = models.CharField(
@@ -25,18 +26,17 @@ class Route(models.Model):
         ordering = ["route_id"]
         unique_together = ("route_id", "translink_id")
 
-
-class Timetable(models.Model):
-    timetable_id = models.IntegerField(primary_key=True)
-    station_id = models.ForeignKey(Station, on_delete=models.CASCADE)
-    route_id = models.ForeignKey(Route, on_delete=models.CASCADE)
+class Trip(models.Model):
+    trip_id = models.IntegerField(primary_key=True)
+    route = models.ForeignKey(Route, on_delete=models.CASCADE)
+    station = models.ForeignKey(Station, on_delete=models.CASCADE)
+    translink_trip_id = models.CharField(max_length=255)
+    arrival_time = models.CharField(max_length=255)
     sequence = models.IntegerField()
-    arrival_times = models.CharField(max_length=255)
 
     class Meta:
-        ordering = ["station_id", "route_id"]
-        unique_together = ("station_id", "route_id")
-
+        ordering = ["trip_id"]
+        unique_together = ("trip_id","station")
 
 class SimulationOutput(models.Model):
     simulation_id = models.IntegerField(primary_key=True)

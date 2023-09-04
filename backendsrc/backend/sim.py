@@ -257,7 +257,7 @@ class Station:
 
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
-    
+
     def get_bus_timings(self) -> list[int]:
         return self.bus_timings
 
@@ -633,9 +633,16 @@ def get_data(env, env_start=0):
         st_timetables = {}
         for st_timetable in qs:
             times_stripped = st_timetable.arrival_times.strip("[").strip("]").split(",")
-            formated_times = [round(float(time.strip(' \'').split(":")[0]) + (float(time.strip(' \'').split(":")[1]) / 60),2) for time in times_stripped]
+            formated_times = [
+                round(
+                    float(time.strip(" '").split(":")[0])
+                    + (float(time.strip(" '").split(":")[1]) / 60),
+                    2,
+                )
+                for time in times_stripped
+            ]
             st_timetables[st_timetable.route_id] = formated_times
-        
+
         station_objects[station.station_id] = Station(
             env,
             station.station_id,
@@ -644,23 +651,28 @@ def get_data(env, env_start=0):
             1,  # bays currently always 1
             [],  # No initial people
             env_start=env_start,
-            bus_timings= st_timetables,  # BUS TIMINGS FOR THIS STATION, FROM TIMETABLE TABLE
+            bus_timings=st_timetables,  # BUS TIMINGS FOR THIS STATION, FROM TIMETABLE TABLE
             bus_spawn_max=0,
         )
 
     for route in routes:
-        route_stations = timetables.filter(route_id=route.route_id).values_list("station_id")
-        route_stations_list = [station_objects[station[0]] for station in route_stations]
-        
+        route_stations = timetables.filter(route_id=route.route_id).values_list(
+            "station_id"
+        )
+        route_stations_list = [
+            station_objects[station[0]] for station in route_stations
+        ]
+
         route_objects[route.route_id] = Route(
             env,
             route.name,
-            "Bus", # Hard codied for now
-            route_stations_list, # GET STATIONS FOR A GIVEN ROUTE
-            env_start
+            "Bus",  # Hard codied for now
+            route_stations_list,  # GET STATIONS FOR A GIVEN ROUTE
+            env_start,
         )
 
     return (station_objects, route_objects)
+
 
 if __name__ == "__main__":
     env = Environment()
