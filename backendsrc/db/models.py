@@ -25,10 +25,11 @@ class Route(models.Model):
         ordering = ["route_id"]
         unique_together = ("route_id", "translink_id")
 
+
 class Timetable(models.Model):
     timetable_id = models.IntegerField(primary_key=True)
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
-    station = models.ForeignKey(Station, on_delete=models.CASCADE)
+    station = models.ForeignKey(Station, on_delete=models.CASCADE, null=True)
     translink_trip_id = models.CharField(max_length=255)
     translink_trip_id_simple = models.IntegerField()
     arrival_time = models.CharField(max_length=255)
@@ -36,6 +37,7 @@ class Timetable(models.Model):
 
     class Meta:
         ordering = ["timetable_id"]
+
 
 class SimulationOutput(models.Model):
     simulation_id = models.IntegerField(primary_key=True)

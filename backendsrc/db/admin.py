@@ -13,6 +13,7 @@ class StationAdmin(admin.ModelAdmin):
 class TimetableAdmin(admin.ModelAdmin):
     pass
 
+
 class TravelTimesAdmin(admin.ModelAdmin):
     pass
 

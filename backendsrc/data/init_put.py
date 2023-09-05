@@ -20,7 +20,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
-from db.models import Station, Route, Timetable # noqa: E402
+from db.models import Station, Route, Timetable  # noqa: E402
 
 
 def parse_data(path: str, model: str) -> None:
@@ -38,9 +38,8 @@ def parse_data(path: str, model: str) -> None:
                     long=row[3],
                 )
             elif model == "Route":
-                
                 route = Route.objects.create(
-                    route_id = i,
+                    route_id=i,
                     translink_id=row[0],
                     name=row[1],
                     transport_type=row[2],
@@ -51,12 +50,12 @@ def parse_data(path: str, model: str) -> None:
             elif model == "Timetable":
                 # import pdb; pdb.set_trace()
                 timetable = Timetable.objects.create(
-                    route = Route.objects.filter(translink_id=row[1])[0],
-                    station = Station.objects.filter(station_id=row[2])[0],
-                    translink_trip_id = row[3],
-                    translink_trip_id_simple = row[0],
-                    arrival_time = row[4],
-                    sequence = row[5]
+                    route=Route.objects.filter(translink_id=row[1]).first(),
+                    station=Station.objects.filter(station_id=row[2]).first(),
+                    translink_trip_id=row[3],
+                    translink_trip_id_simple=row[0],
+                    arrival_time=row[4],
+                    sequence=row[5],
                 )
                 timetable.save()
             if (i % 1000) == 0:
@@ -64,8 +63,7 @@ def parse_data(path: str, model: str) -> None:
 
 
 if __name__ == "__main__":
-    PATH = (
-        "./gtfsdata/trips_converted.csv"  # Change this param to read from diff file
-    )
+    Timetable.objects.all().delete()
+    PATH = "./gtfsdata/trips_converted.csv"  # Change this param to read from diff file
     MODEL = "Timetable"  # Change this param to insert other model types
     parse_data(PATH, MODEL)

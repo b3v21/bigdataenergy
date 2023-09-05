@@ -19,11 +19,21 @@ class RouteSerializer(serializers.ModelSerializer):
             "capacity",
         ]
 
+
 class TimetableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timetable
-        fields = ["timetable_id", "route", "station", "translink_trip_id", "translink_trip_id_simple", "arrival_time", "sequence"]
-        
+        fields = [
+            "timetable_id",
+            "route",
+            "station",
+            "translink_trip_id",
+            "translink_trip_id_simple",
+            "arrival_time",
+            "sequence",
+        ]
+
+
 class SimulationOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = SimulationOutput
