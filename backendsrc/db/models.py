@@ -11,49 +11,44 @@ class Station(models.Model):
     class Meta:
         ordering = ["station_id"]
 
-    def get(self):
-        return {
-            "station_id": self.station_id,
-            "name": self.name,
-            "lat": self.lat,
-            "long": self.long,
-        }
-
 
 class Route(models.Model):
     route_id = models.IntegerField(primary_key=True)
+    translink_id = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length=255)  # Type of route (i.e. bus, train, etc.)
-    start = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="start")
-    end = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="end")
-    station_sequence = models.CharField(max_length=255)
+    transport_type = models.CharField(
+        max_length=255
+    )  # Type of route (i.e. bus, train, etc.)
+    capacity = models.IntegerField(null=True)
 
     class Meta:
         ordering = ["route_id"]
-
-    def get(self):
-        return {
-            "route_id": self.route_id,
-            "name": self.name,
-            "type": self.type,
-            "start": self.start,
-            "end": self.end,
-            "station_sequence": self.station_sequence,
-        }
+        unique_together = ("route_id", "translink_id")
 
 
 class Timetable(models.Model):
-    station_id = models.ForeignKey(Station, on_delete=models.CASCADE)
-    route_id = models.ForeignKey(Route, on_delete=models.CASCADE)
-    arrival_times = models.CharField(max_length=255)
+    timetable_id = models.IntegerField(primary_key=True)
+    route = models.ForeignKey(Route, on_delete=models.CASCADE)
+    station = models.ForeignKey(Station, on_delete=models.CASCADE, null=True)
+    translink_trip_id = models.CharField(max_length=255)
+    translink_trip_id_simple = models.IntegerField()
+    arrival_time = models.CharField(max_length=255)
+    sequence = models.IntegerField()
 
     class Meta:
-        ordering = ["station_id", "route_id"]
-        unique_together = ("station_id", "route_id")
+        ordering = ["timetable_id"]
 
-    def get(self):
-        return {
-            "station_id": self.station_id,
-            "route_id": self.route_id,
-            "arrival_times": self.arrival_times,
-        }
+
+class SimulationOutput(models.Model):
+    simulation_id = models.IntegerField(primary_key=True)
+
+
+class TravelTimes(models.Model):
+    traveltime_id = models.IntegerField(primary_key=True)
+    from_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="from_station"
+    )
+    to_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="to_station"
+    )
+    duration = models.FloatField(default=0)
