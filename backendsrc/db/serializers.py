@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from db.models import Station, Route, SimulationOutput, TravelTimes, Trip
+from db.models import Station, Route, SimulationOutput, TravelTimes, Timetable
 
 
 class StationSerializer(serializers.ModelSerializer):
@@ -13,17 +13,16 @@ class RouteSerializer(serializers.ModelSerializer):
         model = Route
         fields = [
             "route_id",
-            "stations",
             "translink_id",
             "name",
             "transport_type",
             "capacity",
         ]
 
-class TripSerializer(serializers.ModelSerializer):
+class TimetableSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Trip
-        fields = ["trip_id", "route", "station", "translink_trip_id","arrival_time", "sequence"]
+        model = Timetable
+        fields = ["timetable_id", "route", "station", "translink_trip_id", "translink_trip_id_simple", "arrival_time", "sequence"]
         
 class SimulationOutputSerializer(serializers.ModelSerializer):
     class Meta:
