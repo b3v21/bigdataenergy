@@ -600,27 +600,14 @@ def simple_example(
     env.run(120)
 
 
-# def simple_example() -> None:
-#     env = Environment()
+def get_data(
+    env: Environment, env_start: int = 0
+) -> tuple[dict[int, Station], dict[int, Route]]:
+    """
+    This function accesses the data from the database and converts it into simulation
+    objects.
+    """
 
-#     first_stop = Station(env, "first_stop", "Bus", (0, 0), 1, [], 1, 1)
-#     last_stop = Station(env, "last_stop", "Bus", (2, 2), 1, [], 3)
-#     stadium = Station(env, "stadium", "Finish", (4, 4), 1, [])
-
-#     bus = Route(env, "the_route", "Bus", [first_stop, last_stop])
-#     walking = Route(env, "the walk", "Walking", [last_stop, stadium])
-#     itinerary = Itinerary(env, 0, [bus, walking])
-
-#     simple_suburb = Suburb(
-#         env, "Simple Suburb", {first_stop: 100, last_stop: 0}, 100, 10, 0, [itinerary]
-#     )
-#     env.run(30)
-#     print(first_stop)
-#     print(last_stop)
-#     print(stadium)
-
-
-def get_data(env, env_start=0):
     stations = StationM.objects.all()
     routes = RouteM.objects.all()
     timetables = TimetableM.objects.all()
@@ -628,52 +615,65 @@ def get_data(env, env_start=0):
     station_objects = {}
     route_objects = {}
 
-    for station in stations:
-        qs = timetables.filter(station_id=station.station_id)
-        st_timetables = {}
-        for st_timetable in qs:
-            times_stripped = st_timetable.arrival_times.strip("[").strip("]").split(",")
-            formated_times = [
-                round(
-                    float(time.strip(" '").split(":")[0])
-                    + (float(time.strip(" '").split(":")[1]) / 60),
-                    2,
-                )
-                for time in times_stripped
-            ]
-            st_timetables[st_timetable.route_id] = formated_times
-
-        station_objects[station.station_id] = Station(
-            env,
-            station.station_id,
-            station.name,
-            (station.lat, station.long),
-            1,  # bays currently always 1
-            [],  # No initial people
-            env_start=env_start,
-            bus_timings=st_timetables,  # BUS TIMINGS FOR THIS STATION, FROM TIMETABLE TABLE
-            bus_spawn_max=0,
-        )
-
-    for route in routes:
-        route_stations = timetables.filter(route_id=route.route_id).values_list(
-            "station_id"
-        )
-        route_stations_list = [
-            station_objects[station[0]] for station in route_stations
-        ]
-
-        route_objects[route.route_id] = Route(
-            env,
-            route.name,
-            "Bus",  # Hard codied for now
-            route_stations_list,  # GET STATIONS FOR A GIVEN ROUTE
-            env_start,
-        )
-
     return (station_objects, route_objects)
 
 
 if __name__ == "__main__":
     env = Environment()
     simple_example(env, START_TIME, get_data(env, env_start=START_TIME))
+
+
+
+
+
+# Station:
+    # Remove bus_timings from station class
+
+# Route:
+    # Add an id to route class
+    # Add timetable: dict[station: namedtuple[list[time], seq]] (travel times will be stored here) # we assume that the order of stations is always the same
+    # Make Route an abstract class
+    # Add mode of transport as a subclass and then that contains capacity
+
+
+# class Station(models.Model):
+    # self,
+    # env: Environment,
+    # id: int,
+    # name: str,
+    # pos: tuple[int, int],
+    # bus_spawn_max: int = 0,
+    # bays: int,
+    # people: list[People],
+    # env_start: int,
+
+
+# class Route(models.Model):
+    # self,
+    # id: int,
+    # env: Environment,
+    # name: str,
+    # transport_type: str,
+    # stops: list[Station],
+    # env_start: int,
+
+
+# class Timetable(models.Model):
+#     timetable_id = models.IntegerField(primary_key=True)
+#     route = models.ForeignKey(Route, on_delete=models.CASCADE)
+#     station = models.ForeignKey(Station, on_delete=models.CASCADE, null=True)
+#     arrival_time = models.CharField(max_length=255)
+#     sequence = models.IntegerField()
+
+
+
+
+# class TravelTimes(models.Model):
+#     traveltime_id = models.IntegerField(primary_key=True)
+#     from_station = models.ForeignKey(
+#         Station, on_delete=models.CASCADE, related_name="from_station"
+#     )
+#     to_station = models.ForeignKey(
+#         Station, on_delete=models.CASCADE, related_name="to_station"
+#     )
+#     duration = models.FloatField(default=0)
