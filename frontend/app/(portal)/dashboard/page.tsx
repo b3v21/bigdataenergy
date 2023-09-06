@@ -22,7 +22,7 @@ export default function DashboardPage() {
 				<h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
 			</div>
 
-			<div className="grid gap-4 grid-cols-4">
+			<div className="grid gap-4 grid-cols-2">
 				<Button asChild variant="outline" className="cursor-pointer">
 					<Link href="/simulation" className="min-h-[300px] flex flex-col">
 						<CardHeader>
