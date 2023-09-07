@@ -627,8 +627,6 @@ def simple_example(
         timetable=[(timetable_stops[t % 2], t) for t in range(0, 60, 5)],
     )
 
-    print(trip.timetable)
-
     bus_route = BusRoute(
         env=env,
         env_start=env_start,
