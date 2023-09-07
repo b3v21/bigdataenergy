@@ -1,7 +1,6 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod, abstractproperty
 from simpy import Environment, Resource
-from collections import namedtuple
+from abc import ABC, abstractmethod
 from random import randint
 from pathlib import Path
 from math import ceil
