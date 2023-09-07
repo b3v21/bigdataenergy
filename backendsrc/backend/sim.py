@@ -225,27 +225,76 @@ class Transporter(ABC):
         id: int,
         location_index: int = 0,
         people: list[People] = [],
+        capacity: int = 50
     ) -> None:
         self.env = env
         self.env_start = env_start
         self.id = id
         self.location_index = location_index
         self.people = people
+        self.capacity = capacity
 
-    @abstractmethod
     def get_name(self) -> str:
-        pass
+        return f"B{self.id}"
+    
+    def load_passengers(self, station : Station) -> None:
+        """Load passengers from the current stop onto this transporter."""
 
-    @abstractmethod
-    def load_passengers(self) -> None:
-        pass
+        seats_left = self.capacity - self.passenger_count()
+        people_at_stop = sum(group.get_num_people() for group in station.people)
 
-    @abstractmethod
-    def deload_passengers(self) -> None:
-        pass
+        if not people_at_stop:
+            print(
+                f"({self.env.now+self.env_start}): No passengers at stop {station.name}"
+            )
+            return
+
+        if not seats_left:
+            print(
+                f"({self.env.now+self.env_start}): No seats left on bus {self.get_name()}"
+            )
+            return
+
+        people_to_ride = station.board(min(people_at_stop, seats_left))
+
+        num_people_to_board = sum([p.get_num_people() for p in people_to_ride])
+        load_time = int(num_people_to_board * PERSON_BOARD_TIME)
+        self.people += people_to_ride
+
+        yield self.env.timeout(load_time)
+
+        print(
+            f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} loaded {num_people_to_board} people from {station.name} ({load_time} mins)"
+        )
+
+    def deload_passengers(self, station: Station) -> None:
+        # Currently all passengers get off...
+        get_off = self.passenger_count()
+
+        if not get_off:
+            print(
+                f"({self.env.now+self.env_start}): No passengers got off the bus {self.get_name()}"
+            )
+            return
+
+        off_time = int(get_off * PERSON_BOARD_TIME)
+        yield self.env.timeout(off_time)
+        print(
+            f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {get_off} people at {station.name} ({off_time} mins)"
+        )
+        station.put(self.people)
+        self.people.clear()
+
+    def move_to_next_stop(self, num_stops: int) -> None:
+        new_location_index = (self.location_index + 1) % num_stops
+        self.location_index = new_location_index
 
     def passenger_count(self) -> int:
         return sum(group.get_num_people() for group in self.people)
+    
+    @abstractmethod
+    def get_type(self) -> str:
+        pass
 
 
 class Bus(Transporter):
@@ -260,64 +309,11 @@ class Bus(Transporter):
         people: list[People] = [],
         capacity: int = 50,
     ) -> None:
-        super().__init__(env, env_start, id, location_index, people)
-        self.capacity = capacity
-
-    def get_name(self) -> str:
-        return f"B{self.id}"
-
-    def load_passengers(self, bus_stop: Station) -> None:
-        """Load passengers from the current stop onto this bus."""
-
-        bus_seats_left = self.capacity - self.passenger_count()
-        people_at_stop = sum(group.get_num_people() for group in bus_stop.people)
-
-        if not people_at_stop:
-            print(
-                f"({self.env.now+self.env_start}): No passengers at stop {bus_stop.name}"
-            )
-            return
-
-        if not bus_seats_left:
-            print(
-                f"({self.env.now+self.env_start}): No seats left on bus {self.get_name()}"
-            )
-            return
-
-        people_to_ride = bus_stop.board(min(people_at_stop, bus_seats_left))
-
-        num_people_to_board = sum([p.get_num_people() for p in people_to_ride])
-        load_time = int(num_people_to_board * PERSON_BOARD_TIME)
-        self.people += people_to_ride
-
-        yield self.env.timeout(load_time)
-
-        print(
-            f"({self.env.now+self.env_start}): Bus {self.get_name()} loaded {num_people_to_board} people from {bus_stop.name} ({load_time} mins)"
-        )
-
-    def deload_passengers(self, bus_stop: Station) -> None:
-        # Currently all passengers get off...
-        get_off = self.passenger_count()
-
-        if not get_off:
-            print(
-                f"({self.env.now+self.env_start}): No passengers got off the bus {self.get_name()}"
-            )
-            return
-
-        off_time = int(get_off * PERSON_BOARD_TIME)
-        yield self.env.timeout(off_time)
-        print(
-            f"({self.env.now+self.env_start}): Bus {self.get_name()} has dropped off {get_off} people at {bus_stop.name} ({off_time} mins)"
-        )
-        bus_stop.put(self.people)
-        self.people.clear()
-
-    def move_to_next_stop(self, num_stops: int) -> None:
-        new_location_index = (self.location_index + 1) % num_stops
-        self.location_index = new_location_index
-
+        super().__init__(env, env_start, id, location_index, people, capacity)
+        
+    def get_type(self) -> str:
+        return "Bus"
+        
 
 class Route(ABC):
     """
@@ -378,47 +374,6 @@ class BusRoute(Route):
         intervals and then handle how these buses transport people along the route
         """
 
-        # def start_transporting(self) -> None:
-        # """
-        # Logic of a bus:
-        # When spawned --> Pick up people from current stop
-        # When full OR no more people --> Go to final stop OR go to next stop
-        # Repeat
-        # """
-
-        # while True:
-        #     with self.stops[self.location_index].bays.request() as req:
-        #         yield req
-        #         if self.stops[(self.location_index)] != self.last_stop:
-        #             yield self.env.process(self.load_passengers())
-        #         else:
-        #             yield self.env.process(self.deload_passengers())
-
-        #         next = (self.location_index + 1) % len(self.stops)
-
-        #     stop_times = self.stops[
-        #         (self.location_index + 1) % len(self.stops)
-        #     ].bus_timings.get(self.name)
-
-        #     next_stop_times = [
-        #         x for x in stop_times if x > int(self.env.now + self.env_start) % 60
-        #     ]
-
-        #     if not next_stop_times:
-        #         travel_time = (
-        #             60 - int(self.env.now + self.env_start) % 60 + stop_times[0]
-        #         )
-        #     else:
-        #         travel_time = (
-        #             next_stop_times[0] - int(self.env.now + self.env_start) % 60
-        #         )
-        #     self.update_current_stop()
-        #     yield self.env.timeout(travel_time)
-        #     print(
-        #         f"({self.env.now+self.env_start}): Bus {self.name} travelled from {self.get_current_stop()} to {self.route.stops[next].name} ({travel_time} mins)"
-        #     )
-        #     self.location_index = next
-
         while True:
             if (self.first_stop.buses_spawned != self.first_stop.bus_spawn_max) and (
                 self.env.now in self.first_stop.bus_timings.get(self.name)
@@ -469,7 +424,7 @@ class BusRoute(Route):
                 )
 
     def get_type(self) -> str:
-        return "Bus"
+        return "BusRoute"
 
     def add_bus(self, new_bus: Bus) -> None:
         self.buses.append(new_bus)
