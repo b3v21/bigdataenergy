@@ -591,9 +591,9 @@ class Trip:
         self.timetable = timetable
 
 
-def simple_example(
-    env: Environment, env_start: int, data: tuple(list[Station], list[Route])
-) -> None:
+def simple_example(env_start: int) -> None:
+    env = Environment()
+
     first_stop = Station(
         env=env,
         id=0,
@@ -680,7 +680,6 @@ def get_data(
 
 
 if __name__ == "__main__":
-    env = Environment()
     print()
-    simple_example(env, START_TIME, get_data(env, env_start=START_TIME))
+    simple_example(START_TIME)
     print()
