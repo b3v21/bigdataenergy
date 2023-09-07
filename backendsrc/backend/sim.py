@@ -195,9 +195,9 @@ class Station:
             if p.itinerary.last_leg():
                 # Being put at end
                 self.people.append(p)
-            elif p.itinerary.get_current_type() == "Bus":
+            elif p.itinerary.get_current_type() == "BusRoute":
                 self.people.append(p)
-            elif p.itinerary.get_current_type() == "Walking":
+            elif p.itinerary.get_current_type() == "Walk":
                 # Queue people all up to walk
                 self.env.process(
                     Walk(
