@@ -49,7 +49,7 @@ def parse_data(path: str, model: str) -> None:
 
             elif model == "Timetable":
                 # import pdb; pdb.set_trace()
-                timetable = Timetable.objects.create(
+                Timetable.objects.create(
                     route=Route.objects.filter(translink_id=row[1]).first(),
                     station=Station.objects.filter(station_id=row[2]).first(),
                     translink_trip_id=row[3],
@@ -57,13 +57,12 @@ def parse_data(path: str, model: str) -> None:
                     arrival_time=row[4],
                     sequence=row[5],
                 )
-                timetable.save()
             if (i % 1000) == 0:
                 print(i, "rows added!")
 
 
 if __name__ == "__main__":
-    Timetable.objects.all().delete()
+    # Timetable.objects.all().delete()
     PATH = "./gtfsdata/trips_converted.csv"  # Change this param to read from diff file
     MODEL = "Timetable"  # Change this param to insert other model types
     parse_data(PATH, MODEL)
