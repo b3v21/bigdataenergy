@@ -487,7 +487,7 @@ class Walk(Route):
         return randint(5, 20)
 
     def get_type(self) -> str:
-        return "Walking"
+        return "Walk"
 
 
 class Suburb:
