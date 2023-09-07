@@ -24,6 +24,7 @@ START_TIME = 12
 PERSON_BOARD_TIME = 0.1
 MINUTES_IN_DAY = 1440
 
+ITINERARIES = []
 
 class Itinerary:
     """
@@ -34,22 +35,15 @@ class Itinerary:
         self.env = env
         self.routes = routes
         self.id = id
-        self.index = 0
 
     def __str__(self):
-        return f"Itinerary: ID: {self.id}, Routes: {self.routes}, Index: {self.index}"
+        return f"Itinerary: ID: {self.id}, Routes: {self.routes}"
 
-    def get_current_type(self) -> str:
-        return self.routes[self.index].get_type()
+    def get_current_type(self, people : People) -> str:
+        return self.routes[people.current_location_index].get_type()
 
-    def get_current_route(self) -> Route:
-        return self.routes[self.index]
-
-    def next(self) -> None:
-        self.index += 1
-
-    def last_leg(self) -> bool:
-        return self.index == len(self.routes)
+    def last_leg(self, people : People) -> bool:
+        return people.current_location_index == len(self.routes)
 
     def duplicate(self, suburb=False):
         new = Itinerary(self.env, self.id, self.routes)
@@ -70,17 +64,18 @@ class People:
         count: int,
         start_time: int,
         start_location: Station,
-        itinerary: Itinerary,
+        itinerary_index: int,
         env_start: int,
+        current_location_index : int = 0,
     ) -> None:
-        self.env_start = start_time
+        self.env_start = env_start
         self.env = env
         self.num_people = count
         self.start_time = start_time
         self.start_location = start_location
         self.end_time = None
-        self.itinerary = itinerary
-        self.travel_route = None  # To come later
+        self.itinerary_index = itinerary_index
+        self.current_location_index = current_location_index # route index within an itinerary
 
     def __str__(self) -> str:
         journey_time = (
@@ -110,9 +105,11 @@ class People:
         return self.end_time
 
     def get_next_stop_current_route(self, current_stop: Station) -> list[Station]:
-        route_stops = self.itinerary.get_current_route().stops
+        route_stops = ITINERARIES[self.itinerary_index].routes[self.current_location_index].stops
         return route_stops[(route_stops.index(current_stop) + 1) % len(route_stops)]
 
+    def next_route(self) -> None:
+        self.current_location_index += 1
 
 class Station:
     """
@@ -166,10 +163,11 @@ class Station:
                     excess,
                     people.start_time,
                     people.start_location,
-                    people.itinerary.duplicate(),
+                    people.itinerary_index,
                     self.env_start,
+                    people.current_location_index,
                 )
-                split.itinerary.index = people.itinerary.index
+
                 people.change_num_people(-excess)
                 self.people.append(split)
                 people_to_get.append(people)
@@ -184,22 +182,22 @@ class Station:
         return people_to_get
 
     def put(self, passengers: list[People], from_suburb=False) -> None:
-        for p in passengers:
-            if not from_suburb and not p.itinerary.last_leg():
-                p.itinerary.next()
-            if p.itinerary.last_leg():
+        for group in passengers:
+            if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(group):
+                group.next_route()
+            if ITINERARIES[group.itinerary_index].last_leg(group):
                 # Being put at end
-                self.people.append(p)
-            elif p.itinerary.get_current_type() == "BusRoute":
-                self.people.append(p)
-            elif p.itinerary.get_current_type() == "Walk":
+                self.people.append(group)
+            elif ITINERARIES[group.itinerary_index].get_current_type(group) == "BusRoute":
+                self.people.append(group)
+            elif ITINERARIES[group.itinerary_index].get_current_type(group) == "Walk":
                 # Queue people all up to walk
                 self.env.process(
                     Walk(
                         env=self.env,
                         env_start=self.env_start,
-                        stops=[self, p.get_next_stop_current_route(self)],
-                        people=[p],
+                        stops=[self, group.get_next_stop_current_route(self)],
+                        people=[group],
                     ).initiate_route()
                 )
 
@@ -553,21 +551,24 @@ class Suburb:
 
             # Get a random valid itinerary (must include stop)
             valid_itinerary_for_people = None
+            valid_stop_index = None
 
             # this triple for loop is definately bad but will probably get updated
             # when further refactoring occurs.
-            for itinerary in self.itineraries:
+            for itinerary_index, itinerary in enumerate(ITINERARIES):
                 for route in itinerary.routes:
-                    for route_stop in route.stops:
+                    for stop_index, route_stop in enumerate(route.stops):
                         if route_stop == stop:
-                            valid_itinerary_for_people = itinerary
+                            valid_itinerary_for_people = itinerary_index
+                            valid_stop_index = stop_index
 
             people_arriving_at_stop = People(
                 env=self.env,
                 count=num_for_stop,
                 start_time=self.env.now,
                 start_location=stop,
-                itinerary=valid_itinerary_for_people,
+                itinerary_index=valid_itinerary_for_people,
+                current_location_index=valid_stop_index,
                 env_start=self.env_start,
             )
             stop.put([people_arriving_at_stop], from_suburb=True)
@@ -624,7 +625,7 @@ def simple_example(
     trip = Trip(
         start_time=0,
         end_time=50,
-        timetable=[(timetable_stops[t % 2], t) for t in range(0, 60, 5)],
+        timetable=[(timetable_stops[t % 2], t) for t in range(0, 60, 30)],
     )
 
     bus_route = BusRoute(
@@ -642,7 +643,8 @@ def simple_example(
         stops=[last_stop, stadium],
     )
 
-    itinerary = Itinerary(env=env, id=0, routes=[bus_route, walk_to_stadium])
+    itinerary1 = Itinerary(env=env, id=0, routes=[bus_route, walk_to_stadium])
+    ITINERARIES.append(itinerary1)
 
     Suburb(
         env=env,
@@ -651,11 +653,11 @@ def simple_example(
         population=100,
         frequency=10,
         max_distributes=0,
-        itineraries=[itinerary],
+        itineraries=[itinerary1],
         env_start=env_start,
     )
 
-    env.run(60)
+    env.run(80)
 
 
 def get_data(
