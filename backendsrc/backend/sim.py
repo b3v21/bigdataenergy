@@ -129,8 +129,6 @@ class Station:
         pos: tuple[int, int],
         bays: int,
         env_start: int,
-        bus_timings: dict[str, list[int]],
-        bus_spawn_max: int = 0,
     ) -> None:
         self.env_start = env_start
         self.env = env
@@ -139,9 +137,6 @@ class Station:
         self.pos = pos
         self.bays = Resource(env, capacity=bays)
         self.people = []
-        self.bus_timings = bus_timings
-        self.bus_spawn_max = bus_spawn_max
-        self.buses_spawned = 0
 
     def __str__(self) -> str:
         output = f"{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}"
@@ -211,9 +206,6 @@ class Station:
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
 
-    def get_bus_timings(self) -> list[int]:
-        return self.bus_timings
-
 
 class Transporter(ABC):
     """Abstract transporter object"""
@@ -223,9 +215,10 @@ class Transporter(ABC):
         env: Environment,
         env_start: int,
         id: int,
+        trip: Trip,  # key = order, value = (Station, Time)
         location_index: int = 0,
         people: list[People] = [],
-        capacity: int = 50
+        capacity: int = 50,
     ) -> None:
         self.env = env
         self.env_start = env_start
@@ -233,11 +226,12 @@ class Transporter(ABC):
         self.location_index = location_index
         self.people = people
         self.capacity = capacity
+        self.trip = trip
 
     def get_name(self) -> str:
         return f"B{self.id}"
-    
-    def load_passengers(self, station : Station) -> None:
+
+    def load_passengers(self, station: Station) -> None:
         """Load passengers from the current stop onto this transporter."""
 
         seats_left = self.capacity - self.passenger_count()
@@ -273,7 +267,7 @@ class Transporter(ABC):
 
         if not get_off:
             print(
-                f"({self.env.now+self.env_start}): No passengers got off the bus {self.get_name()}"
+                f"({self.env.now+self.env_start}): No passengers got off {self.get_type()}: {self.get_name()}"
             )
             return
 
@@ -291,7 +285,7 @@ class Transporter(ABC):
 
     def passenger_count(self) -> int:
         return sum(group.get_num_people() for group in self.people)
-    
+
     @abstractmethod
     def get_type(self) -> str:
         pass
@@ -305,15 +299,16 @@ class Bus(Transporter):
         env: Environment,
         env_start: int,
         id: int,
+        trip: Trip,
         location_index: int = 0,
         people: list[People] = [],
         capacity: int = 50,
     ) -> None:
-        super().__init__(env, env_start, id, location_index, people, capacity)
-        
+        super().__init__(env, env_start, id, trip, location_index, people, capacity)
+
     def get_type(self) -> str:
         return "Bus"
-        
+
 
 class Route(ABC):
     """
@@ -327,6 +322,8 @@ class Route(ABC):
         id: int,
         name: str,
         stops: list[Station],
+        trip_timing_data: list[Trip],
+        transporter_spawn_max: int = 1,
     ) -> None:
         self.id = id
         self.name = name
@@ -335,6 +332,9 @@ class Route(ABC):
         self.last_stop = stops[-1]
         self.env = env
         self.env_start = env_start
+        self.transporter_spawn_max = transporter_spawn_max
+        self.trip_timing_data = trip_timing_data
+        self.transporters_spawned = 0
 
     def get_stations(self):
         return self.stops
@@ -363,8 +363,12 @@ class BusRoute(Route):
         id: int,
         name: str,
         stops: list[Station],
+        trip_timing_data: list[Trip],
+        transporter_spawn_max: int = 1,
     ) -> None:
-        super().__init__(env, env_start, id, name, stops)
+        super().__init__(
+            env, env_start, id, name, stops, trip_timing_data, transporter_spawn_max
+        )
         self.running = self.env.process(self.initiate_route())
         self.buses: list[Bus] = []
 
@@ -375,19 +379,31 @@ class BusRoute(Route):
         """
 
         while True:
-            if (self.first_stop.buses_spawned != self.first_stop.bus_spawn_max) and (
-                self.env.now in self.first_stop.bus_timings.get(self.name)
-            ):
-                new_bus = Bus(
-                    env=self.env,
-                    env_start=self.env_start,
-                    id=self.first_stop.buses_spawned,
-                )
-                self.first_stop.buses_spawned += 1
-                self.add_bus(new_bus)
-                print(
-                    f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name}"
-                )
+            if self.transporters_spawned != self.transporter_spawn_max:
+                # get the location of the bus to spawn if the current time exists in
+                # the timetable.
+                stop_info = None
+                trip_info = None
+
+                for trip in self.trip_timing_data:
+                    for stop in trip.timetable:
+                        if stop[1] == (self.env.now + self.env_start):
+                            stop_info = stop
+                            trip_info = trip
+
+                if stop_info:
+                    new_bus = Bus(
+                        env=self.env,
+                        env_start=self.env_start,
+                        id=self.transporters_spawned,
+                        trip=trip_info,
+                        location_index=self.get_stop_with_name(stop_info[0]),
+                    )
+                    self.transporters_spawned += 1
+                    self.add_bus(new_bus)
+                    print(
+                        f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name}"
+                    )
                 yield self.env.timeout(1)
 
             for bus in self.buses:
@@ -405,7 +421,7 @@ class BusRoute(Route):
                     previous_stop = self.stops[bus.location_index]
                     bus.move_to_next_stop(len(self.stops))
 
-                stop_times = self.stops[bus.location_index].bus_timings.get(self.name)
+                stop_times = [t[1] for t in bus.trip.timetable]
 
                 next_stop_times = [
                     x for x in stop_times if x > int(self.env.now + self.env_start) % 60
@@ -432,6 +448,9 @@ class BusRoute(Route):
     def get_current_stop(self, bus: Bus) -> Station:
         return self.stops[bus.location_index]
 
+    def get_stop_with_name(self, name: str) -> Station:
+        return [stop.name for stop in self.stops].index(name)
+
 
 class Walk(Route):
     """A group of people walking through a route"""
@@ -444,7 +463,7 @@ class Walk(Route):
         location_index: int = 0,
         people: list[People] = [],
     ) -> None:
-        super().__init__(env, env_start, None, None, stops)
+        super().__init__(env, env_start, None, None, stops, None, None)
         self.walking_congestion = 1
         self.location_index = location_index
         self.people = people
@@ -561,6 +580,17 @@ class Suburb:
             return have_distributed
 
 
+class Trip:
+    """This trip object will be created to hold transporter timings"""
+
+    def __init__(
+        self, start_time: int, end_time: int, timetable: list[tuple[str, int]]
+    ) -> None:
+        self.start_time = start_time
+        self.end_time = end_time
+        self.timetable = timetable
+
+
 def simple_example(
     env: Environment, env_start: int, data: tuple(list[Station], list[Route])
 ) -> None:
@@ -571,8 +601,6 @@ def simple_example(
         pos=(0, 0),
         bays=1,
         env_start=env_start,
-        bus_timings={"the_route": list(range(0, 60, 5))},
-        bus_spawn_max=1,
     )
     last_stop = Station(
         env=env,
@@ -581,7 +609,6 @@ def simple_example(
         pos=(2, 2),
         bays=1,
         env_start=env_start,
-        bus_timings={"the_route": list(range(0, 60, 5))},
     )
     stadium = Station(
         env=env,
@@ -590,8 +617,17 @@ def simple_example(
         pos=(4, 4),
         bays=1,
         env_start=env_start,
-        bus_timings={"the_route": list(range(0, 60, 5))},
     )
+
+    timetable_stops = ["first_stop", "last_stop"]
+
+    trip = Trip(
+        start_time=0,
+        end_time=50,
+        timetable=[(timetable_stops[t % 2], t) for t in range(0, 60, 5)],
+    )
+
+    print(trip.timetable)
 
     bus_route = BusRoute(
         env=env,
@@ -599,7 +635,9 @@ def simple_example(
         id=0,
         name="the_route",
         stops=[first_stop, last_stop],
+        trip_timing_data=[trip],
     )
+
     walk_to_stadium = Walk(
         env=env,
         env_start=env_start,
@@ -619,7 +657,7 @@ def simple_example(
         env_start=env_start,
     )
 
-    env.run(50)
+    env.run(60)
 
 
 def get_data(
@@ -633,6 +671,9 @@ def get_data(
     stations = StationM.objects.all()
     routes = RouteM.objects.all()
     timetables = TimetableM.objects.all()
+
+    # User inputs time window for simulation. For each route in the simulation, all trips
+    # which lie inside the time window are obtained and saved in a list.
 
     station_objects = {}
     route_objects = {}
