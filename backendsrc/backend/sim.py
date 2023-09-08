@@ -25,6 +25,7 @@ MINUTES_IN_DAY = 1440
 
 ITINERARIES = []
 
+
 class Itinerary:
     """
     Object to store multiple types of travel at a time.
@@ -38,11 +39,11 @@ class Itinerary:
     def __str__(self):
         return f"Itinerary: ID: {self.id}, Routes: {self.routes}"
 
-    def get_current_type(self, people : People) -> str:
-        return self.routes[people.current_location_index].get_type()
+    def get_current_type(self, people: People) -> str:
+        return self.routes[people.current_route_in_itin_index].get_type()
 
-    def last_leg(self, people : People) -> bool:
-        return people.current_location_index == len(self.routes)
+    def last_leg(self, people: People) -> bool:
+        return people.current_route_in_itin_index == len(self.routes)
 
     def duplicate(self, suburb=False):
         new = Itinerary(self.env, self.id, self.routes)
@@ -65,7 +66,7 @@ class People:
         start_location: Station,
         itinerary_index: int,
         env_start: int,
-        current_location_index : int = 0,
+        current_route_in_itin_index: int = 0,
     ) -> None:
         self.env_start = env_start
         self.env = env
@@ -74,7 +75,9 @@ class People:
         self.start_location = start_location
         self.end_time = None
         self.itinerary_index = itinerary_index
-        self.current_location_index = current_location_index # route index within an itinerary
+        self.current_route_in_itin_index = (
+            current_route_in_itin_index  # route index within an itinerary
+        )
 
     def __str__(self) -> str:
         journey_time = (
@@ -104,11 +107,16 @@ class People:
         return self.end_time
 
     def get_next_stop_current_route(self, current_stop: Station) -> list[Station]:
-        route_stops = ITINERARIES[self.itinerary_index].routes[self.current_location_index].stops
+        route_stops = (
+            ITINERARIES[self.itinerary_index]
+            .routes[self.current_route_in_itin_index]
+            .stops
+        )
         return route_stops[(route_stops.index(current_stop) + 1) % len(route_stops)]
 
     def next_route(self) -> None:
-        self.current_location_index += 1
+        self.current_route_in_itin_index += 1
+
 
 class Station:
     """
@@ -164,7 +172,7 @@ class Station:
                     people.start_location,
                     people.itinerary_index,
                     self.env_start,
-                    people.current_location_index,
+                    people.current_route_in_itin_index,
                 )
 
                 people.change_num_people(-excess)
@@ -182,12 +190,16 @@ class Station:
 
     def put(self, passengers: list[People], from_suburb=False) -> None:
         for group in passengers:
-            if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(group):
+            if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(
+                group
+            ):
                 group.next_route()
             if ITINERARIES[group.itinerary_index].last_leg(group):
                 # Being put at end
                 self.people.append(group)
-            elif ITINERARIES[group.itinerary_index].get_current_type(group) == "BusRoute":
+            elif (
+                ITINERARIES[group.itinerary_index].get_current_type(group) == "BusRoute"
+            ):
                 self.people.append(group)
             elif ITINERARIES[group.itinerary_index].get_current_type(group) == "Walk":
                 # Queue people all up to walk
@@ -567,7 +579,7 @@ class Suburb:
                 start_time=self.env.now,
                 start_location=stop,
                 itinerary_index=valid_itinerary_for_people,
-                current_location_index=valid_stop_index,
+                current_route_in_itin_index=valid_stop_index,
                 env_start=self.env_start,
             )
             stop.put([people_arriving_at_stop], from_suburb=True)
