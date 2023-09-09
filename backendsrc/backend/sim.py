@@ -1,9 +1,9 @@
 from __future__ import annotations
 from simpy import Environment, Resource
 from abc import ABC, abstractmethod
-from random import randint
+from random import randint, randrange
 from pathlib import Path
-from math import ceil
+from math import ceil, floor
 import django
 import os
 import sys
@@ -41,6 +41,9 @@ class Itinerary:
 
     def get_current_type(self, people: People) -> str:
         return self.routes[people.current_route_in_itin_index].get_type()
+    
+    def get_current(self, people: People) -> Route:
+        return self.routes[people.current_route_in_itin_index]
 
     def last_leg(self, people: People) -> bool:
         return people.current_route_in_itin_index == len(self.routes)
@@ -141,17 +144,20 @@ class Station:
         self.pos = pos
         self.bays = Resource(env, capacity=bays)
         self.people = []
+        self.people_over_time = {}
+
+    def log_cur_people(self, num_people=None) -> None:
+        if num_people:
+            self.people_over_time[self.env.now+self.env_start] = num_people
+        else:
+            self.people_over_time[self.env.now+self.env_start] = self.num_people()
+
 
     def __str__(self) -> str:
         output = f"{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}"
         for people in self.people:
             output += f"\n{str(people)}"
         return output
-
-    # For adding more groups of people to stops (if more rock up at a different time)
-
-    def add_people(self, new_people: People) -> None:
-        self.people.append(new_people)
 
     def board(self, num_people_to_board: int) -> list[People]:
         """
@@ -186,10 +192,15 @@ class Station:
             if cur_total == num_people_to_board:
                 break
 
+        #People_to_get people will be leaving
+        self.log_cur_people(self.num_people())
         return people_to_get
 
     def put(self, passengers: list[People], from_suburb=False) -> None:
+        count = 0
+        count_pre_add = self.num_people() #Doing it this way as some transport doesnt log them in the station
         for group in passengers:
+            count += group.get_num_people()
             if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(
                 group
             ):
@@ -201,16 +212,16 @@ class Station:
                 ITINERARIES[group.itinerary_index].get_current_type(group) == "BusRoute"
             ):
                 self.people.append(group)
+
             elif ITINERARIES[group.itinerary_index].get_current_type(group) == "Walk":
                 # Queue people all up to walk
+                time_to_wait = 0.5
                 self.env.process(
-                    Walk(
-                        env=self.env,
-                        env_start=self.env_start,
-                        stops=[self, group.get_next_stop_current_route(self)],
-                        people=[group],
-                    ).initiate_route()
+                    ITINERARIES[group.itinerary_index].get_current(group).walk_instance(group, time_to_wait)
                 )
+
+        self.log_cur_people(count_pre_add + count)
+        
 
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
@@ -328,6 +339,10 @@ class Bus(Transporter):
         while True:
             with bus_route.get_current_stop(self).bays.request() as req:
                 yield req
+                print(
+                    f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
+                )
+                bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = self.env.now + self.env_start
                 if bus_route.get_current_stop(self) != bus_route.last_stop:
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
@@ -358,10 +373,11 @@ class Bus(Transporter):
                     travel_time = (
                         next_stop_times[0] - int(self.env.now + bus_route.env_start) % 60
                     )
-                yield self.env.timeout(travel_time)
-                print(
-                    f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {bus_route.get_current_stop(self).name} ({travel_time} mins)"
-                )
+            yield self.env.timeout(travel_time)
+            bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = self.env.now + self.env_start
+            print(
+                f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {bus_route.get_current_stop(self).name} ({travel_time} mins)"
+            )
 
 
 class Route(ABC):
@@ -425,6 +441,7 @@ class BusRoute(Route):
         )
         self.running = self.env.process(self.initiate_route())
         self.buses: list[Bus] = []
+        self.bus_time_log = []
 
     def initiate_route(self) -> None:
         """
@@ -439,7 +456,7 @@ class BusRoute(Route):
                 # the timetable.
                 stop_info = None
                 trip_info = None
-
+                trips_inited = []
                 for trip in trips_to_iniate:
                     for stop in trip.timetable:
                         if stop[1] == (self.env.now + self.env_start):
@@ -457,12 +474,14 @@ class BusRoute(Route):
                             new_bus.people = [] #Doing this to wipe the people because somehow when a new bus is spawned it links people with the other buses???
                             self.transporters_spawned += 1
                             self.add_bus(new_bus)
+                            self.bus_time_log.append({})
                             print(
                                 f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name}"
                             )
                             self.env.process(new_bus.bus_instance(self))
-                            trips_to_iniate.remove(trip)
-                            break
+                            trips_inited.append(trip)
+                for trip in trips_inited:
+                    trips_to_iniate.remove(trip)           
             else:
                 break
             yield self.env.timeout(1)
@@ -498,17 +517,26 @@ class Walk(Route):
         self.walking_congestion = 1
         self.location_index = location_index
         self.people = people
+        self.walk_time_log = {}
 
     def initiate_route(self) -> None:
+        return super().initiate_route()
+
+    def walk_instance(self, people: People, time_to_leave=0) -> None:
         """
         Walking process
         """
-
+        yield self.env.timeout(time_to_leave)
+        self.walk_time_log[people] = [self.env.now + self.env_start, None] #Maybe change this to be an ID
+        self.people.append(people)
+        self.stops[0].log_cur_people()
         walk_time = self.walk_time() * self.walking_congestion
         yield self.env.timeout(walk_time)
+        self.people.remove(people)
+        self.walk_time_log[people][1] = self.env.now + self.env_start
         self.stops[1].put(self.people)
         print(
-            f"({self.env_start+self.env.now}): {self.get_num_people()} people walked from {self.stops[0].name} to {self.stops[1].name} ({walk_time} mins)"
+            f"({self.env_start+self.env.now}): {people.get_num_people()} people walked from {self.stops[0].name} to {self.stops[1].name} ({walk_time} mins)"
         )
 
     def get_num_people(self) -> int:
@@ -658,12 +686,17 @@ def simple_example(env_start: int) -> None:
     trip = Trip(
         start_time=0,
         end_time=50,
-        timetable=[(timetable_stops[t % 2], t) for t in range(0, 60, 30)],
+        timetable=[('First Stop', 0), ('Last Stop', 30)],
     )
     trip_2 = Trip(
         start_time=0,
         end_time=50,
-        timetable=[(timetable_stops[t % 2], t) for t in range(15, 75, 30)],
+        timetable=[('First Stop', 15), ('Last Stop', 45)],
+    )
+    trip_3 = Trip(
+        start_time=0,
+        end_time=50,
+        timetable=[('First Stop', 30), ('Last Stop', 45)],
     )
 
     bus_route = BusRoute(
@@ -672,7 +705,7 @@ def simple_example(env_start: int) -> None:
         id=0,
         name="R",
         stops=[first_stop, last_stop],
-        trip_timing_data=[trip, trip_2],
+        trip_timing_data=[trip, trip_2, trip_3],
     )
 
     walk_to_stadium = Walk(
@@ -695,7 +728,14 @@ def simple_example(env_start: int) -> None:
         env_start=env_start,
     )
 
-    env.run(80)
+    env.run(100)
+
+    print()
+    print(first_stop.people_over_time, last_stop.people_over_time, stadium.people_over_time)
+    print()
+    print(bus_route.bus_time_log)
+    print()
+    print(walk_to_stadium.walk_time_log)
 
 
 def get_data(
