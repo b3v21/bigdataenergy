@@ -7,6 +7,7 @@ from math import ceil, floor
 import django
 import os
 import sys
+import copy
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
@@ -81,6 +82,11 @@ class People:
         self.current_route_in_itin_index = (
             current_route_in_itin_index  # route index within an itinerary
         )
+        self.people_log = {}
+        self.expected_end_time = None #How could we come up with this?
+
+    def log(self, where: tuple(str, int)) -> None:
+        self.people_log[self.env.now + self.env_start] = where
 
     def __str__(self) -> str:
         journey_time = (
@@ -180,7 +186,7 @@ class Station:
                     self.env_start,
                     people.current_route_in_itin_index,
                 )
-
+                split.people_log = copy.deepcopy(people.people_log)
                 people.change_num_people(-excess)
                 self.people.append(split)
                 people_to_get.append(people)
@@ -200,6 +206,7 @@ class Station:
         count = 0
         count_pre_add = self.num_people() #Doing it this way as some transport doesnt log them in the station
         for group in passengers:
+            group.log((self.name, self.id))
             count += group.get_num_people()
             if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(
                 group
@@ -278,7 +285,8 @@ class Transporter(ABC):
         self.people += people_to_ride
 
         yield self.env.timeout(load_time)
-
+        for people in people_to_ride:
+            people.log((self.name, self.id))
         print(
             f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} loaded {num_people_to_board} people from {station.name} ({load_time} mins)"
         )
@@ -298,6 +306,7 @@ class Transporter(ABC):
         print(
             f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {get_off} people at {station.name} ({off_time} mins)"
         )
+        
         station.put(self.people)
         self.people.clear()
 
@@ -328,6 +337,7 @@ class Bus(Transporter):
         capacity: int = 50,
     ) -> None:
         super().__init__(env, env_start, id, name, trip, location_index, people, capacity)
+        self.bus_pop_log = {}
 
     def get_type(self) -> str:
         return "Bus"
@@ -336,6 +346,7 @@ class Bus(Transporter):
         return f'{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}'
     
     def bus_instance(self, bus_route: BusRoute) -> None:
+        bus_route.bus_pop_log[self.id] = {}
         while True:
             with bus_route.get_current_stop(self).bays.request() as req:
                 yield req
@@ -347,10 +358,12 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
                     )
+                    bus_route.bus_pop_log[self.id][self.env.now + self.env_start] = self.passenger_count()
                 else:
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
+                    bus_route.bus_pop_log[self.id][self.env.now + self.env_start] = self.passenger_count()
                     #Despawn
                     print(
                         f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} ended its journey."
@@ -442,6 +455,7 @@ class BusRoute(Route):
         self.running = self.env.process(self.initiate_route())
         self.buses: list[Bus] = []
         self.bus_time_log = []
+        self.bus_pop_log = {} # {id : bus_pop_log}
 
     def initiate_route(self) -> None:
         """
@@ -509,11 +523,12 @@ class Walk(Route):
         self,
         env: Environment,
         env_start: int,
+        id: int,
         stops: list[Station],
         location_index: int = 0,
         people: list[People] = [],
     ) -> None:
-        super().__init__(env, env_start, None, None, stops, None, None)
+        super().__init__(env, env_start, id, None, stops, None, None)
         self.walking_congestion = 1
         self.location_index = location_index
         self.people = people
@@ -527,6 +542,7 @@ class Walk(Route):
         Walking process
         """
         yield self.env.timeout(time_to_leave)
+        people.log((self.stops, self.id))
         self.walk_time_log[people] = [self.env.now + self.env_start, None] #Maybe change this to be an ID
         self.people.append(people)
         self.stops[0].log_cur_people()
@@ -534,7 +550,7 @@ class Walk(Route):
         yield self.env.timeout(walk_time)
         self.people.remove(people)
         self.walk_time_log[people][1] = self.env.now + self.env_start
-        self.stops[1].put(self.people)
+        self.stops[1].put([people])
         print(
             f"({self.env_start+self.env.now}): {people.get_num_people()} people walked from {self.stops[0].name} to {self.stops[1].name} ({walk_time} mins)"
         )
@@ -696,7 +712,7 @@ def simple_example(env_start: int) -> None:
     trip_3 = Trip(
         start_time=0,
         end_time=50,
-        timetable=[('First Stop', 30), ('Last Stop', 45)],
+        timetable=[('First Stop', 30), ('Last Stop', 60)],
     )
 
     bus_route = BusRoute(
@@ -709,6 +725,7 @@ def simple_example(env_start: int) -> None:
     )
 
     walk_to_stadium = Walk(
+        id=10,
         env=env,
         env_start=env_start,
         stops=[last_stop, stadium],
@@ -730,12 +747,41 @@ def simple_example(env_start: int) -> None:
 
     env.run(100)
 
+    """
+    Could this be done easier by have the arrays storing all objects of that being created 
+    from the instruction method and then could be called as an object on the class?
+    """
+    stops = [first_stop, last_stop, stadium] #Maybe have this setup on construct from method?
+    station_out = {}
+    for stop in stops:
+        station_out[stop.id] = stop.people_over_time
+    
+    bus_routes = [bus_route]
+    bus_route_time_out = {}
+    bus_route_pop_out = {}
+    for route in bus_routes:
+        bus_route_time_out[route.id] = route.bus_time_log
+        bus_route_pop_out[route.id] = route.bus_pop_log
+
+    walk_routes = [walk_to_stadium]
+    walk_route_out = {}
+    for route in walk_routes:
+        walk_route_out[route.id] = route.walk_time_log
+
+
+
     print()
-    print(first_stop.people_over_time, last_stop.people_over_time, stadium.people_over_time)
+    print(station_out)
     print()
-    print(bus_route.bus_time_log)
+    print(bus_route_time_out)
+    print(bus_route_pop_out)
     print()
-    print(walk_to_stadium.walk_time_log)
+    print(walk_route_out)
+
+    for stop in stops:
+        print(f"{stop.id}: {stop.name}")
+        for people in stop.people:
+            print(people.people_log)
 
 
 def get_data(
@@ -757,6 +803,15 @@ def get_data(
     route_objects = {}
 
     return (station_objects, route_objects)
+
+
+"""
+Track a bunch info for each group of people.
+
+In general track how many people are using a transporter at a time between stations.
+
+Also change it so the end has ID from object to referncing summary stats.
+"""
 
 
 if __name__ == "__main__":
