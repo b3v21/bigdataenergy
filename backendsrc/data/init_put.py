@@ -3,6 +3,11 @@ import os
 import csv
 from pathlib import Path
 import django
+from datetime import time
+from dateutil import tz
+
+BRIS = tz.gettz("Australia/Brisbane")
+
 
 maxInt = sys.maxsize
 while True:
@@ -49,12 +54,21 @@ def parse_data(path: str, model: str) -> None:
 
             elif model == "Timetable":
                 # import pdb; pdb.set_trace()
+                time_format = row[4].strip("'").split(":")
+                if int(time_format[0]) >= 24:
+                    time_object = time(
+                        int(time_format[0]) - 24, int(time_format[1]), tzinfo=BRIS
+                    )
+                else:
+                    time_object = time(
+                        int(time_format[0]), int(time_format[1]), tzinfo=BRIS
+                    )
                 Timetable.objects.create(
                     route=Route.objects.filter(translink_id=row[1]).first(),
                     station=Station.objects.filter(station_id=row[2]).first(),
                     translink_trip_id=row[3],
                     translink_trip_id_simple=row[0],
-                    arrival_time=row[4],
+                    arrival_time=time_object,
                     sequence=row[5],
                 )
             if (i % 1000) == 0:
@@ -62,7 +76,7 @@ def parse_data(path: str, model: str) -> None:
 
 
 if __name__ == "__main__":
-    # Timetable.objects.all().delete()
-    PATH = "./gtfsdata/trips_converted.csv"  # Change this param to read from diff file
+    Timetable.objects.all().delete()
+    PATH = "./gtfsdata/timetables_converted.csv"  # Change this param to read from diff file
     MODEL = "Timetable"  # Change this param to insert other model types
     parse_data(PATH, MODEL)
