@@ -707,7 +707,14 @@ class Suburb:
             station = None
             while station not in self.station_distribution.keys():
                 stations_sub_array = route.stops[:route.stops.index(route_end)]
-                station = stations_sub_array[randint(0, len(stations_sub_array) - 1)]
+                upper = len(stations_sub_array) - 1
+                if upper == 0:
+                    station_ind = 0
+                elif (upper < 0):
+                    continue
+                else:
+                    station_ind = randint(0, upper)
+                station = stations_sub_array[station_ind]
 
             num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
             if (num_for_stop > num_people - people_distributed):
@@ -932,7 +939,7 @@ def data_simple_example(
         stops=[routes[189].stops[-1], stadium],
     )
 
-    itinerary1 = Itinerary(env=env, id=0, routes=[routes[189], walk_a_bit])
+    itinerary1 = Itinerary(env=env, id=0, routes=[(routes[189], None), (walk_a_bit, None)])
     ITINERARIES.append(itinerary1)
 
     Suburb(
