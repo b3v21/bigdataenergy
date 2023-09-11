@@ -23,7 +23,7 @@ from db.models import (
 
 
 START_TIME = 840
-TIME_HORIZON = 120
+TIME_HORIZON = 15
 PERSON_BOARD_TIME = 0.1
 MINUTES_IN_DAY = 1440
 
@@ -541,10 +541,10 @@ class BusRoute(Route):
             trip_info = None
             trips_inited = []
             for trip in trips_to_iniate:
-                print(trip)
                 for stop in trip.timetable:
-                    print(stop)
                     if stop[1] == (self.env.now + self.env_start):
+                        print(trip)
+                        print(stop)
                         stop_info = stop
                         trip_info = trip
                         # Now have a trip to start
@@ -583,7 +583,7 @@ class BusRoute(Route):
         return self.stops[bus.location_index]
 
     def get_stop_with_name(self, name: str) -> Station:
-        return [stop.name for stop in self.stops].index(name)
+        return [stop.id for stop in self.stops].index(name)
 
 
 class Walk(Route):
@@ -1224,7 +1224,7 @@ def get_data(
             potential_stations = (
                 timetables.filter(route__pk=route.route_id)
                 .order_by("sequence")
-                .values_list("station")
+                .values_list("station").distinct()
             )
 
             if not potential_stations:
