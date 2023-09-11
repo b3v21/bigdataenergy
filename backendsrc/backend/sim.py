@@ -538,50 +538,40 @@ class BusRoute(Route):
 
         trips_to_iniate = copy.deepcopy(self.trip_timing_data)
         while True:
-            if (self.env.now + self.env_start) % 60 == 0:
-                trips_to_iniate = copy.deepcopy(self.trip_timing_data)
-                for trip in trips_to_iniate:
-                    for timetable_index, time_entry in enumerate(trip.timetable):
-                        old_entry = trip.timetable[timetable_index]
-                        trip.timetable[timetable_index] = (old_entry[0], old_entry[1] + (self.env.now + self.env_start))
 
-            if self.transporters_spawned != self.transporter_spawn_max + 100: #Temp stop the max transporter spawn
-                # get the location of the bus to spawn if the current time exists in
-                # the timetable.
-                stop_info = None
-                trip_info = None
-                trips_inited = []
-                for trip in trips_to_iniate:
-                    for stop in trip.timetable:
-                        if stop[1] == (self.env.now + self.env_start):
-                            stop_info = stop
-                            trip_info = trip
-                            # Now have a trip to start
-                            new_bus = Bus(
-                                env=self.env,
-                                env_start=self.env_start,
-                                id=self.transporters_spawned,
-                                name=f"B{self.transporters_spawned}_{self.name}",
-                                trip=trip_info,
-                                route=self,
-                                location_index=self.get_stop_with_name(stop_info[0]),
-                            )
-                            new_bus.people = (
-                                []
-                            )  # Doing this to wipe the people because somehow when a new bus is spawned it links people with the other buses???
-                            self.transporters_spawned += 1
-                            self.add_bus(new_bus)
-                            self.bus_time_log.append({})
-                            print(
-                                f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name}"
-                            )
-                            self.env.process(new_bus.bus_instance(self))
-                            trips_inited.append(trip)
-                for trip in trips_inited:
-                    trips_to_iniate.remove(trip)
-            else:
-                pass
-                #break
+
+            stop_info = None
+            trip_info = None
+            trips_inited = []
+            for trip in trips_to_iniate:
+                for stop in trip.timetable:
+                    if stop[1] == (self.env.now + self.env_start):
+                        stop_info = stop
+                        trip_info = trip
+                        # Now have a trip to start
+                        new_bus = Bus(
+                            env=self.env,
+                            env_start=self.env_start,
+                            id=self.transporters_spawned,
+                            name=f"B{self.transporters_spawned}_{self.name}",
+                            trip=trip_info,
+                            route=self,
+                            location_index=self.get_stop_with_name(stop_info[0]),
+                        )
+                        new_bus.people = (
+                            []
+                        )  # Doing this to wipe the people because somehow when a new bus is spawned it links people with the other buses???
+                        self.transporters_spawned += 1
+                        self.add_bus(new_bus)
+                        self.bus_time_log.append({})
+                        print(
+                            f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name}"
+                        )
+                        self.env.process(new_bus.bus_instance(self))
+                        trips_inited.append(trip)
+            for trip in trips_inited:
+                trips_to_iniate.remove(trip)
+    
             yield self.env.timeout(1)
 
     def get_type(self) -> str:
