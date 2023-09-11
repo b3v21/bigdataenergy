@@ -669,8 +669,7 @@ class Trip:
         self.timetable = timetable
 
 
-def simple_example(env_start: int) -> None:
-    env = Environment()
+def simple_example(env : Environment, env_start: int) -> None:
 
     first_stop = Station(
         env=env,
@@ -770,32 +769,36 @@ def simple_example(env_start: int) -> None:
 
 
 
-    print()
-    print(station_out)
-    print()
-    print(bus_route_time_out)
-    print(bus_route_pop_out)
-    print()
-    print(walk_route_out)
+    # print()
+    # print(station_out)
+    # print()
+    # print(bus_route_time_out)
+    # print(bus_route_pop_out)
+    # print()
+    # print(walk_route_out)
 
-    for stop in stops:
-        print(f"{stop.id}: {stop.name}")
-        for people in stop.people:
-            print(people.people_log)
+    # for stop in stops:
+    #     print(f"{stop.id}: {stop.name}")
+    #     for people in stop.people:
+    #         print(people.people_log)
 
 
 def get_data(
-    env: Environment, env_start: int = 0
+    env: Environment, env_start: int = 840, time_horizon: int = 120
 ) -> tuple[dict[int, Station], dict[int, Route]]:
     """
     This function accesses the data from the database and converts it into simulation
     objects.
+    
+    env_start: number of minutes into the day to start the sim (defaulted to 2pm)
+    time_horizon: number of minutes to simulate from env_start onwards
     """
 
     stations = StationM.objects.all()
     routes = RouteM.objects.all()
-    timetables = TimetableM.objects.all()
-
+    timetables = TimetableM.objects.filter(arrival_time__gte=env_start).filter(arrival_time__lte=env_start + time_horizon)
+    for t in timetables:
+        print(t.timetable_id, t.arrival_time)
     # User inputs time window for simulation. For each route in the simulation, all trips
     # which lie inside the time window are obtained and saved in a list.
 
@@ -815,6 +818,9 @@ Also change it so the end has ID from object to referncing summary stats.
 
 
 if __name__ == "__main__":
+    env = Environment()
     print()
-    simple_example(START_TIME)
+    print(get_data(env))
+    print()
+    simple_example(env, START_TIME)
     print()

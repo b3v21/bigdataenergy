@@ -32,7 +32,7 @@ class Timetable(models.Model):
     station = models.ForeignKey(Station, on_delete=models.CASCADE, null=True)
     translink_trip_id = models.CharField(max_length=255)
     translink_trip_id_simple = models.IntegerField()
-    arrival_time = models.CharField(max_length=255)
+    arrival_time = models.DateTimeField()
     sequence = models.IntegerField()
 
     class Meta:
