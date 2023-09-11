@@ -1198,7 +1198,7 @@ def get_data(
                 start_time=start_time.hour * 60 + start_time.minute,
                 end_time=end_time.hour * 60 + end_time.minute,
                 timetable=[
-                    (t[0], t[1])
+                    (t[0], t[1].hour * 60 + t[1].minute)
                     for t in timetables.filter(translink_trip_id_simple=trip[0])
                     .order_by("sequence")
                     .values_list("station", "arrival_time")
