@@ -6,8 +6,8 @@ import django
 from datetime import time
 from dateutil import tz
 
-BRIS = tz.gettz('Australia/Brisbane')
- 
+BRIS = tz.gettz("Australia/Brisbane")
+
 
 maxInt = sys.maxsize
 while True:
@@ -54,11 +54,15 @@ def parse_data(path: str, model: str) -> None:
 
             elif model == "Timetable":
                 # import pdb; pdb.set_trace()
-                time_format = row[4].strip('\'').split(':')
+                time_format = row[4].strip("'").split(":")
                 if int(time_format[0]) >= 24:
-                    time_object = time(int(time_format[0])-24, int(time_format[1]),tzinfo=BRIS)
+                    time_object = time(
+                        int(time_format[0]) - 24, int(time_format[1]), tzinfo=BRIS
+                    )
                 else:
-                    time_object = time(int(time_format[0]), int(time_format[1]),tzinfo=BRIS)
+                    time_object = time(
+                        int(time_format[0]), int(time_format[1]), tzinfo=BRIS
+                    )
                 Timetable.objects.create(
                     route=Route.objects.filter(translink_id=row[1]).first(),
                     station=Station.objects.filter(station_id=row[2]).first(),
