@@ -227,9 +227,6 @@ class Station:
             if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(
                 group
             ):
-                import pdb
-
-                pdb.set_trace()
                 group.next_route()
             if ITINERARIES[group.itinerary_index].last_leg(group):
                 # Being put at end
@@ -244,7 +241,7 @@ class Station:
                 time_to_wait = 0.5
                 self.env.process(
                     ITINERARIES[group.itinerary_index]
-                    .get_current(group)
+                    .get_current_route(group)
                     .walk_instance(group, time_to_wait)
                 )
 
@@ -544,7 +541,9 @@ class BusRoute(Route):
             trip_info = None
             trips_inited = []
             for trip in trips_to_iniate:
+                print(trip)
                 for stop in trip.timetable:
+                    print(stop)
                     if stop[1] == (self.env.now + self.env_start):
                         stop_info = stop
                         trip_info = trip
@@ -711,10 +710,12 @@ class Suburb:
                 if upper == 0:
                     station_ind = 0
                 elif (upper < 0):
-                    continue
+                    break
                 else:
                     station_ind = randint(0, upper)
                 station = stations_sub_array[station_ind]
+            if station == None:
+                continue
 
             num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
             if (num_for_stop > num_people - people_distributed):
