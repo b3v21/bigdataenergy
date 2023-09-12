@@ -81,16 +81,24 @@ def parse_data(path: str, model: str) -> None:
                         int(time_format[0]), int(time_format[1]), tzinfo=BRIS
                     )
                 Timetable.objects.create(
-                    trip_id = row[0],
-                    station=Station.objects.filter(station_id=row[3]).first(),
+                    trip_id = Trip.objects.filter(trip_id=row[0]).first(),
+                    station= Station.objects.filter(station_id=row[3]).first(),
                     arrival_time=time_object,
                     sequence=row[4],
+                )
+            elif model == "Trip":
+                Trip.objects.get_or_create(
+                    trip_id=row[2],
+                    route_id=Route.objects.filter(route_id=row[0]).first(),
+                    service_id=Calendar.objects.filter(service_id=row[1]).first(),
+                    shape_id=Shape.objects.filter(shape_id=row[6]).first(),
                 )
             if (i % 1000) == 0:
                 print(i, "rows added!")
 
 
 if __name__ == "__main__":
-    PATH = "./gtfsdata/calendar.txt"  # Change this param to read from diff file
-    MODEL = "Calendar"  # Change this param to insert other model types
+    # Timetable.objects.all().delete()
+    PATH = "./gtfsdata/stop_times.txt"  # Change this param to read from diff file
+    MODEL = "Timetable"  # Change this param to insert other model types
     parse_data(PATH, MODEL)

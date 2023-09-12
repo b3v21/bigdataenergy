@@ -27,6 +27,9 @@ class ShapeAdmin(admin.ModelAdmin):
 class CalendarAdmin(admin.ModelAdmin):
     pass
 
+class TripAdmin(admin.ModelAdmin):
+    pass
+
 
 admin.site.register(Route, RouteAdmin)
 admin.site.register(Station, StationAdmin)
@@ -35,3 +38,4 @@ admin.site.register(SimulationOutput, SimulationOutputAdmin)
 admin.site.register(Timetable, TimetableAdmin)
 admin.site.register(Shape, ShapeAdmin)
 admin.site.register(Calendar, CalendarAdmin)
+admin.site.register(Trip, TripAdmin)

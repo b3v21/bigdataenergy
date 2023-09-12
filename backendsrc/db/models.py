@@ -17,20 +17,21 @@ class Calendar(models.Model):
 class Route(models.Model):
     route_id = models.CharField(max_length=255, primary_key=True)
     name = models.CharField(max_length=255)
-    transport_type = models.IntegerField # Type of route (see data info for type conversions)
+    transport_type = models.IntegerField() # Type of route (see data info for type conversions)
     capacity = models.IntegerField(null=True)
 
     class Meta:
         ordering = ["route_id"]
         
 class Shape(models.Model):
-    shape_id = models.CharField(max_length=255, primary_key=True)
+    shape_id = models.CharField(max_length=255)
     shape_pt_lat = models.FloatField()
     shape_pt_lon = models.FloatField()
     shape_pt_sequence = models.IntegerField()
 
     class Meta:
         ordering = ["shape_id", "shape_pt_sequence"]
+        unique_together = ("shape_id", "shape_pt_sequence")
         
 class Station(models.Model):
     station_id = models.CharField(max_length=255, primary_key=True)
@@ -42,15 +43,24 @@ class Station(models.Model):
 
     class Meta:
         ordering = ["station_id"]
-class Timetable(models.Model):
+        
+class Trip(models.Model):
     trip_id = models.CharField(max_length=255, primary_key=True)
+    route_id = models.ForeignKey(Route, on_delete=models.CASCADE)
+    service_id = models.ForeignKey(Calendar, on_delete=models.CASCADE)
+    shape_id = models.ForeignKey(Shape, on_delete=models.CASCADE)
+    
+    class Meta:
+        ordering = ["trip_id","route_id","service_id","shape_id"]
+class Timetable(models.Model):
+    trip_id = models.ForeignKey(Trip, on_delete=models.CASCADE)
     station = models.ForeignKey(Station, on_delete=models.CASCADE, null=True)
     arrival_time = models.TimeField(max_length=255)
     sequence = models.IntegerField()
 
     class Meta:
         ordering = ["trip_id"]
-        unique_together = ("trip_id", "station")
+        unique_together = ("trip_id", "station", "arrival_time", "sequence")
 
 
 class SimulationOutput(models.Model):
