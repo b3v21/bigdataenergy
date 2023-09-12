@@ -91,6 +91,6 @@ def parse_data(path: str, model: str) -> None:
 
 
 if __name__ == "__main__":
-    PATH = "./gtfsdata/timetables_converted.csv"  # Change this param to read from diff file
-    MODEL = "Timetable"  # Change this param to insert other model types
+    PATH = "./gtfsdata/calendar.txt"  # Change this param to read from diff file
+    MODEL = "Calendar"  # Change this param to insert other model types
     parse_data(PATH, MODEL)
