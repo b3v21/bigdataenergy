@@ -158,8 +158,11 @@ class Station:
         self.people = []
         self.people_over_time = {}
 
-    def log_cur_people(self) -> None:
-        self.people_over_time[self.env.now + self.env_start] = self.num_people()
+    def log_cur_people(self, num_people=None) -> None:
+        if num_people:
+            self.people_over_time[self.env.now + self.env_start] = num_people
+        else:
+            self.people_over_time[self.env.now + self.env_start] = self.num_people()
 
     def __str__(self) -> str:
         output = f"{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}"
@@ -204,7 +207,7 @@ class Station:
         for p in people_to_get:
             self.people.remove(p)
 
-        self.log_cur_people()
+        self.log_cur_people(self.num_people())
         return people_to_get
 
     def put(self, passengers: list[People], from_suburb=False) -> None:
@@ -235,7 +238,7 @@ class Station:
                     .walk_instance(group, time_to_wait)
                 )
 
-        self.log_cur_people()
+        self.log_cur_people(count_pre_add + count)
 
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
