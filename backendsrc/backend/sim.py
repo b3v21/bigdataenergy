@@ -672,7 +672,6 @@ class Suburb:
             # Pick a itin to distribute to
             itin_ind = randint(0, len(self.itineraries) - 1)
             itin = self.itineraries[itin_ind]
-            itin_ind = ITINERARIES.index(itin)
 
             # Pick a route from it to distribute to
             route_ind = randint(0, len(itin.routes) - 1)
@@ -681,7 +680,7 @@ class Suburb:
                 route_tuple[1] if route_tuple[1] != None else route_tuple[0].stops[-1]
             )
             route = route_tuple[0]
-            # Pick a stop on that route (given its in the correct suburb)
+            # Pick a station on that route (given its in the correct suburb)
             station = None
             while station not in self.station_distribution.keys():
                 stations_sub_array = route.stops[: route.stops.index(route_end)]
@@ -693,7 +692,7 @@ class Suburb:
                 else:
                     station_ind = randint(0, upper)
                 station = stations_sub_array[station_ind]
-            if station == None:
+            if (station == None) or (self.station_distribution[station] == 0):
                 continue
 
             num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
@@ -755,7 +754,22 @@ def process_simulation_output(
 ) -> dict[dict]:
     """
     Analyse all the models once the simulation has finished running and returns the
-    information which will be sent to the frontend.
+    information which will be sent to the frontend. Some information requested from the
+    frontend is as follows...
+
+    Routes:
+    - occupancy of the route at each point (station) of the journey
+
+    Stops
+    - Average wait times at stations
+    - Time taken to get to the destination from the starting station (for each group of people?)
+
+    - Distance from event
+
+    Itinerary
+    - Time taken at each step (walking, bus etc)
+    - Also will probably need to send some information about routes directly.
+      I think at the moment route data is just contained in the itinerary?
     """
 
     output = {
