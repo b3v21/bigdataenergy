@@ -209,7 +209,6 @@ class Station:
             if cur_total == num_people_to_board:
                 break
 
-        #People_to_get people will be leaving
         for p in people_to_get:
             self.people.remove(p)
 
@@ -229,7 +228,6 @@ class Station:
             ):
                 group.next_route()
             if ITINERARIES[group.itinerary_index].last_leg(group):
-                # Being put at end
                 self.people.append(group)
             elif (
                 ITINERARIES[group.itinerary_index].get_current_type(group) == "BusRoute"
@@ -244,6 +242,7 @@ class Station:
                     .get_current_route(group)
                     .walk_instance(group, time_to_wait)
                 )
+
 
         self.log_cur_people(count_pre_add + count)
 
@@ -403,9 +402,11 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_pop_log[self.id][
-                        self.env.now + self.env_start
-                    ] = self.passenger_count()
+
+                    yield self.env.process(
+                        self.deload_passengers(bus_route.get_current_stop(self))
+                    )
+                    bus_route.bus_pop_log[self.id][self.env.now + self.env_start] = self.passenger_count()
 
                 else:
                     yield self.env.process(
@@ -430,29 +431,6 @@ class Bus(Transporter):
                 if travel_time <= 0:
                     print("***ERROR*** Travel time <= 0 due to current implementation of trip, forcing 1")
                     travel_time = 1
-
-                """
-                stop_times = [t[1] for t in self.trip.timetable]
-                stop_ind = bus_route.get_current_stop(self)
-                travel_time = stop_times[]
-
-                next_stop_times = [
-                    x
-                    for x in stop_times
-                    if x > int(self.env.now + bus_route.env_start) % 60
-                ]
-                if not next_stop_times:
-                    travel_time = (
-                        60
-                        - int(self.env.now + bus_route.env_start) % 60
-                        + stop_times[0]
-                    )
-                else:
-                    travel_time = (
-                        next_stop_times[0]
-                        - int(self.env.now + bus_route.env_start) % 60
-                    )
-                """
 
             yield self.env.timeout(travel_time)
             bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = (
@@ -535,31 +513,25 @@ class BusRoute(Route):
 
         trips_to_iniate = copy.deepcopy(self.trip_timing_data)
         while True:
-
-
             stop_info = None
             trip_info = None
             trips_inited = []
             for trip in trips_to_iniate:
                 for stop in trip.timetable:
                     if stop[1] == (self.env.now + self.env_start):
-                        print(trip)
-                        print(stop)
                         stop_info = stop
                         trip_info = trip
-                        # Now have a trip to start
+                        #Now have a trip to start                   
                         new_bus = Bus(
                             env=self.env,
                             env_start=self.env_start,
                             id=self.transporters_spawned,
-                            name=f"B{self.transporters_spawned}_{self.name}",
+                            name=f'B{self.transporters_spawned}_{self.name}',
                             trip=trip_info,
                             route=self,
                             location_index=self.get_stop_with_name(stop_info[0]),
                         )
-                        new_bus.people = (
-                            []
-                        )  # Doing this to wipe the people because somehow when a new bus is spawned it links people with the other buses???
+                        new_bus.people = [] #Doing this to wipe the people because somehow when a new bus is spawned it links people with the other buses???
                         self.transporters_spawned += 1
                         self.add_bus(new_bus)
                         self.bus_time_log.append({})
@@ -569,8 +541,8 @@ class BusRoute(Route):
                         self.env.process(new_bus.bus_instance(self))
                         trips_inited.append(trip)
             for trip in trips_inited:
-                trips_to_iniate.remove(trip)
-    
+                trips_to_iniate.remove(trip)           
+
             yield self.env.timeout(1)
 
     def get_type(self) -> str:
@@ -686,6 +658,13 @@ class Suburb:
         if self.population > 0:
             _ = self.distribute_people(self.population)
 
+    """
+    To be redone.
+
+    Functions the same as the old one just does it randomly and is hopefully slightly more readble.
+    
+    The way we need to generate itins needs to be re-thought as this isnt great.
+    """
     def distribute_people(self, num_people: int) -> int:
         people_distributed = 0
         while people_distributed != num_people:
@@ -740,56 +719,7 @@ class Suburb:
 
             people_distributed += num_for_stop
         return people_distributed
-
-
-    def distribute_people_old(self, num_people: int) -> int:
-        """
-        Function which distributes people throughout a suburb. Returns the number
-        of people distributed.
-        """
-
-        have_distributed = 0
-
-        for stop in self.station_distribution.keys():
-            if stop == list(self.station_distribution.keys())[-1]:
-                num_for_stop = have_distributed
-            else:
-                num_for_stop = ceil(self.station_distribution[stop] / 100 * num_people)
-
-            # Get a random valid itinerary (must include stop)
-            valid_itinerary_for_people = None
-            valid_stop_index = None
-
-            # this triple for loop is definately bad but will probably get updated
-            # when further refactoring occurs.
-            for itinerary_index, itinerary in enumerate(ITINERARIES):
-                for tuple in itinerary.routes:
-                    route = tuple[0]
-                    for stop_index, route_stop in enumerate(route.stops):
-                        if route_stop == stop:
-                            valid_itinerary_for_people = itinerary_index
-                            valid_stop_index = stop_index
-
-
-            people_arriving_at_stop = People(
-                env=self.env,
-                count=num_for_stop,
-                start_time=self.env.now,
-                start_location=stop,
-                itinerary_index=valid_itinerary_for_people,
-                current_route_in_itin_index=0,
-                env_start=self.env_start,
-            )
-            stop.put([people_arriving_at_stop], from_suburb=True)
-
-            print(
-                f"({self.env.now+self.env_start}): {num_for_stop} people arrived at {stop.name} in {self.name}"
-            )
-
-            have_distributed += num_for_stop
-        return have_distributed
-
-
+      
 class Trip:
     """This trip object will be created to hold transporter timings"""
 
@@ -902,19 +832,13 @@ def simple_example(env: Environment, env_start: int) -> None:
     for route in walk_routes:
         walk_route_out[route.id] = route.walk_time_log
 
-    # print()
-    # print(station_out)
-    # print()
-    # print(bus_route_time_out)
-    # print(bus_route_pop_out)
-    # print()
-    # print(walk_route_out)
-
-    # for stop in stops:
-    #     print(f"{stop.id}: {stop.name}")
-    #     for people in stop.people:
-    #         print(people.people_log)
-
+    print()
+    print(station_out)
+    print()
+    print(bus_route_time_out)
+    print(bus_route_pop_out)
+    print()
+    print(walk_route_out)
 
 def data_simple_example(
     env: Environment,
