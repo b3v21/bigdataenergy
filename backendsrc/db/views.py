@@ -8,17 +8,27 @@ from db.serializers import StationSerializer
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
+from backendsrc.backend.sim import run_simulation
+from logging import warning
 
 
 @api_view(["POST"])
-def run_sim(request: Request, sim_id: int) -> Response:
+def sim_request(request: Request, sim_id: int) -> Response:
     """
     This is the request responsible for sending user data from the 
     frontend -> sim, then running the sim, then sending the sim data from
     the backend -> frontend, and also uploading to the database.
     """
 
-    return "foo"
+    print(f"Simulation {sim_id} request recieved.")
+    if not request.data:
+        warning(f"Simulation {sim_id} has not recieved any user data.")
+
+    print(f"Running simulation {sim_id}.")
+    simulation_output = run_simulation(request.data, sim_id)
+    print(f"Simulation {sim_id} output processed.")
+    
+    return Response(data=simulation_output, status=201)
 
 
 
