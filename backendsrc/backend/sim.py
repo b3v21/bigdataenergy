@@ -1099,7 +1099,7 @@ def get_data(
             ),
         ]
     ],
-) -> tuple[dict[int, Station], dict[int, Route], list[Trip], list[Itinerary]]:
+) -> tuple[dict[int, Station], list[Trip], dict[int, Route], list[Itinerary]]:
     """
     This function accesses the data from the database and converts it into simulation
     objects.
