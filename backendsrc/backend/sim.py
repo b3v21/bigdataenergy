@@ -1193,9 +1193,6 @@ def get_data(
     sim_itineraries = []
     sim_itineraries.append(Itinerary(env, env_start, sim_routes))
 
-    import pdb
-
-    pdb.set_trace()
     return (sim_stations, sim_trips, sim_routes, sim_itineraries)
 
 
