@@ -1,5 +1,4 @@
 from __future__ import annotations
-from test_sim import simple_example, complex_example
 from simpy import Environment, Resource
 from abc import ABC, abstractmethod
 from random import randint, randrange
@@ -787,18 +786,3 @@ def get_data(
     route_objects = {}
 
     return (station_objects, route_objects)
-
-
-if __name__ == "__main__":
-    print()
-    import time
-
-    start_time = time.time()
-    i = 0
-    while i < 100:
-        complex_example(0)
-        i += 1
-    # simple_example(START_TIME)
-    print("--- %s seconds ---" % (time.time() - start_time))
-
-    print()

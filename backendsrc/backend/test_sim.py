@@ -1,5 +1,6 @@
-from backend.sim import Station, Trip, BusRoute, Walk, Itinerary, Suburb, ITINERARIES
+from sim import Station, Trip, BusRoute, Walk, Itinerary, Suburb, ITINERARIES
 from simpy import Environment
+import time
 
 
 def simple_example(env_start: int) -> None:
@@ -300,3 +301,17 @@ def complex_example(env_start: int) -> None:
                 print(people.current_route_in_itin_index)
 
         print()
+
+
+def test_efficiency():
+    print()
+    start_time = time.time()
+    i = 0
+    while i < 100:
+        complex_example(0)
+        i += 1
+    print("--- %s seconds ---" % (time.time() - start_time), "\n")
+
+
+if __name__ == "__main__":
+    simple_example(0)

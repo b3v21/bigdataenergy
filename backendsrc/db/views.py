@@ -15,7 +15,7 @@ from logging import warning
 @api_view(["POST"])
 def sim_request(request: Request, sim_id: int) -> Response:
     """
-    This is the request responsible for sending user data from the 
+    This is the request responsible for sending user data from the
     frontend -> sim, then running the sim, then sending the sim data from
     the backend -> frontend, and also uploading to the database.
     """
@@ -28,9 +28,7 @@ def sim_request(request: Request, sim_id: int) -> Response:
     simulation_output = run_simulation(request.data, sim_id)
     print(f"Simulation {sim_id} output processed.")
 
-    return Response(data=simulation_output, status=201)
-
-
+    return Response(data=simulation_output, status=status.HTTP_201_CREATED)
 
 
 ######################## PRACTICE VIEWS ########################
