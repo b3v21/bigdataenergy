@@ -4,4 +4,5 @@ from db import views
 urlpatterns = [
     path("db/", views.station_list),
     path("db/<int:pk>/", views.station_details),
+    path("run_simulation/<int:sim_id>/", views.run_sim)
 ]
