@@ -45,7 +45,7 @@ class Station(models.Model):
 class Timetable(models.Model):
     trip_id = models.CharField(max_length=255, primary_key=True)
     station = models.ForeignKey(Station, on_delete=models.CASCADE, null=True)
-    arrival_time = models.CharField(max_length=255)
+    arrival_time = models.TimeField(max_length=255)
     sequence = models.IntegerField()
 
     class Meta:
