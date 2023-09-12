@@ -27,7 +27,7 @@ def sim_request(request: Request, sim_id: int) -> Response:
     print(f"Running simulation {sim_id}.")
     simulation_output = run_simulation(request.data, sim_id)
     print(f"Simulation {sim_id} output processed.")
-    
+
     return Response(data=simulation_output, status=201)
 
 
