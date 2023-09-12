@@ -21,11 +21,14 @@ class TravelTimesAdmin(admin.ModelAdmin):
 class SimulationOutputAdmin(admin.ModelAdmin):
     pass
 
+
 class ShapeAdmin(admin.ModelAdmin):
     pass
 
+
 class CalendarAdmin(admin.ModelAdmin):
     pass
+
 
 class TripAdmin(admin.ModelAdmin):
     pass

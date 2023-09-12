@@ -49,7 +49,7 @@ def parse_data(path: str, model: str) -> None:
             if model == "Station":
                 Station.objects.create(
                     station_id=row[0],  # THIS ASSUMES THE ID IS IN THE CSV
-                    station_code = row[1],
+                    station_code=row[1],
                     name=row[2],
                     lat=row[4],
                     long=row[5],
@@ -81,8 +81,8 @@ def parse_data(path: str, model: str) -> None:
                         int(time_format[0]), int(time_format[1]), tzinfo=BRIS
                     )
                 Timetable.objects.create(
-                    trip_id = Trip.objects.filter(trip_id=row[0]).first(),
-                    station= Station.objects.filter(station_id=row[3]).first(),
+                    trip_id=Trip.objects.filter(trip_id=row[0]).first(),
+                    station=Station.objects.filter(station_id=row[3]).first(),
                     arrival_time=time_object,
                     sequence=row[4],
                 )
