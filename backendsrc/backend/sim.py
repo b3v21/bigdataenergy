@@ -1126,7 +1126,6 @@ def get_data(
     sim_trips = []
     sim_stations = {}
 
-    print(db_routes)
     for route in db_routes:
         # Get trip_ids that run on a Friday for a particular route
         db_trips = TripM.objects.all().filter(service_id__in=calendars, route_id=route)
