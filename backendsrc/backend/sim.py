@@ -8,7 +8,8 @@ import django
 import os
 import sys
 import copy
-import time
+from datetime import time
+
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
@@ -21,10 +22,12 @@ from db.models import (
 )  # noqa: E402
 
 
-START_TIME = 12
+START_TIME = 840
+TIME_HORIZON = 15
 PERSON_BOARD_TIME = 0.1
 MINUTES_IN_DAY = 1440
 
+# THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
 ITINERARIES = []
 
 
@@ -394,6 +397,7 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
                     )
+
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
@@ -426,6 +430,7 @@ class Bus(Transporter):
                         "***ERROR*** Travel time <= 0 due to current implementation of trip, forcing 1"
                     )
                     travel_time = 1
+
             yield self.env.timeout(travel_time)
             bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
@@ -683,7 +688,16 @@ class Suburb:
             station = None
             while station not in self.station_distribution.keys():
                 stations_sub_array = route.stops[: route.stops.index(route_end)]
-                station = stations_sub_array[randint(0, len(stations_sub_array) - 1)]
+                upper = len(stations_sub_array) - 1
+                if upper == 0:
+                    station_ind = 0
+                elif upper < 0:
+                    break
+                else:
+                    station_ind = randint(0, upper)
+                station = stations_sub_array[station_ind]
+            if station == None:
+                continue
 
             num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
             if num_for_stop > num_people - people_distributed:
@@ -765,24 +779,3 @@ def process_simulation_output(
             output["walk_route_out"][r.id] = r.walk_time_log
 
     return output
-
-
-def get_data(
-    env: Environment, env_start: int = 0
-) -> tuple[dict[int, Station], dict[int, Route]]:
-    """
-    This function accesses the data from the database and converts it into simulation
-    objects.
-    """
-
-    stations = StationM.objects.all()
-    routes = RouteM.objects.all()
-    timetables = TimetableM.objects.all()
-
-    # User inputs time window for simulation. For each route in the simulation, all trips
-    # which lie inside the time window are obtained and saved in a list.
-
-    station_objects = {}
-    route_objects = {}
-
-    return (station_objects, route_objects)
