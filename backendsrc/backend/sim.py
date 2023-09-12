@@ -8,7 +8,8 @@ import django
 import os
 import sys
 import copy
-import time
+from datetime import time
+
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
@@ -21,10 +22,16 @@ from db.models import (
 )  # noqa: E402
 
 
-START_TIME = 12
+START_TIME = 840
+TIME_HORIZON = 15
 PERSON_BOARD_TIME = 0.1
 MINUTES_IN_DAY = 1440
 
+# TODO: THESE ITINERARIES WILL COME IN SOME FORMAT AND WE WILL
+# NEED A FUNC TO CONVERT TO THE FORM WE WANT
+GENERATED_ITINERARIES = [{189: ("first", "last", "bus"), 20: ("last", "stadium" "walk")}]
+
+# THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
 ITINERARIES = []
 
 
@@ -395,6 +402,7 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
                     )
+
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
@@ -423,6 +431,7 @@ class Bus(Transporter):
                 if travel_time <= 0:
                     print("***ERROR*** Travel time <= 0 due to current implementation of trip, forcing 1")
                     travel_time = 1
+
             yield self.env.timeout(travel_time)
             bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
@@ -546,7 +555,7 @@ class BusRoute(Route):
         return self.stops[bus.location_index]
 
     def get_stop_with_name(self, name: str) -> Station:
-        return [stop.name for stop in self.stops].index(name)
+        return [stop.id for stop in self.stops].index(name)
 
 
 class Walk(Route):
@@ -676,7 +685,16 @@ class Suburb:
             station = None
             while station not in self.station_distribution.keys():
                 stations_sub_array = route.stops[:route.stops.index(route_end)]
-                station = stations_sub_array[randint(0, len(stations_sub_array) - 1)]
+                upper = len(stations_sub_array) - 1
+                if upper == 0:
+                    station_ind = 0
+                elif (upper < 0):
+                    break
+                else:
+                    station_ind = randint(0, upper)
+                station = stations_sub_array[station_ind]
+            if station == None:
+                continue
 
             num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
             if (num_for_stop > num_people - people_distributed):
@@ -701,7 +719,7 @@ class Suburb:
 
             people_distributed += num_for_stop
         return people_distributed
-
+      
 class Trip:
     """This trip object will be created to hold transporter timings"""
 
@@ -713,9 +731,7 @@ class Trip:
         self.timetable = timetable
 
 
-def simple_example(env_start: int) -> None:
-    env = Environment()
-
+def simple_example(env: Environment, env_start: int) -> None:
     first_stop = Station(
         env=env,
         id=0,
@@ -824,10 +840,45 @@ def simple_example(env_start: int) -> None:
     print()
     print(walk_route_out)
 
-    for stop in stops:
-        print(f"{stop.id}: {stop.name}")
-        for people in stop.people:
-            print(people.people_log)
+def data_simple_example(
+    env: Environment,
+    env_start: int,
+    time_horizon: int,
+    data: tuple[dict[int, Station], dict[int, Route], dict[int, Trip]],
+) -> None:
+    stations, routes, trips = data
+
+    stadium = Station(
+        env,
+        999999,
+        "Stadium",
+        (routes[189].stops[-1].pos[0] + 2, routes[189].stops[-1].pos[1] + 2),
+        1,
+        env_start,
+    )
+
+    walk_a_bit = Walk(
+        id=10,
+        env=env,
+        env_start=env_start,
+        stops=[routes[189].stops[-1], stadium],
+    )
+
+    itinerary1 = Itinerary(env=env, id=0, routes=[(routes[189], None), (walk_a_bit, None)])
+    ITINERARIES.append(itinerary1)
+
+    Suburb(
+        env=env,
+        name="Simple Suburb",
+        station_distribution={stop : randint(0, 100) for stop in routes[189].stops},
+        population=100,
+        frequency=10,
+        max_distributes=0,
+        itineraries=[itinerary1],
+        env_start=env_start,
+    )
+
+    env.run(time_horizon)
 
 def complex_example(env_start: int) -> None:
     env = Environment()
@@ -997,44 +1048,26 @@ def complex_example(env_start: int) -> None:
         print()
 
 def get_data(
-    env: Environment, env_start: int = 0
-) -> tuple[dict[int, Station], dict[int, Route]]:
+    env: Environment,
+    env_start: int = START_TIME,
+    time_horizon: int = TIME_HORIZON,
+    itineraries: list[Route] = GENERATED_ITINERARIES,
+) -> tuple[dict[int, Station], dict[int, Route], dict[int, Trip]]:
     """
     This function accesses the data from the database and converts it into simulation
     objects.
+
+    env_start: number of minutes into the day to start the sim (defaulted to 2pm)
+    time_horizon: number of minutes to simulate from env_start onwards
     """
+    
 
-    stations = StationM.objects.all()
-    routes = RouteM.objects.all()
-    timetables = TimetableM.objects.all()
-
-    # User inputs time window for simulation. For each route in the simulation, all trips
-    # which lie inside the time window are obtained and saved in a list.
-
-    station_objects = {}
-    route_objects = {}
-
-    return (station_objects, route_objects)
-
-
-"""
-Track a bunch info for each group of people.
-
-In general track how many people are using a transporter at a time between stations.
-
-Also change it so the end has ID from object to referncing summary stats.
-"""
 
 
 if __name__ == "__main__":
+    env = Environment()
     print()
-    import time
-    start_time = time.time()
-    i = 0
-    while i < 100:
-        complex_example(0)
-        i += 1
-    #simple_example(START_TIME)
-    print("--- %s seconds ---" % (time.time() - start_time))
-    
+    data = get_data(env)
+    print()
+    data_simple_example(env, START_TIME, TIME_HORIZON, data)
     print()

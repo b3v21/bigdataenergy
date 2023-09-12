@@ -80,7 +80,7 @@ def parse_trips():
     # get route_id from routes.txt -> use trip_id from routes.txt to all getstop_ids,
     # stop_sequence & collect stop_time and add to list from stop_times.txt
     path1 = "./gtfsdata/routes.csv"
-    path2 = "./gtfsdata/trips.csv"
+    path2 = "./gtfsdata/timetables.csv"
     path3 = "./gtfsdata/stop_times.csv"
 
     translink_route_link = {}
@@ -121,7 +121,8 @@ def parse_trips():
         trip_id = row2["trip_id"]
         route_id = row2["route_id"]
 
-        route_trip_link[route_id].append(trip_id)
+        if trip_id not in route_trip_link.values():
+            route_trip_link[route_id] += [trip_id]
 
     print("stage 2/4 complete")
 
@@ -132,36 +133,42 @@ def parse_trips():
         arrival_time = row3["arrival_time"]
 
         if trip_id in trip_stop_link.keys():
-            trip_stop_link[trip_id] += [stop_id]
+            if stop_id not in trip_stop_link[trip_id]:
+                trip_stop_link[trip_id] += [stop_id]   
         else:
             trip_stop_link[trip_id] = [stop_id]
+            
 
         if (trip_id, stop_id) not in trip_stop_times_link.keys():
             trip_stop_times_link[(trip_id, stop_id)] = (sequence, arrival_time)
 
     print("stage 3/4 complete")
-    count = 1
+    total = 0
+    count = 0
+    visited_trips = set()
     for translink_id, route_id in translink_route_link.items():
         for trip_id in route_trip_link[route_id]:
-            for stop_id in trip_stop_link[trip_id]:
-                print(trip_id, stop_id)
-                if (trip_id, stop_id) in trip_stop_times_link.keys():
-                    seq, time = trip_stop_times_link[(trip_id, stop_id)]
-                    trips_result.loc[len(trips_result.index)] = [
-                        count,
-                        translink_id,
-                        stop_id,
-                        trip_id,
-                        time,
-                        seq,
-                    ]
-            count += 1
-            if (count % 1000) == 0:
-                print(count)
+            if trip_id not in visited_trips:
+                count += 1
+                visited_trips.add(trip_id)
+                for stop_id in trip_stop_link[trip_id]:
+                    if (trip_id, stop_id) in trip_stop_times_link.keys():
+                        seq, time = trip_stop_times_link[(trip_id, stop_id)]
+                        trips_result.loc[len(trips_result.index)] = [
+                            count,
+                            translink_id,
+                            stop_id,
+                            trip_id,
+                            time,
+                            seq,
+                        ]
+                        total +=1
+                    if (total % 10000) == 0:
+                        print(total)
 
     print("stage 4/4 complete")
 
-    trips_result.to_csv("./gtfsdata/trips_converted.csv", index=False)
+    trips_result.to_csv("./gtfsdata/timetables_converted.csv", index=False)
 
     print("done!")
 
@@ -169,16 +176,16 @@ def parse_trips():
 def fix_trips():
     visited = set()
 
-    trips = pd.read_csv("./gtfsdata/trips_converted.csv")
+    trips = pd.read_csv("./gtfsdata/timetables_converted.csv")
     for i, row in trips.iterrows():
-        if (row["trip_id"], row["station"]) in visited:
+        if (row["translink_trip_id"], row["station"]) in visited:
             trips.drop(index=i, axis=0)
         else:
-            visited.add((row["trip_id"], row["station"]))
+            visited.add((row["translink_trip_id"], row["station"]))
         if (i % 1000) == 0:
             print(i)
-    trips.to_csv("./gtfsdata/trips_converted.csv", index=False)
+    trips.to_csv("./gtfsdata/timetables_converted.csv", index=False)
 
 
 if __name__ == "__main__":
-    fix_trips()
+    parse_trips()
