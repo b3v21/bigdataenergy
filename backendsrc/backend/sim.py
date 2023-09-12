@@ -42,7 +42,7 @@ class Itinerary:
 
     def get_current_type(self, people: People) -> str:
         return self.routes[people.current_route_in_itin_index].get_type()
-    
+
     def get_current(self, people: People) -> Route:
         return self.routes[people.current_route_in_itin_index]
 
@@ -83,7 +83,7 @@ class People:
             current_route_in_itin_index  # route index within an itinerary
         )
         self.people_log = {}
-        self.expected_end_time = None #How could we come up with this?
+        self.expected_end_time = None  # How could we come up with this?
 
     def log(self, where: tuple(str, int)) -> None:
         self.people_log[self.env.now + self.env_start] = where
@@ -154,10 +154,9 @@ class Station:
 
     def log_cur_people(self, num_people=None) -> None:
         if num_people:
-            self.people_over_time[self.env.now+self.env_start] = num_people
+            self.people_over_time[self.env.now + self.env_start] = num_people
         else:
-            self.people_over_time[self.env.now+self.env_start] = self.num_people()
-
+            self.people_over_time[self.env.now + self.env_start] = self.num_people()
 
     def __str__(self) -> str:
         output = f"{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}"
@@ -198,13 +197,14 @@ class Station:
             if cur_total == num_people_to_board:
                 break
 
-        #People_to_get people will be leaving
         self.log_cur_people(self.num_people())
         return people_to_get
 
     def put(self, passengers: list[People], from_suburb=False) -> None:
         count = 0
-        count_pre_add = self.num_people() #Doing it this way as some transport doesnt log them in the station
+        count_pre_add = (
+            self.num_people()
+        )  # Doing it this way as some transport doesnt log them in the station
         for group in passengers:
             group.log((self.name, self.id))
             count += group.get_num_people()
@@ -213,7 +213,6 @@ class Station:
             ):
                 group.next_route()
             if ITINERARIES[group.itinerary_index].last_leg(group):
-                # Being put at end
                 self.people.append(group)
             elif (
                 ITINERARIES[group.itinerary_index].get_current_type(group) == "BusRoute"
@@ -224,11 +223,12 @@ class Station:
                 # Queue people all up to walk
                 time_to_wait = 0.5
                 self.env.process(
-                    ITINERARIES[group.itinerary_index].get_current(group).walk_instance(group, time_to_wait)
+                    ITINERARIES[group.itinerary_index]
+                    .get_current(group)
+                    .walk_instance(group, time_to_wait)
                 )
 
         self.log_cur_people(count_pre_add + count)
-        
 
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
@@ -306,7 +306,7 @@ class Transporter(ABC):
         print(
             f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {get_off} people at {station.name} ({off_time} mins)"
         )
-        
+
         station.put(self.people)
         self.people.clear()
 
@@ -336,15 +336,17 @@ class Bus(Transporter):
         people: list[People] = [],
         capacity: int = 50,
     ) -> None:
-        super().__init__(env, env_start, id, name, trip, location_index, people, capacity)
+        super().__init__(
+            env, env_start, id, name, trip, location_index, people, capacity
+        )
         self.bus_pop_log = {}
 
     def get_type(self) -> str:
         return "Bus"
-    
+
     def __str__(self) -> str:
-        return f'{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}'
-    
+        return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
+
     def bus_instance(self, bus_route: BusRoute) -> None:
         bus_route.bus_pop_log[self.id] = {}
         while True:
@@ -353,18 +355,24 @@ class Bus(Transporter):
                 print(
                     f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
                 )
-                bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = self.env.now + self.env_start
+                bus_route.bus_time_log[self.id][
+                    bus_route.get_current_stop(self).name
+                ] = (self.env.now + self.env_start)
                 if bus_route.get_current_stop(self) != bus_route.last_stop:
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_pop_log[self.id][self.env.now + self.env_start] = self.passenger_count()
+                    bus_route.bus_pop_log[self.id][
+                        self.env.now + self.env_start
+                    ] = self.passenger_count()
                 else:
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_pop_log[self.id][self.env.now + self.env_start] = self.passenger_count()
-                    #Despawn
+                    bus_route.bus_pop_log[self.id][
+                        self.env.now + self.env_start
+                    ] = self.passenger_count()
+                    # Despawn
                     print(
                         f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} ended its journey."
                     )
@@ -376,18 +384,25 @@ class Bus(Transporter):
                 stop_times = [t[1] for t in self.trip.timetable]
 
                 next_stop_times = [
-                    x for x in stop_times if x > int(self.env.now + bus_route.env_start) % 60
+                    x
+                    for x in stop_times
+                    if x > int(self.env.now + bus_route.env_start) % 60
                 ]
                 if not next_stop_times:
                     travel_time = (
-                        60 - int(self.env.now + bus_route.env_start) % 60 + stop_times[0]
+                        60
+                        - int(self.env.now + bus_route.env_start) % 60
+                        + stop_times[0]
                     )
                 else:
                     travel_time = (
-                        next_stop_times[0] - int(self.env.now + bus_route.env_start) % 60
+                        next_stop_times[0]
+                        - int(self.env.now + bus_route.env_start) % 60
                     )
             yield self.env.timeout(travel_time)
-            bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = self.env.now + self.env_start
+            bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = (
+                self.env.now + self.env_start
+            )
             print(
                 f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {bus_route.get_current_stop(self).name} ({travel_time} mins)"
             )
@@ -455,7 +470,7 @@ class BusRoute(Route):
         self.running = self.env.process(self.initiate_route())
         self.buses: list[Bus] = []
         self.bus_time_log = []
-        self.bus_pop_log = {} # {id : bus_pop_log}
+        self.bus_pop_log = {}  # {id : bus_pop_log}
 
     def initiate_route(self) -> None:
         """
@@ -476,32 +491,29 @@ class BusRoute(Route):
                         if stop[1] == (self.env.now + self.env_start):
                             stop_info = stop
                             trip_info = trip
-                            #Now have a trip to start                   
+                            # Now have a trip to start
                             new_bus = Bus(
                                 env=self.env,
                                 env_start=self.env_start,
                                 id=self.transporters_spawned,
-                                name=f'B{self.transporters_spawned}_{self.name}',
+                                name=f"B{self.transporters_spawned}_{self.name}",
                                 trip=trip_info,
                                 location_index=self.get_stop_with_name(stop_info[0]),
+                                people=[],
                             )
-                            new_bus.people = [] #Doing this to wipe the people because somehow when a new bus is spawned it links people with the other buses???
                             self.transporters_spawned += 1
                             self.add_bus(new_bus)
+                            self.env.process(new_bus.bus_instance(self))
                             self.bus_time_log.append({})
                             print(
                                 f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name}"
                             )
-                            self.env.process(new_bus.bus_instance(self))
                             trips_inited.append(trip)
                 for trip in trips_inited:
-                    trips_to_iniate.remove(trip)           
+                    trips_to_iniate.remove(trip)
             else:
                 break
             yield self.env.timeout(1)
-
-                
-                
 
     def get_type(self) -> str:
         return "BusRoute"
@@ -543,7 +555,10 @@ class Walk(Route):
         """
         yield self.env.timeout(time_to_leave)
         people.log((self.stops, self.id))
-        self.walk_time_log[people] = [self.env.now + self.env_start, None] #Maybe change this to be an ID
+        self.walk_time_log[people] = [
+            self.env.now + self.env_start,
+            None,
+        ]  # Maybe change this to be an ID
         self.people.append(people)
         self.stops[0].log_cur_people()
         walk_time = self.walk_time() * self.walking_congestion
@@ -702,17 +717,17 @@ def simple_example(env_start: int) -> None:
     trip = Trip(
         start_time=0,
         end_time=50,
-        timetable=[('First Stop', 0), ('Last Stop', 30)],
+        timetable=[("First Stop", 0), ("Last Stop", 30)],
     )
     trip_2 = Trip(
         start_time=0,
         end_time=50,
-        timetable=[('First Stop', 15), ('Last Stop', 45)],
+        timetable=[("First Stop", 15), ("Last Stop", 45)],
     )
     trip_3 = Trip(
         start_time=0,
         end_time=50,
-        timetable=[('First Stop', 30), ('Last Stop', 60)],
+        timetable=[("First Stop", 30), ("Last Stop", 60)],
     )
 
     bus_route = BusRoute(
@@ -751,11 +766,15 @@ def simple_example(env_start: int) -> None:
     Could this be done easier by have the arrays storing all objects of that being created 
     from the instruction method and then could be called as an object on the class?
     """
-    stops = [first_stop, last_stop, stadium] #Maybe have this setup on construct from method?
+    stops = [
+        first_stop,
+        last_stop,
+        stadium,
+    ]  # Maybe have this setup on construct from method?
     station_out = {}
     for stop in stops:
         station_out[stop.id] = stop.people_over_time
-    
+
     bus_routes = [bus_route]
     bus_route_time_out = {}
     bus_route_pop_out = {}
@@ -767,8 +786,6 @@ def simple_example(env_start: int) -> None:
     walk_route_out = {}
     for route in walk_routes:
         walk_route_out[route.id] = route.walk_time_log
-
-
 
     print()
     print(station_out)
