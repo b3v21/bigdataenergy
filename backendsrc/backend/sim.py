@@ -90,7 +90,6 @@ class People:
             current_route_in_itin_index  # route index within an itinerary
         )
         self.people_log = {}
-        self.expected_end_time = None  # How could we come up with this?
 
     def log(self, where: tuple(str, int)) -> None:
         self.people_log[self.env.now + self.env_start] = where
@@ -529,10 +528,8 @@ class BusRoute(Route):
                             trip=trip_info,
                             route=self,
                             location_index=self.get_stop_with_name(stop_info[0]),
+                            people=[],
                         )
-                        new_bus.people = (
-                            []
-                        )  # Doing this to wipe the people because somehow when a new bus is spawned it links people with the other buses???
                         self.transporters_spawned += 1
                         self.add_bus(new_bus)
                         self.bus_time_log.append({})
@@ -661,13 +658,13 @@ class Suburb:
         if self.population > 0:
             _ = self.distribute_people(self.population)
 
-    """
-    To be redone.
-    Functions the same as the old one just does it randomly and is hopefully slightly more readble.
-    The way we need to generate itins needs to be re-thought as this isnt great.
-    """
-
     def distribute_people(self, num_people: int) -> int:
+        """
+        To be redone.
+        Functions the same as the old one just does it randomly and is hopefully slightly
+        more readble. The way we need to generate itins needs to be re-thought as this
+        isnt great.
+        """
         people_distributed = 0
         while people_distributed != num_people:
             # Keep distrubuting
@@ -779,3 +776,7 @@ def process_simulation_output(
             output["walk_route_out"][r.id] = r.walk_time_log
 
     return output
+
+
+def get_data():
+    return
