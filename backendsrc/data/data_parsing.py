@@ -134,10 +134,9 @@ def parse_trips():
 
         if trip_id in trip_stop_link.keys():
             if stop_id not in trip_stop_link[trip_id]:
-                trip_stop_link[trip_id] += [stop_id]   
+                trip_stop_link[trip_id] += [stop_id]
         else:
             trip_stop_link[trip_id] = [stop_id]
-            
 
         if (trip_id, stop_id) not in trip_stop_times_link.keys():
             trip_stop_times_link[(trip_id, stop_id)] = (sequence, arrival_time)
@@ -162,7 +161,7 @@ def parse_trips():
                             time,
                             seq,
                         ]
-                        total +=1
+                        total += 1
                     if (total % 10000) == 0:
                         print(total)
 

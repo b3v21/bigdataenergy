@@ -10,19 +10,23 @@ class Calendar(models.Model):
     friday = models.BooleanField(default=False)
     saturday = models.BooleanField(default=False)
     sunday = models.BooleanField(default=False)
-    
+
     class Meta:
         ordering = ["service_id"]
+
 
 class Route(models.Model):
     route_id = models.CharField(max_length=255, primary_key=True)
     name = models.CharField(max_length=255)
-    transport_type = models.IntegerField() # Type of route (see data info for type conversions)
+    transport_type = (
+        models.IntegerField()
+    )  # Type of route (see data info for type conversions)
     capacity = models.IntegerField(null=True)
 
     class Meta:
         ordering = ["route_id"]
-        
+
+
 class Shape(models.Model):
     shape_id = models.CharField(max_length=255)
     shape_pt_lat = models.FloatField()
@@ -32,26 +36,32 @@ class Shape(models.Model):
     class Meta:
         ordering = ["shape_id", "shape_pt_sequence"]
         unique_together = ("shape_id", "shape_pt_sequence")
-        
+
+
 class Station(models.Model):
     station_id = models.CharField(max_length=255, primary_key=True)
     station_code = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
     lat = models.FloatField()
     long = models.FloatField()
-    location_type = models.IntegerField() # Type of station (see data info for type conversions)
+    location_type = (
+        models.IntegerField()
+    )  # Type of station (see data info for type conversions)
 
     class Meta:
         ordering = ["station_id"]
-        
+
+
 class Trip(models.Model):
     trip_id = models.CharField(max_length=255, primary_key=True)
     route_id = models.ForeignKey(Route, on_delete=models.CASCADE)
     service_id = models.ForeignKey(Calendar, on_delete=models.CASCADE)
     shape_id = models.ForeignKey(Shape, on_delete=models.CASCADE)
-    
+
     class Meta:
-        ordering = ["trip_id","route_id","service_id","shape_id"]
+        ordering = ["trip_id", "route_id", "service_id", "shape_id"]
+
+
 class Timetable(models.Model):
     trip_id = models.ForeignKey(Trip, on_delete=models.CASCADE)
     station = models.ForeignKey(Station, on_delete=models.CASCADE, null=True)
