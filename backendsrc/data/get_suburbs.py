@@ -16,7 +16,13 @@ reverse= RateLimiter(geolocator.reverse, min_delay_seconds=1)
 
 def get_location(coords):
     location = reverse(coords)
-    return location.raw["address"]["suburb"]
+    address = location.raw.get("address")
+    if address is not None:
+        print(address.get("suburb"))
+        return address.get("suburb")
+    else: 
+        print("None")
+        return None
 
 df = pd.read_csv("./stops_with_postcode_suburb.csv")
 df = df[['stop_id', 'stop_lat', 'stop_lon']]
