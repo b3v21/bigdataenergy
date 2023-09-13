@@ -31,21 +31,13 @@ def simple_example(env_start: int) -> None:
         env_start=env_start,
     )
 
-    timetable_stops = ["First Stop", "Last Stop"]
-
     trip = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 0), ("Last Stop", 30)],
     )
     trip_2 = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 15), ("Last Stop", 45)],
     )
     trip_3 = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 30), ("Last Stop", 60)],
     )
 
@@ -159,32 +151,22 @@ def complex_example(env_start: int) -> None:
     )
 
     X_trip = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 0), ("Last Stop", 30)],
     )
 
     X_trip_2 = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 30), ("Last Stop", 60)],
     )
 
     Y_trip = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 15), ("Second Stop", 30), ("Last Stop", 45)],
     )
 
     Z_trip = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("Second Stop", 0), ("Last Stop", 15), ("Stadium", 20)],
     )
 
     Z_trip_2 = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[
             ("Second Stop", 45),
             ("Last Stop", 60),

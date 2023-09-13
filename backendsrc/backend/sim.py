@@ -722,11 +722,7 @@ class Suburb:
 class Trip:
     """This trip object will be created to hold transporter timings"""
 
-    def __init__(
-        self, start_time: int, end_time: int, timetable: list[tuple[str, int]]
-    ) -> None:
-        self.start_time = start_time
-        self.end_time = end_time
+    def __init__(self, timetable: list[tuple[str, int]]) -> None:
         self.timetable = timetable
 
 
