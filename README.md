@@ -15,10 +15,11 @@ Our goal is to build a website with an interactive map and other visualisations 
 1. setup & activate a python venv if you haven't already
 2. <code>pip install django</code>
    <code>pip install djangorestframework</code>
-3. enter backendsrc directory and run <code>python manage.py migrate</code>
-4. create a superuser with - <code>python manage.py createsuperuser --email admin@example.com --username admin</code>
-5. run python manage.py runserver
-6. good to go!
+3. Go to the Big Data Energy Discord and grab the `db.sqlite3.zip` file and put it in the `backendsrc` folder
+4. enter backendsrc directory and run <code>python manage.py migrate</code>
+5. create a superuser with - <code>python manage.py createsuperuser --email admin@example.com --username admin</code>
+6. run python manage.py runserver
+7. good to go!
 
 # How to update the structure of the database
 1. <code>python manage.py showmigrations</code>. This lists the current migrations.
