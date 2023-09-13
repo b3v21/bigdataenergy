@@ -34,12 +34,16 @@ MINUTES_IN_DAY = 1440
 ITINERARIES = []
 
 
+def convert_date_to_int(time: time) -> int:
+    return time.hour * 60 + time.minute
+
+
 class Itinerary:
     """
     Object to store multiple types of travel at a time.
     """
 
-    def __init__(self, env: Environment, id: int, routes: list[(Route, Station)]):
+    def __init__(self, env: Environment, id: int, routes: list[tuple[Route, Station]]):
         self.env = env
         self.routes = routes
         self.id = id
@@ -512,7 +516,7 @@ class BusRoute(Route):
         intervals and then handle how these buses transport people along the route
         """
 
-        trips_to_iniate = copy.deepcopy(self.trip_timing_data)
+        trips_to_iniate = self.trip_timing_data
         while True:
             stop_info = None
             trip_info = None
@@ -530,7 +534,7 @@ class BusRoute(Route):
                             name=f"B{self.transporters_spawned}_{self.name}",
                             trip=trip_info,
                             route=self,
-                            location_index=self.get_stop_with_name(stop_info[0]),
+                            location_index=self.get_stop_with_name(stop_info[0].name),
                             people=[],
                         )
                         self.transporters_spawned += 1
@@ -683,22 +687,25 @@ class Suburb:
                 route_tuple[1] if route_tuple[1] != None else route_tuple[0].stops[-1]
             )
             route = route_tuple[0]
+
             # Pick a station on that route (given its in the correct suburb)
-            station = None
-            while station not in self.station_distribution.keys():
-                stations_sub_array = route.stops[: route.stops.index(route_end)]
-                upper = len(stations_sub_array) - 1
-                if upper == 0:
-                    station_ind = 0
-                elif upper < 0:
-                    break
-                else:
-                    station_ind = randint(0, upper)
-                station = stations_sub_array[station_ind]
-            if (station == None) or (self.station_distribution[station] == 0):
-                continue
+            station = route.stops[0]
+
+            # while station not in self.station_distribution.keys():
+            #     stations_sub_array = route.stops[: route.stops.index(route_end)]
+            #     upper = len(stations_sub_array) - 1
+            #     if upper == 0:
+            #         station_ind = 0
+            #     elif upper < 0:
+            #         break
+            #     else:
+            #         station_ind = randint(0, upper)
+            #     station = stations_sub_array[station_ind]
+            # if (station == None) or (self.station_distribution[station] == 0):
+            #     continue
 
             num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
+
             if num_for_stop > num_people - people_distributed:
                 num_for_stop = num_people - people_distributed
 
@@ -741,7 +748,19 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
     stations, trips, routes, itineraries = get_data(
         env, user_data["env_start"], user_data["time_horizon"]
     )
+
     print(f"Models successfully created for {sim_id}.")
+
+    suburb = Suburb(
+        env=env,
+        name="Simple Suburb",
+        station_distribution={stations[0]: 100, stations[1]: 0},
+        population=200,
+        frequency=10,
+        max_distributes=0,
+        itineraries=[itineraries[0]],
+        env_start=user_data["env_start"],
+    )
 
     env.run(user_data["time_horizon"])
     print(f"Simulation {sim_id} successfully ran.")
@@ -750,9 +769,9 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
 
 
 def process_simulation_output(
-    stations: list[Station],
+    stations: dict[int, Station],
     trips: list[Trip],
-    routes: list[Route],
+    routes: dict[int, Route],
     itineraries: list[Itinerary],
 ) -> dict[dict]:
     """
@@ -795,5 +814,125 @@ def process_simulation_output(
     return output
 
 
-def get_data():
-    return
+def get_data(
+    env: Environment,
+    env_start: int,
+    time_horizon: int,
+    itineraries=[
+        [
+            (0, "0", "-1"),  # (route_id, start station id , end station id)
+            (
+                "walk",
+                (-27.47112772450842, 153.0079242049246),
+                (-27.464671708670693, 153.00855606809037),
+            ),
+        ]
+    ],
+) -> tuple[dict[int, Station], list[Trip], dict[int, Route], list[Itinerary]]:
+    """
+    This function accesses the data from the database and converts it into simulation
+    objects.
+    """
+
+    # Itineraries need to be generated elsewhere and converted here into
+    # Itinerary objects, for now just use placeholder which is a list of routes
+    # that the itinerary use
+
+    # Get all calendar objects (containing service info) that run on a Friday
+    calendars = CalendarM.objects.all().filter(service_id="0")
+
+    # Get all routes that are used in the itineraries
+    route_ids = []
+    for itinerary in itineraries:
+        for route in itinerary:
+            route_id, start, end = route
+            if route_id != "walk":
+                route_ids.append(route_id)
+
+    db_routes = RouteM.objects.all().filter(route_id__in=route_ids)
+
+    sim_routes = {}
+    sim_trips = []
+    sim_stations = {}
+
+    for route in db_routes:
+        # Get trip_ids that run on a Friday for this particular route
+        db_trips = TripM.objects.all().filter(service_id__in=calendars, route_id=route)
+
+        if not db_trips:
+            continue
+
+        route_stations = {}
+
+        route_trips = []
+        ## Create sim Trips ##
+        for trip in db_trips:
+            # Get Timetables for that trip
+            sim_timetables = []
+            db_timetables = (
+                TimetableM.objects.all().filter(trip_id=trip).order_by("sequence")
+            )
+
+            for timetable in db_timetables:
+                sim_timetables.append(
+                    (timetable.station, convert_date_to_int(timetable.arrival_time))
+                )
+
+                # Filter stations for this route and add to global list
+                timetable_station = StationM.objects.filter(
+                    station_id=timetable.station.station_id
+                ).first()
+
+                if timetable_station.station_id not in sim_stations.keys():
+                    new_station = Station(
+                        env,
+                        timetable_station.station_id,
+                        timetable_station.name,
+                        (timetable_station.lat, timetable_station.long),
+                        1,
+                        env_start,
+                    )
+                    sim_stations[timetable_station.station_id] = new_station
+                    if new_station.id not in route_stations.keys():
+                        route_stations[timetable_station.station_id] = new_station
+                else:
+                    if new_station.id not in route_stations.keys():
+                        route_stations[timetable_station.station_id] = sim_stations[
+                            timetable_station.station_id
+                        ]
+
+            new_trip = Trip(env, env_start, sim_timetables)
+
+            if new_trip not in sim_trips:
+                sim_trips.append(new_trip)
+            route_trips.append(new_trip)
+
+        new_route = BusRoute(
+            env,
+            env_start,
+            route.route_id,
+            route.name,
+            [route for route in route_stations.values()],
+            route_trips,
+        )
+
+        if route.route_id in sim_routes.keys():
+            print("***ERROR*** Duplicate route id")
+        else:
+            sim_routes[route.route_id] = new_route
+
+    # shapes = ShapeM.objects.all()
+
+    sim_itineraries = []
+    print(sim_routes)
+    sim_itineraries.append(
+        Itinerary(env, env_start, [(list(sim_routes.values())[0], None)])
+    )
+    ITINERARIES.append(sim_itineraries[0])
+
+    stations_out = [station for station in sim_stations.values()]
+    trips_out = sim_trips
+    routes_out = [route for route in sim_routes.values()]
+    itineraries_out = sim_itineraries
+
+    return stations_out, trips_out, routes_out, itineraries_out

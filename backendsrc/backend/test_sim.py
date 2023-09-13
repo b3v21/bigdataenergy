@@ -1,6 +1,25 @@
-from sim import Station, Trip, BusRoute, Walk, Itinerary, Suburb, ITINERARIES
+from sim import (
+    Station,
+    Trip,
+    BusRoute,
+    Walk,
+    Itinerary,
+    Suburb,
+    ITINERARIES,
+    run_simulation,
+)
 from simpy import Environment
-import time
+
+from db.models import (
+    Station as StationM,
+    Route as RouteM,
+    Timetable as TimetableM,
+    Trip as TripM,
+    Shape as ShapeM,
+    Calendar as CalendarM,
+)  # noqa: E402
+
+from datetime import time
 
 
 def simple_example(env_start: int) -> None:
@@ -314,4 +333,39 @@ def test_efficiency():
 
 
 if __name__ == "__main__":
-    simple_example(0)
+    # simple_example(0)
+    # run_simulation({'env_start':800, 'time_horizon': 120}, 1)
+
+    ShapeM.objects.all().filter(shape_id=0).delete()
+    # make shape
+    ShapeM.objects.get_or_create(
+        shape_id=0,
+        shape_pt_lat=0,
+        shape_pt_lon=0,
+        shape_pt_sequence=0,
+    )
+
+    # make trip
+    TripM.objects.get_or_create(
+        trip_id=1,
+        route_id=RouteM.objects.get(route_id=0),
+        shape_id=ShapeM.objects.get(shape_id=0),
+        service_id=CalendarM.objects.get(service_id=0),
+    )
+
+    # make timetable
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=1),
+        station=StationM.objects.get(station_id=0),
+        arrival_time=time(0, 10),
+        sequence=1,
+    )
+
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=1),
+        station=StationM.objects.get(station_id=-1),
+        arrival_time=time(0, 20),
+        sequence=2,
+    )
+
+    run_simulation({"env_start": 0, "time_horizon": 100}, 1)
