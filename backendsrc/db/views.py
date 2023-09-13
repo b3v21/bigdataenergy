@@ -8,7 +8,7 @@ from db.serializers import StationSerializer
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
-from backendsrc.backend.sim import run_simulation
+from backend.sim import run_simulation
 from logging import warning
 
 
