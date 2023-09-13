@@ -746,7 +746,11 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
     env = Environment()
 
     stations, trips, routes, itineraries = get_data(
-        env, user_data["env_start"], user_data["time_horizon"], user_data["itineraries"], user_data["service_ids"]
+        env,
+        user_data["env_start"],
+        user_data["time_horizon"],
+        user_data["itineraries"],
+        user_data["service_ids"],
     )
 
     print(f"Models successfully created for {sim_id}.")
@@ -856,7 +860,7 @@ def get_data(
 
         route_stations = {}
         route_trips = []
-        
+
         ## Create sim Trips ##
         for trip in db_trips:
             # Get Timetables for that trip
@@ -930,10 +934,4 @@ def get_data(
     routes_out = [route for route in sim_routes.values()]
     itineraries_out = sim_itineraries
 
-
     return stations_out, trips_out, routes_out, itineraries_out
-
-
-
-
-
