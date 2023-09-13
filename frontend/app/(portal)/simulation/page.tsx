@@ -10,9 +10,9 @@ import { stubbedSimulation } from './stubbed';
 import { Stop } from '@/@types/simulation';
 
 type HoverData = {
-	x: number | null;
-	y: number | null;
-	stop: Stop | null;
+	x: number;
+	y: number;
+	stop: Stop;
 };
 
 const HOVER_OFFSET = { x: 10, y: 10 };
@@ -20,11 +20,7 @@ const HOVER_OFFSET = { x: 10, y: 10 };
 const Simulation = () => {
 	const { stops } = stubbedSimulation;
 
-	const [hoverData, setHoverData] = useState<HoverData>({
-		x: null,
-		y: null,
-		stop: null
-	});
+	const [hoverData, setHoverData] = useState<HoverData | null>(null);
 
 	return (
 		<div className="flex flex-row gap-4">
@@ -59,9 +55,9 @@ const Simulation = () => {
 							bbox: { x0, y0 }
 						} = event.points[0] as any;
 
-						const stop =
-							stops.find((stop) => stop.lat === lat && stop.lon === lon) ??
-							null;
+						const stop = stops.find(
+							(stop) => stop.lat === lat && stop.lon === lon
+						)!;
 
 						setHoverData({
 							x: x0 + HOVER_OFFSET.x,
@@ -69,7 +65,10 @@ const Simulation = () => {
 							stop
 						});
 					}}
-					onUnhover={() => setHoverData({ x: null, y: null, stop: null })}
+					onUnhover={() => setHoverData(null)}
+					onClick={(event) => {
+						// todo: Focus route tap on sidebar and display more route info
+					}}
 				/>
 			</div>
 		</div>

@@ -3,7 +3,7 @@ import { PlotParams } from 'react-plotly.js';
 const layout: PlotParams['layout'] = {
 	dragmode: 'zoom',
 	mapbox: {
-		style: 'open-street-map',
+		style: 'dark',
 		center: { lat: -27.5, lon: 153 },
 		zoom: 12
 	},
