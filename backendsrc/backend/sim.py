@@ -176,6 +176,7 @@ class Station:
         for people in self.people:
             output += f"\n{str(people)}"
         return output
+        
 
     def board(self, num_people_to_board: int, route: Route) -> list[People]:
         """
@@ -518,13 +519,13 @@ class BusRoute(Route):
 
         trips_to_iniate = self.trip_timing_data
         while True:
-            stop_info = None
+            station_info = None
             trip_info = None
             trips_inited = []
             for trip in trips_to_iniate:
-                for stop in trip.timetable:
-                    if stop[1] == (self.env.now + self.env_start):
-                        stop_info = stop
+                for station, arrival_time in trip.timetable:
+                    if arrival_time == (self.env.now + self.env_start):
+                        station_info = (station, arrival_time)
                         trip_info = trip
                         # Now have a trip to start
                         new_bus = Bus(
@@ -534,15 +535,20 @@ class BusRoute(Route):
                             name=f"B{self.transporters_spawned}_{self.name}",
                             trip=trip_info,
                             route=self,
-                            location_index=self.get_stop_with_name(stop_info[0]),
+                            location_index=self.get_stop_with_name(station_info[0]),
                             people=[],
                         )
                         self.transporters_spawned += 1
                         self.add_bus(new_bus)
                         self.bus_time_log.append({})
-                        print(
-                            f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name} at stop {stop_info[0]}"
-                        )
+                        # if trip.timetable[0][0] == station:
+                        #     print(
+                        #         f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name} at station {station_info[0]}"
+                        #     )   
+                        # else:
+                        #     print(
+                        #         f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} already on route {self.name} at station {station_info[0]}"
+                        #     )
                         self.env.process(new_bus.bus_instance(self))
                         trips_inited.append(trip)
             for trip in trips_inited:

@@ -359,7 +359,7 @@ def test_sim_with_db_models():
         shape_pt_sequence=0,
     )
 
-    # make trip
+    # make trip 1
     TripM.objects.get_or_create(
         trip_id=1,
         route_id=RouteM.objects.get(route_id=0),
@@ -367,7 +367,7 @@ def test_sim_with_db_models():
         service_id=CalendarM.objects.get(service_id=0),
     )
 
-    # make timetable
+    # make timetable for trip 1
     TimetableM.objects.get_or_create(
         trip_id=TripM.objects.get(trip_id=1),
         station=StationM.objects.get(station_id=0),
@@ -375,6 +375,7 @@ def test_sim_with_db_models():
         sequence=1,
     )
 
+    # make timetable for trip 2
     TimetableM.objects.get_or_create(
         trip_id=TripM.objects.get(trip_id=1),
         station=StationM.objects.get(station_id=-1),
@@ -382,9 +383,33 @@ def test_sim_with_db_models():
         sequence=2,
     )
 
+    # make trip 2
+    TripM.objects.get_or_create(
+        trip_id=2,
+        route_id=RouteM.objects.get(route_id=0),
+        shape_id=ShapeM.objects.get(shape_id=0),
+        service_id=CalendarM.objects.get(service_id=0),
+    )
+
+    # make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=2),
+        station=StationM.objects.get(station_id=0),
+        arrival_time=time(0, 0),
+        sequence=1,
+    )
+
+    # make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=2),
+        station=StationM.objects.get(station_id=-1),
+        arrival_time=time(0, 10),
+        sequence=2,
+    )
+
     run_simulation(
         {
-            "env_start": 0,
+            "env_start": 10,
             "time_horizon": 30,
             "itineraries": [[("0", "0", "-1")]],
             "service_ids": ["0"],
