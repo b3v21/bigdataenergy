@@ -332,11 +332,46 @@ def test_efficiency():
     print("--- %s seconds ---" % (time.time() - start_time), "\n")
 
 
-if __name__ == "__main__":
-    # simple_example(0)
-    # run_simulation({'env_start':800, 'time_horizon': 120}, 1)
+def test_sim_with_db_models():
+    # make calender
+    CalendarM.objects.get_or_create(
+        service_id="0",
+        monday=False,
+        tuesday=False,
+        wednesday=False,
+        thursday=False,
+        friday=True,
+        saturday=False,
+        sunday=False,
+    )
 
-    ShapeM.objects.all().filter(shape_id=0).delete()
+    # make stations
+    StationM.objects.get_or_create(
+        station_id="0",
+        station_code="0",
+        name="first stop",
+        lat=0,
+        long=0,
+        location_type=3,
+    )
+
+    StationM.objects.get_or_create(
+        station_id="-1",
+        station_code="-1",
+        name="last stop",
+        lat=2,
+        long=2,
+        location_type=3,
+    )
+
+    # make route
+    RouteM.objects.get_or_create(
+        route_id="0",
+        name="test",
+        transport_type=3,
+        capacity=50
+    )
+
     # make shape
     ShapeM.objects.get_or_create(
         shape_id=0,
@@ -369,3 +404,7 @@ if __name__ == "__main__":
     )
 
     run_simulation({"env_start": 0, "time_horizon": 100}, 1)
+
+
+if __name__ == "__main__":
+    test_sim_with_db_models()
