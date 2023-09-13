@@ -20,13 +20,13 @@ def sim_request(request: Request, sim_id: int) -> Response:
     the backend -> frontend, and also uploading to the database.
     """
 
-    print(f"Simulation {sim_id} request recieved.")
+    print(f"Simulation #{sim_id} request recieved.")
     if not request.data:
-        warning(f"Simulation {sim_id} has not recieved any user data.")
+        warning(f"Simulation #{sim_id} has not recieved any user data.")
 
-    print(f"Running simulation {sim_id}.")
+    print(f"Running simulation #{sim_id}.")
     simulation_output = run_simulation(request.data, sim_id)
-    print(f"Simulation {sim_id} output processed.")
+    print(f"Simulation #{sim_id} output processed.")
 
     return Response(data=simulation_output, status=status.HTTP_201_CREATED)
 
