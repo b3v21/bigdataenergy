@@ -29,13 +29,14 @@ START_TIME = 840
 TIME_HORIZON = 15
 PERSON_BOARD_TIME = 0.1
 MINUTES_IN_DAY = 1440
+MINUTES_IN_HOUR = 60
 
 # THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
 ITINERARIES = []
 
 
 def convert_date_to_int(time: time) -> int:
-    return time.hour * 60 + time.minute
+    return time.hour * MINUTES_IN_HOUR + time.minute
 
 
 class Itinerary:
@@ -65,13 +66,6 @@ class Itinerary:
     def last_leg(self, people: People) -> bool:
         return people.current_route_in_itin_index == len(self.routes)
 
-    def duplicate(self, suburb=False):
-        new = Itinerary(self.env, self.id, self.routes)
-        if not suburb:
-            new.index = self.index
-        new.id += 1
-        return new
-
 
 class People:
     """
@@ -95,9 +89,7 @@ class People:
         self.start_location = start_location
         self.end_time = None
         self.itinerary_index = itinerary_index
-        self.current_route_in_itin_index = (
-            current_route_in_itin_index  # route index within an itinerary
-        )
+        self.current_route_in_itin_index = current_route_in_itin_index
         self.people_log = {}
 
     def log(self, where: tuple[str, int]) -> None:
@@ -105,38 +97,16 @@ class People:
 
     def __str__(self) -> str:
         journey_time = (
-            self.get_end_time() - self.get_start_time()
-            if self.get_end_time() != None
-            else "N/A"
+            self.end_time - self.start_time if self.end_time != None else "N/A"
         )
 
-        return f"Count: {self.get_num_people()}, Start Time: {self.get_start_time()}, End Time: {self.get_end_time()}, Journey Time: {journey_time}, Start Loc: {self.start_location.name}"
+        return f"Count: {self.get_num_people()}, Start Time: {self.start_time}, End Time: {self.end_time}, Journey Time: {journey_time}, Start Loc: {self.start_location.name}"
 
     def get_num_people(self) -> int:
         return self.num_people
 
-    def add_start_loc(self, location: Station) -> None:
-        self.start_location = location
-
     def change_num_people(self, change: int) -> None:
         self.num_people += change
-
-    def get_start_time(self) -> float:
-        return self.start_time
-
-    def set_end_time(self, time: float) -> None:
-        self.end_time = time
-
-    def get_end_time(self) -> float:
-        return self.end_time
-
-    def get_next_stop_current_route(self, current_stop: Station) -> list[Station]:
-        route_stops = (
-            ITINERARIES[self.itinerary_index]
-            .routes[self.current_route_in_itin_index]
-            .stops
-        )
-        return route_stops[(route_stops.index(current_stop) + 1) % len(route_stops)]
 
     def next_route(self) -> None:
         self.current_route_in_itin_index += 1
@@ -832,7 +802,7 @@ def process_simulation_output(
             rd = itin_d["Routes"][route.id]
             for stop in route.stops:
                 rd.add(stop.name)
-                
+
     return output
 
 
@@ -846,11 +816,11 @@ def get_data(
     """
     This function accesses the data from the database and converts it into simulation
     objects.
-    """
 
-    # Itineraries need to be generated elsewhere and converted here into
-    # Itinerary objects, for now just use placeholder which is a list of routes
-    # that the itinerary use
+    TODO: Itineraries need to be generated elsewhere and converted here into
+    Itinerary objects, for now just use placeholder which is a list of routes
+    that the itinerary use
+    """
 
     # Get all calendar objects (containing service info) that run on a Friday
     calendars = CalendarM.objects.all().filter(service_id__in=service_ids)
