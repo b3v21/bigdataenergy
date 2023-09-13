@@ -340,7 +340,7 @@ def test_sim_with_db_models():
     StationM.objects.get_or_create(
         station_id="-1",
         station_code="-1",
-        name="last stop",
+        name="middle stop",
         lat=2,
         long=2,
         location_type=3,
@@ -349,7 +349,7 @@ def test_sim_with_db_models():
     StationM.objects.get_or_create(
         station_id="-2",
         station_code="-2",
-        name="last last stop",
+        name="last stop",
         lat=4,
         long=4,
         location_type=3,
