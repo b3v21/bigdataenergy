@@ -167,7 +167,7 @@ class Station:
         self.people = []
         self.people_over_time = {}
 
-    def log_cur_people(self, num_people=None) -> None:
+    def log_cur_people(self) -> None:
         self.people_over_time[self.env.now + self.env_start] = self.num_people()
 
     def __str__(self) -> str:
@@ -826,7 +826,7 @@ def process_simulation_output(
             rd = itin_d["Routes"][route.id]
             for stop in route.stops:
                 rd.add(stop.name)
-                
+
     return output
 
 
