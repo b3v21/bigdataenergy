@@ -36,7 +36,7 @@ class Itinerary:
     Object to store multiple types of travel at a time.
     """
 
-    def __init__(self, env: Environment, id: int, routes: list[(Route, Station)]):
+    def __init__(self, env: Environment, id: int, routes: list[tuple[Route, Station]]):
         self.env = env
         self.routes = routes
         self.id = id
