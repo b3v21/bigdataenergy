@@ -687,10 +687,10 @@ class Suburb:
                 set(self.station_distribution.keys()) & set(route.stops)
             )
 
-            if not possible_stations:
-                continue
-
+            if not possible_stations: continue
             station = choice(possible_stations)
+            if not self.station_distribution[station]: continue
+
             num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
 
             if num_for_stop > num_people - people_distributed:
