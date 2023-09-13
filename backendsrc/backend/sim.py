@@ -1,7 +1,7 @@
 from __future__ import annotations
 from simpy import Environment, Resource
 from abc import ABC, abstractmethod
-from random import randint, randrange
+from random import randint, randrange, choice
 from pathlib import Path
 from math import ceil, floor
 import django
@@ -150,9 +150,9 @@ class Station:
     def __init__(
         self,
         env: Environment,
-        id: int,
+        id: str,
         name: str,
-        pos: tuple[int, int],
+        pos: tuple[float, float],
         bays: int,
         env_start: int,
     ) -> None:
@@ -667,43 +667,30 @@ class Suburb:
 
     def distribute_people(self, num_people: int) -> int:
         """
-        To be redone.
-        Functions the same as the old one just does it randomly and is hopefully slightly
-        more readble. The way we need to generate itins needs to be re-thought as this
-        isnt great.
+        TODO: This will be replaced with a standard form of distribution + the
+        possibility for user inputs via the frontend.
+
+        Currently just randomly selects itinerary -> randomly selects route on itinerary
+        -> randomly selects station on route and drops a percentage of num_people at that
+        station based off the self.station_distribution dict.
         """
         people_distributed = 0
         while people_distributed != num_people:
-            # Keep distrubuting
-
             # Pick a itin to distribute to
-            itin_ind = randint(0, len(self.itineraries) - 1)
-            itin = self.itineraries[itin_ind]
+            itin = choice(self.itineraries)
 
             # Pick a route from it to distribute to
-            route_ind = randint(0, len(itin.routes) - 1)
-            route_tuple = itin.routes[route_ind]
-            route_end = (
-                route_tuple[1] if route_tuple[1] != None else route_tuple[0].stops[-1]
-            )
+            route_tuple = choice(itin.routes)
             route = route_tuple[0]
 
-            # Pick a station on that route (given its in the correct suburb)
-            station = route.stops[0]
+            possible_stations = list(
+                set(self.station_distribution.keys()) & set(route.stops)
+            )
 
-            # while station not in self.station_distribution.keys():
-            #     stations_sub_array = route.stops[: route.stops.index(route_end)]
-            #     upper = len(stations_sub_array) - 1
-            #     if upper == 0:
-            #         station_ind = 0
-            #     elif upper < 0:
-            #         break
-            #     else:
-            #         station_ind = randint(0, upper)
-            #     station = stations_sub_array[station_ind]
-            # if (station == None) or (self.station_distribution[station] == 0):
-            #     continue
+            if not possible_stations:
+                continue
 
+            station = choice(possible_stations)
             num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
 
             if num_for_stop > num_people - people_distributed:
@@ -714,8 +701,8 @@ class Suburb:
                 count=num_for_stop,
                 start_time=self.env.now,
                 start_location=station,
-                itinerary_index=itin_ind,
-                current_route_in_itin_index=route_ind,
+                itinerary_index=self.itineraries.index(itin),
+                current_route_in_itin_index=itin.routes.index(route_tuple),
                 env_start=self.env_start,
             )
 
@@ -753,7 +740,7 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
         user_data["service_ids"],
     )
 
-    print(f"Models successfully created for {sim_id}.")
+    print(f"Models successfully created for simulation #{sim_id}.")
 
     suburb = Suburb(
         env=env,
@@ -767,7 +754,7 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
     )
 
     env.run(user_data["time_horizon"])
-    print(f"Simulation {sim_id} successfully ran.")
+    print(f"Simulation #{sim_id} successfully ran.")
 
     return process_simulation_output(stations, trips, routes, itineraries)
 
@@ -920,10 +907,7 @@ def get_data(
         else:
             sim_routes[route.route_id] = new_route
 
-    # shapes = ShapeM.objects.all()
-
     sim_itineraries = []
-    print(sim_routes)
     sim_itineraries.append(
         Itinerary(env, env_start, [(list(sim_routes.values())[0], None)])
     )
