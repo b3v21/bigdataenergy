@@ -1,6 +1,25 @@
-from sim import Station, Trip, BusRoute, Walk, Itinerary, Suburb, ITINERARIES
+from sim import (
+    Station,
+    Trip,
+    BusRoute,
+    Walk,
+    Itinerary,
+    Suburb,
+    ITINERARIES,
+    run_simulation,
+)
 from simpy import Environment
-import time
+
+from db.models import (
+    Station as StationM,
+    Route as RouteM,
+    Timetable as TimetableM,
+    Trip as TripM,
+    Shape as ShapeM,
+    Calendar as CalendarM,
+)  # noqa: E402
+
+from datetime import time
 
 
 def simple_example(env_start: int) -> None:
@@ -31,21 +50,13 @@ def simple_example(env_start: int) -> None:
         env_start=env_start,
     )
 
-    timetable_stops = ["First Stop", "Last Stop"]
-
     trip = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 0), ("Last Stop", 30)],
     )
     trip_2 = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 15), ("Last Stop", 45)],
     )
     trip_3 = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 30), ("Last Stop", 60)],
     )
 
@@ -159,32 +170,22 @@ def complex_example(env_start: int) -> None:
     )
 
     X_trip = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 0), ("Last Stop", 30)],
     )
 
     X_trip_2 = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 30), ("Last Stop", 60)],
     )
 
     Y_trip = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("First Stop", 15), ("Second Stop", 30), ("Last Stop", 45)],
     )
 
     Z_trip = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[("Second Stop", 0), ("Last Stop", 15), ("Stadium", 20)],
     )
 
     Z_trip_2 = Trip(
-        start_time=0,
-        end_time=50,
         timetable=[
             ("Second Stop", 45),
             ("Last Stop", 60),
@@ -313,5 +314,109 @@ def test_efficiency():
     print("--- %s seconds ---" % (time.time() - start_time), "\n")
 
 
+def test_sim_with_db_models():
+    # make calender
+    CalendarM.objects.get_or_create(
+        service_id="0",
+        monday=False,
+        tuesday=False,
+        wednesday=False,
+        thursday=False,
+        friday=True,
+        saturday=False,
+        sunday=False,
+    )
+
+    # make stations
+    StationM.objects.get_or_create(
+        station_id="0",
+        station_code="0",
+        name="first stop",
+        lat=0,
+        long=0,
+        location_type=3,
+    )
+
+    StationM.objects.get_or_create(
+        station_id="-1",
+        station_code="-1",
+        name="last stop",
+        lat=2,
+        long=2,
+        location_type=3,
+    )
+
+    # make route
+    RouteM.objects.get_or_create(
+        route_id="0", name="test", transport_type=3, capacity=50
+    )
+
+    # make shape
+    ShapeM.objects.get_or_create(
+        shape_id=0,
+        shape_pt_lat=0,
+        shape_pt_lon=0,
+        shape_pt_sequence=0,
+    )
+
+    # make trip 1
+    TripM.objects.get_or_create(
+        trip_id=1,
+        route_id=RouteM.objects.get(route_id=0),
+        shape_id=ShapeM.objects.get(shape_id=0),
+        service_id=CalendarM.objects.get(service_id=0),
+    )
+
+    # make timetable for trip 1
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=1),
+        station=StationM.objects.get(station_id=0),
+        arrival_time=time(0, 10),
+        sequence=1,
+    )
+
+    # make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=1),
+        station=StationM.objects.get(station_id=-1),
+        arrival_time=time(0, 20),
+        sequence=2,
+    )
+
+    # make trip 2
+    TripM.objects.get_or_create(
+        trip_id=2,
+        route_id=RouteM.objects.get(route_id=0),
+        shape_id=ShapeM.objects.get(shape_id=0),
+        service_id=CalendarM.objects.get(service_id=0),
+    )
+
+    # make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=2),
+        station=StationM.objects.get(station_id=0),
+        arrival_time=time(0, 0),
+        sequence=1,
+    )
+
+    # make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=2),
+        station=StationM.objects.get(station_id=-1),
+        arrival_time=time(0, 10),
+        sequence=2,
+    )
+
+    run_simulation(
+        {
+            "env_start": 10,
+            "time_horizon": 30,
+            "itineraries": [[("0", "0", "-1")]],
+            "service_ids": ["0"],
+        },
+        1,
+    )
+
+
 if __name__ == "__main__":
-    simple_example(0)
+    test_sim_with_db_models()

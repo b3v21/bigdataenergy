@@ -18,15 +18,23 @@ def sim_request(request: Request, sim_id: int) -> Response:
     This is the request responsible for sending user data from the
     frontend -> sim, then running the sim, then sending the sim data from
     the backend -> frontend, and also uploading to the database.
+
+    request.data is currently expected to be a dict containing the following fields:
+    {
+        "env_start": int,
+        "time_horizon": int,
+        "itineraries": [[(str, str, str)]],
+        "service_ids": [str],
+    }
     """
 
-    print(f"Simulation {sim_id} request recieved.")
+    print(f"Simulation #{sim_id} request recieved.")
     if not request.data:
-        warning(f"Simulation {sim_id} has not recieved any user data.")
+        warning(f"Simulation #{sim_id} has not recieved any user data.")
 
-    print(f"Running simulation {sim_id}.")
+    print(f"Running simulation #{sim_id}.")
     simulation_output = run_simulation(request.data, sim_id)
-    print(f"Simulation {sim_id} output processed.")
+    print(f"Simulation #{sim_id} output processed.")
 
     return Response(data=simulation_output, status=status.HTTP_201_CREATED)
 
