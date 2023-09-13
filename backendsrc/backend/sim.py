@@ -167,11 +167,8 @@ class Station:
         self.people = []
         self.people_over_time = {}
 
-    def log_cur_people(self, num_people=None) -> None:
-        if num_people:
-            self.people_over_time[self.env.now + self.env_start] = num_people
-        else:
-            self.people_over_time[self.env.now + self.env_start] = self.num_people()
+    def log_cur_people(self) -> None:
+        self.people_over_time[self.env.now + self.env_start] = self.num_people()
 
     def __str__(self) -> str:
         output = f"{self.name}: Total People = {self.num_people()}, Total Groups = {len(self.people)}"
@@ -215,18 +212,12 @@ class Station:
 
         for p in people_to_get:
             self.people.remove(p)
-
-        self.log_cur_people(self.num_people())
         return people_to_get
 
     def put(self, passengers: list[People], from_suburb=False) -> None:
-        count = 0
-        count_pre_add = (
-            self.num_people()
-        )  # Doing it this way as some transport doesnt log them in the station
         for group in passengers:
             group.log((self.name, self.id))
-            count += group.get_num_people()
+
             if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(
                 group
             ):
@@ -241,13 +232,14 @@ class Station:
             elif ITINERARIES[group.itinerary_index].get_current_type(group) == "Walk":
                 # Queue people all up to walk
                 time_to_wait = 0.5
+                self.people.append(group)
                 self.env.process(
                     ITINERARIES[group.itinerary_index]
                     .get_current_route(group)
                     .walk_instance(group, time_to_wait)
                 )
 
-        self.log_cur_people(count_pre_add + count)
+        self.log_cur_people()
 
     def num_people(self) -> int:
         return sum([people.get_num_people() for people in self.people])
@@ -305,6 +297,7 @@ class Transporter(ABC):
         self.people += people_to_ride
 
         yield self.env.timeout(load_time)
+        station.log_cur_people()
         for people in people_to_ride:
             people.log((self.name, self.id))
         print(
@@ -596,6 +589,7 @@ class Walk(Route):
         Walking process
         """
         yield self.env.timeout(time_to_leave)
+        self.first_stop.people.remove(people)
         people.log((self.stops, self.id))
         self.walk_time_log[people] = [
             self.env.now + self.env_start,
@@ -832,7 +826,7 @@ def process_simulation_output(
             rd = itin_d["Routes"][route.id]
             for stop in route.stops:
                 rd.add(stop.name)
-                
+
     return output
 
 
