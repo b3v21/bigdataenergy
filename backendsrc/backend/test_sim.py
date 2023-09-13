@@ -333,6 +333,7 @@ def test_efficiency():
 
 
 def test_sim_with_db_models():
+
     # make calender
     CalendarM.objects.get_or_create(
         service_id="0",
@@ -402,9 +403,8 @@ def test_sim_with_db_models():
         arrival_time=time(0, 20),
         sequence=2,
     )
-
-    run_simulation({"env_start": 0, "time_horizon": 100}, 1)
-
+    
+    run_simulation({"env_start": 0, "time_horizon": 30,"itineraries":[[("0","0","-1")]],"service_ids":["0"]}, 1)
 
 if __name__ == "__main__":
     test_sim_with_db_models()

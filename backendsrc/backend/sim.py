@@ -534,14 +534,14 @@ class BusRoute(Route):
                             name=f"B{self.transporters_spawned}_{self.name}",
                             trip=trip_info,
                             route=self,
-                            location_index=self.get_stop_with_name(stop_info[0].name),
+                            location_index=self.get_stop_with_name(stop_info[0]),
                             people=[],
                         )
                         self.transporters_spawned += 1
                         self.add_bus(new_bus)
                         self.bus_time_log.append({})
                         print(
-                            f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name}"
+                            f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name} at stop {stop_info[0]}"
                         )
                         self.env.process(new_bus.bus_instance(self))
                         trips_inited.append(trip)
@@ -746,7 +746,7 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
     env = Environment()
 
     stations, trips, routes, itineraries = get_data(
-        env, user_data["env_start"], user_data["time_horizon"]
+        env, user_data["env_start"], user_data["time_horizon"], user_data["itineraries"], user_data["service_ids"]
     )
 
     print(f"Models successfully created for {sim_id}.")
@@ -818,16 +818,8 @@ def get_data(
     env: Environment,
     env_start: int,
     time_horizon: int,
-    itineraries=[
-        [
-            (0, "0", "-1"),  # (route_id, start station id , end station id)
-            (
-                "walk",
-                (-27.47112772450842, 153.0079242049246),
-                (-27.464671708670693, 153.00855606809037),
-            ),
-        ]
-    ],
+    itineraries: list,
+    service_ids: list[str],
 ) -> tuple[dict[int, Station], list[Trip], dict[int, Route], list[Itinerary]]:
     """
     This function accesses the data from the database and converts it into simulation
@@ -839,7 +831,7 @@ def get_data(
     # that the itinerary use
 
     # Get all calendar objects (containing service info) that run on a Friday
-    calendars = CalendarM.objects.all().filter(service_id="0")
+    calendars = CalendarM.objects.all().filter(service_id__in=service_ids)
 
     # Get all routes that are used in the itineraries
     route_ids = []
@@ -863,8 +855,8 @@ def get_data(
             continue
 
         route_stations = {}
-
         route_trips = []
+        
         ## Create sim Trips ##
         for trip in db_trips:
             # Get Timetables for that trip
@@ -875,7 +867,10 @@ def get_data(
 
             for timetable in db_timetables:
                 sim_timetables.append(
-                    (timetable.station, convert_date_to_int(timetable.arrival_time))
+                    (
+                        timetable.station.name,
+                        convert_date_to_int(timetable.arrival_time),
+                    )
                 )
 
                 # Filter stations for this route and add to global list
@@ -935,4 +930,10 @@ def get_data(
     routes_out = [route for route in sim_routes.values()]
     itineraries_out = sim_itineraries
 
+
     return stations_out, trips_out, routes_out, itineraries_out
+
+
+
+
+
