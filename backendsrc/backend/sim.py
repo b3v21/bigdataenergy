@@ -136,6 +136,7 @@ class Station:
         self.bays = Resource(env, capacity=bays)
         self.people = []
         self.people_over_time = {}
+        self.log_cur_people()
 
     def log_cur_people(self) -> None:
         self.people_over_time[self.env.now + self.env_start] = self.num_people()
@@ -345,8 +346,6 @@ class Bus(Transporter):
             env, env_start, id, name, trip, route, location_index, people, capacity
         )
 
-        self.bus_pop_log = {}
-
     def get_type(self) -> str:
         return "Bus"
 
@@ -354,7 +353,10 @@ class Bus(Transporter):
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
 
     def bus_instance(self, bus_route: BusRoute) -> None:
-        bus_route.bus_pop_log[self.id] = {}
+        bus_route.bus_passenger_changes[self.id] = {}
+        bus_route.bus_passenger_changes[self.id][
+            self.env.now + self.env_start
+        ] = self.passenger_count()
         while True:
             with bus_route.get_current_stop(self).bays.request() as req:
                 yield req
@@ -372,7 +374,7 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_pop_log[self.id][
+                    bus_route.bus_passenger_changes[self.id][
                         self.env.now + self.env_start
                     ] = self.passenger_count()
 
@@ -380,7 +382,7 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_pop_log[self.id][
+                    bus_route.bus_passenger_changes[self.id][
                         self.env.now + self.env_start
                     ] = self.passenger_count()
                     # Despawn
@@ -473,7 +475,7 @@ class BusRoute(Route):
         self.running = self.env.process(self.initiate_route())
         self.buses: list[Bus] = []
         self.bus_time_log = []
-        self.bus_pop_log = {}  # {id : bus_pop_log}
+        self.bus_passenger_changes = {}
 
     def initiate_route(self) -> None:
         """
@@ -762,7 +764,7 @@ def process_simulation_output(
         rd["method"] = route.get_type()
         if route.get_type() == "BusRoute":
             rd["Timeout"] = route.bus_time_log
-            rd["Popout"] = route.bus_pop_log
+            rd["PassengerChangesOverTime"] = route.bus_passenger_changes
         elif route.get_type() == "Walk":
             rd["Walkout"] = route.walk_time_log
 
@@ -770,7 +772,7 @@ def process_simulation_output(
         for station in route.stops:
             rd["stations"][station.id] = {}
             sd = rd["stations"][station.id]
-            sd["station_name"] = station.name
+            sd["stationName"] = station.name
             sd["pos"] = {
                 "lat": station.pos[0],
                 "long": station.pos[1],
@@ -779,12 +781,12 @@ def process_simulation_output(
     for station in stations:
         output["Stations"][station.id] = {}
         sd = output["Stations"][station.id]
-        sd["station_name"] = station.name
+        sd["stationName"] = station.name
         sd["pos"] = {
             "lat": station.pos[0],
             "long": station.pos[1],
         }
-        sd["station_out"] = station.people_over_time
+        sd["PeopleChangesOverTime"] = station.people_over_time
 
     for itinerary in itineraries:
         output["Itineraries"][itinerary.id] = {}
