@@ -883,7 +883,7 @@ def get_data(
                             timetable_station.station_id
                         ]
 
-            new_trip = Trip(env, env_start, sim_timetables)
+            new_trip = Trip(sim_timetables)
 
             if new_trip not in sim_trips:
                 sim_trips.append(new_trip)
