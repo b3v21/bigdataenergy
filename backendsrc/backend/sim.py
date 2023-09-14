@@ -318,6 +318,7 @@ class Transporter(ABC):
             gets_off_at = ITINERARIES[group.itinerary_index].get_current(group)[1]
             if gets_off_at == station:
                 people.append(group)
+        return people
 
     def deload_passengers(self, station: Station) -> None:
         # Currently all passengers get off...
@@ -840,7 +841,6 @@ def process_simulation_output(
                 rd.add(stop.name)
                 
     return output
-
 
 def get_data(
     env: Environment,
