@@ -112,7 +112,7 @@ def simple_example(env_start: int) -> None:
     bus_route_pop_out = {}
     for route in bus_routes:
         bus_route_time_out[route.id] = route.bus_time_log
-        bus_route_pop_out[route.id] = route.bus_pop_log
+        bus_route_pop_out[route.id] = route.bus_passenger_changes
 
     walk_routes = [walk_to_stadium]
     walk_route_out = {}
@@ -271,7 +271,7 @@ def complex_example(env_start: int) -> None:
     bus_route_pop_out = {}
     for route in bus_routes:
         bus_route_time_out[route.id] = route.bus_time_log
-        bus_route_pop_out[route.id] = route.bus_pop_log
+        bus_route_pop_out[route.id] = route.bus_passenger_changes
 
     walk_routes = [walk_to_stadium]
     walk_route_out = {}
@@ -448,5 +448,5 @@ def test_sim_with_db_models():
 
 
 if __name__ == "__main__":
-    #test_sim_with_db_models()
-    test_efficiency()
+    test_sim_with_db_models()
+    # test_efficiency()
