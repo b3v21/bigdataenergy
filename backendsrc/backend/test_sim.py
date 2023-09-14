@@ -193,24 +193,23 @@ def complex_example(env_start: int) -> None:
         ],  # How do we handle route wrap over, or is this covered by the datetime
     )
 
+    bus_route_X = BusRoute(
+        env=env,
+        env_start=env_start,
+        id=0,
+        name="X",
+        stops=[first_stop, last_stop],
+        trip_timing_data=[X_trip, X_trip_2],
+    )
 
-    # bus_route_X = BusRoute(
-    #     env=env,
-    #     env_start=env_start,
-    #     id=0,
-    #     name="X",
-    #     stops=[first_stop, last_stop],
-    #     trip_timing_data=[X_trip, X_trip_2],
-    # )
-
-    # bus_route_Y = BusRoute(
-    #     env=env,
-    #     env_start=env_start,
-    #     id=1,
-    #     name="Y",
-    #     stops=[first_stop, second_stop, last_stop],
-    #     trip_timing_data=[Y_trip],
-    # )
+    bus_route_Y = BusRoute(
+        env=env,
+        env_start=env_start,
+        id=1,
+        name="Y",
+        stops=[first_stop, second_stop, last_stop],
+        trip_timing_data=[Y_trip],
+    )
 
     bus_route_Z = BusRoute(
         env=env,
@@ -228,20 +227,20 @@ def complex_example(env_start: int) -> None:
         stops=[last_stop, stadium],
     )
 
-    # itinerary1 = Itinerary(
-    #     env=env, id=1, routes=[(bus_route_X, None), (walk_to_stadium, None)]
-    # )
-    # itinerary2 = Itinerary(
-    #     env=env, id=2, routes=[(bus_route_Y, None), (walk_to_stadium, None)]
-    # )
+    itinerary1 = Itinerary(
+        env=env, id=1, routes=[(bus_route_X, None), (walk_to_stadium, None)]
+    )
+    itinerary2 = Itinerary(
+        env=env, id=2, routes=[(bus_route_Y, None), (walk_to_stadium, None)]
+    )
     itinerary3 = Itinerary(
         env=env, id=3, routes=[(bus_route_Z, last_stop), (walk_to_stadium, None)]
     )
-    # itinerary4 = Itinerary(env=env, id=4, routes=[(bus_route_Z, None)])
-    # ITINERARIES.append(itinerary1)
-    # ITINERARIES.append(itinerary2)
+    itinerary4 = Itinerary(env=env, id=4, routes=[(bus_route_Z, None)])
+    ITINERARIES.append(itinerary1)
+    ITINERARIES.append(itinerary2)
     ITINERARIES.append(itinerary3)
-    # ITINERARIES.append(itinerary4)
+    ITINERARIES.append(itinerary4)
 
     Suburb(
         env=env,
@@ -250,7 +249,7 @@ def complex_example(env_start: int) -> None:
         population=200,
         frequency=10,
         max_distributes=3,
-        itineraries=[itinerary3],
+        itineraries=[itinerary1, itinerary2, itinerary3, itinerary4],
         env_start=env_start,
     )
 
@@ -266,7 +265,7 @@ def complex_example(env_start: int) -> None:
     for stop in stops:
         station_out[stop.id] = stop.people_over_time
 
-    bus_routes = [bus_route_Z]
+    bus_routes = [bus_route_X, bus_route_Y, bus_route_Z]
     bus_route_time_out = {}
     bus_route_pop_out = {}
     for route in bus_routes:
@@ -278,39 +277,41 @@ def complex_example(env_start: int) -> None:
     for route in walk_routes:
         walk_route_out[route.id] = route.walk_time_log
 
-    # print()
-    # print(station_out)
-    # print()
-    # print(bus_route_time_out)
-    # print(bus_route_pop_out)
-    # print()
-    # print(walk_route_out)
+    print()
+    print(station_out)
+    print()
+    print(bus_route_time_out)
+    print(bus_route_pop_out)
+    print()
+    print(walk_route_out)
 
-    # print()
+    print()
 
-    # for stop in stops:
-    #     print(f"{stop.id}: {stop.name}")
-    #     for people in stop.people:
-    #         if stop.name == "Stadium":
-    #             print(people.get_num_people(), people.people_log)
-    #         else:
-    #             print(
-    #                 people.get_num_people(),
-    #                 people.people_log,
-    #                 ITINERARIES[people.itinerary_index].get_current_route(people).name,
-    #             )
-    #             print(people)
-    #             print(people.current_route_in_itin_index)
+    for stop in stops:
+        print(f"{stop.id}: {stop.name}")
+        for people in stop.people:
+            if stop.name == "Stadium":
+                print(people.get_num_people(), people.people_log)
+            else:
+                print(
+                    people.get_num_people(),
+                    people.people_log,
+                    ITINERARIES[people.itinerary_index].get_current_route(people).name,
+                )
+                print(people)
+                print(people.current_route_in_itin_index)
 
-    #     print()
+        print()
 
 
 def test_efficiency():
     print()
+    start_time = time.time()
     i = 0
-    while i < 1:
+    while i < 100:
         complex_example(0)
         i += 1
+    print("--- %s seconds ---" % (time.time() - start_time), "\n")
 
 
 def test_sim_with_db_models():
@@ -339,18 +340,9 @@ def test_sim_with_db_models():
     StationM.objects.get_or_create(
         station_id="-1",
         station_code="-1",
-        name="middle stop",
+        name="last stop",
         lat=2,
         long=2,
-        location_type=3,
-    )
-    
-    StationM.objects.get_or_create(
-        station_id="-2",
-        station_code="-2",
-        name="last stop",
-        lat=4,
-        long=4,
         location_type=3,
     )
 
@@ -383,22 +375,13 @@ def test_sim_with_db_models():
         sequence=1,
     )
 
-    # make timetable for trip 1
+    # make timetable for trip 2
     TimetableM.objects.get_or_create(
         trip_id=TripM.objects.get(trip_id=1),
         station=StationM.objects.get(station_id=-1),
         arrival_time=time(0, 20),
         sequence=2,
     )
-    
-    # make timetable for trip 1
-    TimetableM.objects.get_or_create(
-        trip_id=TripM.objects.get(trip_id=1),
-        station=StationM.objects.get(station_id=-2),
-        arrival_time=time(0, 30),
-        sequence=3,
-    )
-    
 
     # make trip 2
     TripM.objects.get_or_create(
@@ -423,20 +406,12 @@ def test_sim_with_db_models():
         arrival_time=time(0, 10),
         sequence=2,
     )
-    
-# make timetable for trip 2
-    TimetableM.objects.get_or_create(
-        trip_id=TripM.objects.get(trip_id=2),
-        station=StationM.objects.get(station_id=-2),
-        arrival_time=time(0, 20),
-        sequence=3,
-    )
 
     run_simulation(
         {
             "env_start": 10,
             "time_horizon": 30,
-            "itineraries": {0:[{'route_id':"0", 'start':"0", 'end':"-1"}]},
+            "itineraries": [[("0", "0", "-1")]],
             "service_ids": ["0"],
         },
         1,
@@ -445,4 +420,3 @@ def test_sim_with_db_models():
 
 if __name__ == "__main__":
     test_sim_with_db_models()
-    # test_efficiency()
