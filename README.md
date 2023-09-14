@@ -17,7 +17,7 @@ Our goal is to build a website with an interactive map and other visualisations 
    <code>pip install djangorestframework</code>
 3. Go to the Big Data Energy Discord and grab the `db.sqlite3.zip` file, unzip it and put it in the `backendsrc` folder
 4. enter backendsrc directory and run <code>python manage.py migrate</code>
-5. run python manage.py runserver
+5. run <code>python manage.py runserver</code>
 6. good to go! (username and password are 'root')
 
 # How to update the structure of the database
