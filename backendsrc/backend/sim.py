@@ -30,6 +30,7 @@ TIME_HORIZON = 15
 PERSON_BOARD_TIME = 0.1
 MINUTES_IN_DAY = 1440
 MINUTES_IN_HOUR = 60
+DEBUG = False
 
 # THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
 ITINERARIES = []
@@ -254,15 +255,17 @@ class Transporter(ABC):
         seats_left = self.capacity - self.passenger_count()
         people_at_stop = sum(group.get_num_people() for group in station.people)
         if not people_at_stop:
-            print(
-                f"({self.env.now+self.env_start}): No passengers at stop {station.name}"
-            )
+            if DEBUG:
+                print(
+                    f"({self.env.now+self.env_start}): No passengers at stop {station.name}"
+                )
             return
 
         if not seats_left:
-            print(
-                f"({self.env.now+self.env_start}): No seats left on bus {self.get_name()}"
-            )
+            if DEBUG:
+                print(
+                    f"({self.env.now+self.env_start}): No seats left on bus {self.get_name()}"
+                )
             return
 
         people_to_ride = station.board(min(people_at_stop, seats_left), self.route)
@@ -275,9 +278,10 @@ class Transporter(ABC):
         station.log_cur_people()
         for people in people_to_ride:
             people.log((self.name, self.id))
-        print(
-            f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} loaded {num_people_to_board} people from {station.name} ({load_time} mins)"
-        )
+        if DEBUG:
+            print(
+                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} loaded {num_people_to_board} people from {station.name} ({load_time} mins)"
+            )
 
     def get_people_deloading(self, station: Station) -> list[People]:
         people = []
@@ -305,16 +309,18 @@ class Transporter(ABC):
             get_off = None
 
         if not get_off:
-            print(
-                f"({self.env.now+self.env_start}): No passengers got off {self.get_type()}: {self.get_name()}"
-            )
+            if DEBUG:
+                print(
+                    f"({self.env.now+self.env_start}): No passengers got off {self.get_type()}: {self.get_name()}"
+                )
             return
 
         off_time = int(get_off * PERSON_BOARD_TIME)
         yield self.env.timeout(off_time)
-        print(
-            f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {get_off} people at {station.name} ({off_time} mins)"
-        )
+        if DEBUG:
+            print(
+                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {get_off} people at {station.name} ({off_time} mins)"
+            )
 
         station.put(get_off_list)
 
@@ -365,9 +371,10 @@ class Bus(Transporter):
         while True:
             with bus_route.get_current_stop(self).bays.request() as req:
                 yield req
-                print(
-                    f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
-                )
+                if DEBUG:
+                    print(
+                        f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
+                    )
                 bus_route.bus_time_log[self.id][
                     bus_route.get_current_stop(self).name
                 ] = (self.env.now + self.env_start)
@@ -391,9 +398,10 @@ class Bus(Transporter):
                         self.env.now + self.env_start
                     ] = self.passenger_count()
                     # Despawn
-                    print(
-                        f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} ended its journey."
-                    )
+                    if DEBUG:
+                        print(
+                            f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} ended its journey."
+                        )
                     break
 
                 previous_stop = bus_route.stops[self.location_index]
@@ -404,18 +412,20 @@ class Bus(Transporter):
                     if cur_stop.name == stop:
                         travel_time = time - (self.env.now + self.env_start)
                 if travel_time <= 0:
-                    print(
-                        "***ERROR*** Travel time <= 0 due to current implementation of trip, forcing 1"
-                    )
+                    if DEBUG:
+                        print(
+                            "***ERROR*** Travel time <= 0 due to current implementation of trip, forcing 1"
+                        )
                     travel_time = 1
 
             yield self.env.timeout(travel_time)
             bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
             )
-            print(
-                f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {bus_route.get_current_stop(self).name} ({travel_time} mins)"
-            )
+            if DEBUG:
+                print(
+                    f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {bus_route.get_current_stop(self).name} ({travel_time} mins)"
+                )
 
 
 class Route(ABC):
@@ -579,9 +589,10 @@ class Walk(Route):
         self.people.remove(people)
         self.walk_time_log[people][1] = self.env.now + self.env_start
         self.stops[1].put([people])
-        print(
-            f"({self.env_start+self.env.now}): {people.get_num_people()} people walked from {self.stops[0].name} to {self.stops[1].name} ({walk_time} mins)"
-        )
+        if DEBUG:
+            print(
+                f"({self.env_start+self.env.now}): {people.get_num_people()} people walked from {self.stops[0].name} to {self.stops[1].name} ({walk_time} mins)"
+            )
 
     def get_num_people(self) -> int:
         return sum(group.get_num_people() for group in self.people)
@@ -688,9 +699,10 @@ class Suburb:
 
             station.put([people_arriving_at_stop], from_suburb=True)
 
-            print(
-                f"({self.env.now+self.env_start}): {num_for_stop} people arrived at {station.name} in {self.name}"
-            )
+            if DEBUG:
+                print(
+                    f"({self.env.now+self.env_start}): {num_for_stop} people arrived at {station.name} in {self.name}"
+                )
 
             people_distributed += num_for_stop
         return people_distributed
