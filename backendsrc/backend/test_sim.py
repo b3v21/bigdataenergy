@@ -444,6 +444,18 @@ def test_sim_with_db_models():
     )
 
 
+def complex_sim_with_db_models():
+    run_simulation(
+        {
+            "env_start": 355,
+            "time_horizon": 30,
+            "itineraries": {0: [{"route_id": "412-3070", "start": "0", "end": "1850"}]},
+            "service_ids": ["BT 23_24-33667"],
+        },
+        1,
+    )
+    
+
 if __name__ == "__main__":
-    test_sim_with_db_models()
+    complex_sim_with_db_models()
     # test_efficiency()
