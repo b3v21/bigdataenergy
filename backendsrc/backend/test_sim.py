@@ -193,7 +193,6 @@ def complex_example(env_start: int) -> None:
         ],  # How do we handle route wrap over, or is this covered by the datetime
     )
 
-
     bus_route_X = BusRoute(
         env=env,
         env_start=env_start,
@@ -314,10 +313,9 @@ def test_efficiency():
 
 
 def test_sim_with_db_models():
-    
-    StationM.objects.all().filter(station_id='0').delete()
-    StationM.objects.all().filter(station_id='-1').delete()
-    StationM.objects.all().filter(station_id='-2').delete()
+    StationM.objects.all().filter(station_id="0").delete()
+    StationM.objects.all().filter(station_id="-1").delete()
+    StationM.objects.all().filter(station_id="-2").delete()
     # make calender
     CalendarM.objects.get_or_create(
         service_id="0",
@@ -348,7 +346,7 @@ def test_sim_with_db_models():
         long=2,
         location_type=3,
     )
-    
+
     StationM.objects.get_or_create(
         station_id="-2",
         station_code="-2",
@@ -394,7 +392,7 @@ def test_sim_with_db_models():
         arrival_time=time(0, 20),
         sequence=2,
     )
-    
+
     # make timetable for trip 1
     TimetableM.objects.get_or_create(
         trip_id=TripM.objects.get(trip_id=1),
@@ -402,7 +400,6 @@ def test_sim_with_db_models():
         arrival_time=time(0, 30),
         sequence=3,
     )
-    
 
     # make trip 2
     TripM.objects.get_or_create(
@@ -427,8 +424,8 @@ def test_sim_with_db_models():
         arrival_time=time(0, 10),
         sequence=2,
     )
-    
-# make timetable for trip 2
+
+    # make timetable for trip 2
     TimetableM.objects.get_or_create(
         trip_id=TripM.objects.get(trip_id=2),
         station=StationM.objects.get(station_id=-2),
@@ -440,7 +437,7 @@ def test_sim_with_db_models():
         {
             "env_start": 10,
             "time_horizon": 30,
-            "itineraries": {0:[{'route_id':"0", 'start':"0", 'end':"-1"}]},
+            "itineraries": {0: [{"route_id": "0", "start": "0", "end": "-1"}]},
             "service_ids": ["0"],
         },
         1,

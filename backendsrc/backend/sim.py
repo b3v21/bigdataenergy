@@ -189,10 +189,12 @@ class Station:
         for group in passengers:
             group.log((self.name, self.id))
 
-            if (not ITINERARIES[group.itinerary_index].last_leg(group) 
-                and (ITINERARIES[group.itinerary_index].get_current(group)[1] == self 
-                     or  ITINERARIES[group.itinerary_index].get_current_route(group).last_stop == self)):
-                #At current last part of their itin
+            if not ITINERARIES[group.itinerary_index].last_leg(group) and (
+                ITINERARIES[group.itinerary_index].get_current(group)[1] == self
+                or ITINERARIES[group.itinerary_index].get_current_route(group).last_stop
+                == self
+            ):
+                # At current last part of their itin
 
                 group.next_route()
             if ITINERARIES[group.itinerary_index].last_leg(group):
@@ -826,16 +828,15 @@ def get_data(
 
     # Get all routes that are used in the itineraries
     route_ids = {}
-    
+
     for itinerary_id, itinerary in itineraries.items():
         for route in itinerary:
-            route_id = route['route_id']
-            start = route['start']
-            end = route['end']
+            route_id = route["route_id"]
+            start = route["start"]
+            end = route["end"]
 
             if route_id != "walk":
                 route_ids[route_id] = end
-            
 
     db_routes = RouteM.objects.all().filter(route_id__in=list(route_ids.keys()))
 
@@ -918,7 +919,10 @@ def get_data(
             env,
             itinerary_id,
             [
-                (sim_routes[route["route_id"]], sim_stations[route_ids[route["route_id"]]])
+                (
+                    sim_routes[route["route_id"]],
+                    sim_stations[route_ids[route["route_id"]]],
+                )
                 for route in itinerary
             ],
         )
