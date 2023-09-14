@@ -315,6 +315,10 @@ def test_efficiency():
 
 
 def test_sim_with_db_models():
+    
+    StationM.objects.all().filter(station_id='0').delete()
+    StationM.objects.all().filter(station_id='-1').delete()
+    StationM.objects.all().filter(station_id='-2').delete()
     # make calender
     CalendarM.objects.get_or_create(
         service_id="0",
