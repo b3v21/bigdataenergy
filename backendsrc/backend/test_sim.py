@@ -193,6 +193,7 @@ def complex_example(env_start: int) -> None:
         ],  # How do we handle route wrap over, or is this covered by the datetime
     )
 
+
     bus_route_X = BusRoute(
         env=env,
         env_start=env_start,
@@ -240,7 +241,7 @@ def complex_example(env_start: int) -> None:
     ITINERARIES.append(itinerary1)
     ITINERARIES.append(itinerary2)
     ITINERARIES.append(itinerary3)
-    ITINERARIES.append(itinerary4)
+    ITINERARIES.append(itinerary3)
 
     Suburb(
         env=env,
@@ -265,7 +266,7 @@ def complex_example(env_start: int) -> None:
     for stop in stops:
         station_out[stop.id] = stop.people_over_time
 
-    bus_routes = [bus_route_X, bus_route_Y, bus_route_Z]
+    bus_routes = [bus_route_Z]
     bus_route_time_out = {}
     bus_route_pop_out = {}
     for route in bus_routes:
@@ -306,12 +307,10 @@ def complex_example(env_start: int) -> None:
 
 def test_efficiency():
     print()
-    start_time = time.time()
     i = 0
-    while i < 100:
+    while i < 1:
         complex_example(0)
         i += 1
-    print("--- %s seconds ---" % (time.time() - start_time), "\n")
 
 
 def test_sim_with_db_models():
@@ -344,9 +343,18 @@ def test_sim_with_db_models():
     StationM.objects.get_or_create(
         station_id="-1",
         station_code="-1",
-        name="last stop",
+        name="middle stop",
         lat=2,
         long=2,
+        location_type=3,
+    )
+    
+    StationM.objects.get_or_create(
+        station_id="-2",
+        station_code="-2",
+        name="last stop",
+        lat=4,
+        long=4,
         location_type=3,
     )
 
@@ -379,13 +387,22 @@ def test_sim_with_db_models():
         sequence=1,
     )
 
-    # make timetable for trip 2
+    # make timetable for trip 1
     TimetableM.objects.get_or_create(
         trip_id=TripM.objects.get(trip_id=1),
         station=StationM.objects.get(station_id=-1),
         arrival_time=time(0, 20),
         sequence=2,
     )
+    
+    # make timetable for trip 1
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=1),
+        station=StationM.objects.get(station_id=-2),
+        arrival_time=time(0, 30),
+        sequence=3,
+    )
+    
 
     # make trip 2
     TripM.objects.get_or_create(
@@ -410,12 +427,20 @@ def test_sim_with_db_models():
         arrival_time=time(0, 10),
         sequence=2,
     )
+    
+# make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=2),
+        station=StationM.objects.get(station_id=-2),
+        arrival_time=time(0, 20),
+        sequence=3,
+    )
 
     run_simulation(
         {
             "env_start": 10,
             "time_horizon": 30,
-            "itineraries": [[("0", "0", "-1")]],
+            "itineraries": {0:[{'route_id':"0", 'start':"0", 'end':"-1"}]},
             "service_ids": ["0"],
         },
         1,
@@ -423,4 +448,5 @@ def test_sim_with_db_models():
 
 
 if __name__ == "__main__":
-    test_sim_with_db_models()
+    #test_sim_with_db_models()
+    test_efficiency()

@@ -189,9 +189,11 @@ class Station:
         for group in passengers:
             group.log((self.name, self.id))
 
-            if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(
-                group
-            ):
+            if (not ITINERARIES[group.itinerary_index].last_leg(group) 
+                and (ITINERARIES[group.itinerary_index].get_current(group)[1] == self 
+                     or  ITINERARIES[group.itinerary_index].get_current_route(group).last_stop == self)):
+                #At current last part of their itin
+
                 group.next_route()
             if ITINERARIES[group.itinerary_index].last_leg(group):
                 self.people.append(group)
@@ -281,6 +283,7 @@ class Transporter(ABC):
             gets_off_at = ITINERARIES[group.itinerary_index].get_current(group)[1]
             if gets_off_at == station:
                 people.append(group)
+        return people
 
     def deload_passengers(self, station: Station) -> None:
         # Currently all passengers get off...
@@ -712,6 +715,11 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
     )
 
     print(f"Models successfully created for simulation #{sim_id}.")
+    for itin in itineraries:
+        print(itin)
+        print(itin.routes)
+        print()
+    print()
 
     suburb = Suburb(
         env=env,
@@ -822,14 +830,19 @@ def get_data(
     calendars = CalendarM.objects.all().filter(service_id__in=service_ids)
 
     # Get all routes that are used in the itineraries
-    route_ids = []
-    for itinerary in itineraries:
+    route_ids = {}
+    
+    for itinerary_id, itinerary in itineraries.items():
         for route in itinerary:
-            route_id, start, end = route
-            if route_id != "walk":
-                route_ids.append(route_id)
+            route_id = route['route_id']
+            start = route['start']
+            end = route['end']
 
-    db_routes = RouteM.objects.all().filter(route_id__in=route_ids)
+            if route_id != "walk":
+                route_ids[route_id] = end
+            
+
+    db_routes = RouteM.objects.all().filter(route_id__in=list(route_ids.keys()))
 
     sim_routes = {}
     sim_trips = []
@@ -905,10 +918,17 @@ def get_data(
             sim_routes[route.route_id] = new_route
 
     sim_itineraries = []
-    sim_itineraries.append(
-        Itinerary(env, env_start, [(list(sim_routes.values())[0], None)])
-    )
-    ITINERARIES.append(sim_itineraries[0])
+    for itinerary_id, itinerary in itineraries.items():
+        new_itin = Itinerary(
+            env,
+            env_start,
+            [
+                (sim_routes[route["route_id"]], sim_stations[route_ids[route["route_id"]]])
+                for route in itinerary
+            ],
+        )
+        sim_itineraries.append(new_itin)
+        ITINERARIES.append(new_itin)
 
     stations_out = [station for station in sim_stations.values()]
     trips_out = sim_trips
