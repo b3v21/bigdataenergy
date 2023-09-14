@@ -16,6 +16,8 @@ reverse= RateLimiter(geolocator.reverse, min_delay_seconds=1)
 
 def get_location(coords):
     location = reverse(coords)
+    if location is None:
+        return None
     address = location.raw.get("address")
     if address is not None:
         print(address.get("suburb"))
