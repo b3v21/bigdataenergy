@@ -715,11 +715,6 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
     )
 
     print(f"Models successfully created for simulation #{sim_id}.")
-    for itin in itineraries:
-        print(itin)
-        print(itin.routes)
-        print()
-    print()
 
     suburb = Suburb(
         env=env,
@@ -921,7 +916,7 @@ def get_data(
     for itinerary_id, itinerary in itineraries.items():
         new_itin = Itinerary(
             env,
-            env_start,
+            itinerary_id,
             [
                 (sim_routes[route["route_id"]], sim_stations[route_ids[route["route_id"]]])
                 for route in itinerary
