@@ -12,7 +12,7 @@ ctx = ssl.create_default_context(cafile=certifi.where())
 geopy.geocoders.options.default_ssl_context = ctx
 
 geolocator = Nominatim(user_agent="bigdataenergy", scheme="http")
-reverse= RateLimiter(geolocator.reverse, min_delay_seconds=1)
+reverse= RateLimiter(geolocator.reverse, min_delay_seconds=1, max_retries=3, error_wait_seconds=10, swallow_exceptions=True)
 
 def get_location(coords):
     location = reverse(coords)
