@@ -4,6 +4,7 @@ import csv
 from pathlib import Path
 import django
 from datetime import time
+import pandas as pd
 from dateutil import tz
 
 BRIS = tz.gettz("Australia/Brisbane")
@@ -97,8 +98,22 @@ def parse_data(path: str, model: str) -> None:
                 print(i, "rows added!")
 
 
+def add_suburbs_to_stations():
+    df = pd.read_csv("./output2.csv")
+    for i, row in df.iterrows():
+        if i % 100 == 0:
+            print(i)
+        station = Station.objects.filter(station_id=row[0]).first()
+        if station is not None:
+            station.suburb = row[5]
+            station.save()
+        else:
+            print("Station not found")
+
+
 if __name__ == "__main__":
+    add_suburbs_to_stations()
     # Timetable.objects.all().delete()
-    PATH = "./gtfsdata/stop_times.txt"  # Change this param to read from diff file
-    MODEL = "Timetable"  # Change this param to insert other model types
-    parse_data(PATH, MODEL)
+    # PATH = "./gtfsdata/stop_times.txt"  # Change this param to read from diff file
+    # MODEL = "Timetable"  # Change this param to insert other model types
+    # parse_data(PATH, MODEL)

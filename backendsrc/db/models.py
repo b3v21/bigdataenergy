@@ -47,6 +47,7 @@ class Station(models.Model):
     location_type = (
         models.IntegerField()
     )  # Type of station (see data info for type conversions)
+    suburb = models.CharField(max_length=255)
 
     class Meta:
         ordering = ["station_id"]
