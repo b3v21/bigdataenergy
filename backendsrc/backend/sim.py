@@ -227,9 +227,10 @@ class Station:
         for group in passengers:
             group.log((self.name, self.id))
             count += group.get_num_people()
-            if not from_suburb and not ITINERARIES[group.itinerary_index].last_leg(
-                group
-            ):
+            if (not ITINERARIES[group.itinerary_index].last_leg(group) 
+                and (ITINERARIES[group.itinerary_index].get_current(group)[1] == self 
+                     or  ITINERARIES[group.itinerary_index].get_current_route(group).last_stop == self)):
+                #At current last part of their itin
                 group.next_route()
             if ITINERARIES[group.itinerary_index].last_leg(group):
                 self.people.append(group)
@@ -746,6 +747,11 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
     )
 
     print(f"Models successfully created for simulation #{sim_id}.")
+    for itin in itineraries:
+        print(itin)
+        print(itin.routes)
+        print()
+    print()
 
     suburb = Suburb(
         env=env,

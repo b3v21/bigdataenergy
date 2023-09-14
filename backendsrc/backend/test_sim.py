@@ -193,6 +193,7 @@ def complex_example(env_start: int) -> None:
         ],  # How do we handle route wrap over, or is this covered by the datetime
     )
 
+
     bus_route_X = BusRoute(
         env=env,
         env_start=env_start,
@@ -240,7 +241,7 @@ def complex_example(env_start: int) -> None:
     ITINERARIES.append(itinerary1)
     ITINERARIES.append(itinerary2)
     ITINERARIES.append(itinerary3)
-    ITINERARIES.append(itinerary4)
+    ITINERARIES.append(itinerary3)
 
     Suburb(
         env=env,
@@ -265,7 +266,7 @@ def complex_example(env_start: int) -> None:
     for stop in stops:
         station_out[stop.id] = stop.people_over_time
 
-    bus_routes = [bus_route_X, bus_route_Y, bus_route_Z]
+    bus_routes = [bus_route_Z]
     bus_route_time_out = {}
     bus_route_pop_out = {}
     for route in bus_routes:
@@ -306,12 +307,10 @@ def complex_example(env_start: int) -> None:
 
 def test_efficiency():
     print()
-    start_time = time.time()
     i = 0
-    while i < 100:
+    while i < 1:
         complex_example(0)
         i += 1
-    print("--- %s seconds ---" % (time.time() - start_time), "\n")
 
 
 def test_sim_with_db_models():
@@ -445,4 +444,5 @@ def test_sim_with_db_models():
 
 
 if __name__ == "__main__":
-    test_sim_with_db_models()
+    #test_sim_with_db_models()
+    test_efficiency()
