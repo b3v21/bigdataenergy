@@ -26,9 +26,26 @@ def get_location(coords):
         print("None")
         return None
 
-df = pd.read_csv("./stops_with_postcode_suburb.csv")
-df = df[['stop_id', 'stop_lat', 'stop_lon']]
-df["lat_long"] = df["stop_lat"].astype(str) + ", " + df["stop_lon"].astype(str)
+def get_suburbs():
+    df = pd.read_csv("./stops_with_postcode_suburb.csv")
+    df = df[['stop_id', 'stop_lat', 'stop_lon']]
+    df["lat_long"] = df["stop_lat"].astype(str) + ", " + df["stop_lon"].astype(str)
 
-df["suburb"] = df["lat_long"].apply(get_location)
-df.to_csv("./output.csv", index=False)
+    df["suburb"] = df["lat_long"].apply(get_location)
+    df.to_csv("./output.csv", index=False)
+
+def estimate_suburbs():
+    df = pd.read_csv("./output.csv")
+    
+    for i,row in df.iterrows():
+        if i == 0:
+            df.at[i,'suburb_est'] = df.at[i,'suburb'] 
+        if pd.isna(df.at[i,'suburb']):
+            df.at[i,'suburb_est'] = df.at[i-1,'suburb_est']
+        else:
+            df.at[i,'suburb_est'] = df.at[i, 'suburb']
+        if i % 100 == 0:
+            print(i)
+    df.to_csv("./output2.csv", index=False)
+
+estimate_suburbs()
