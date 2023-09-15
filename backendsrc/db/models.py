@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 
 
 class Calendar(models.Model):
@@ -10,6 +11,8 @@ class Calendar(models.Model):
     friday = models.BooleanField(default=False)
     saturday = models.BooleanField(default=False)
     sunday = models.BooleanField(default=False)
+    start_date = models.DateField(default=datetime.now)
+    end_date = models.DateField(default=datetime.now)
 
     class Meta:
         ordering = ["service_id"]
@@ -47,7 +50,7 @@ class Station(models.Model):
     location_type = (
         models.IntegerField()
     )  # Type of station (see data info for type conversions)
-    suburb = models.CharField(max_length=255)
+    suburb = models.CharField(max_length=255, null=True)
 
     class Meta:
         ordering = ["station_id"]

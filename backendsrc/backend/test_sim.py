@@ -19,7 +19,7 @@ from db.models import (
     Calendar as CalendarM,
 )  # noqa: E402
 
-from datetime import time
+from datetime import time, date, datetime
 
 
 def simple_example(env_start: int) -> None:
@@ -438,7 +438,7 @@ def test_sim_with_db_models():
             "env_start": 10,
             "time_horizon": 30,
             "itineraries": {0: [{"route_id": "0", "start": "0", "end": "-1"}]},
-            "service_ids": ["0"],
+            "snapshot_date": datetime.strptime("2023-08-01", "%Y-%m-%d").date(),
         },
         1,
     )
@@ -449,12 +449,12 @@ def complex_sim_with_db_models():
         {
             "env_start": 355,
             "time_horizon": 30,
-            "itineraries": {0: [{"route_id": "412-3070", "start": "0", "end": "1850"}]},
-            "service_ids": ["BT 23_24-33667"],
+            "itineraries": {0: [{"route_id": "412-3136", "start": "0", "end": "1850"}]},
+            "snapshot_date": datetime.strptime("2023-08-01", "%Y-%m-%d").date(),
         },
         1,
     )
-    
+
 
 if __name__ == "__main__":
     complex_sim_with_db_models()

@@ -8,7 +8,7 @@ import django
 import os
 import sys
 import copy
-from datetime import time
+from datetime import time, date, datetime
 
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -723,7 +723,7 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
         user_data["env_start"],
         user_data["time_horizon"],
         user_data["itineraries"],
-        user_data["service_ids"],
+        user_data["snapshot_date"],
     )
 
     print(f"Models successfully created for simulation #{sim_id}.")
@@ -822,7 +822,7 @@ def get_data(
     env_start: int,
     time_horizon: int,
     itineraries: list,
-    service_ids: list[str],
+    snapshot_date: datetime.date,
 ) -> tuple[dict[int, Station], list[Trip], dict[int, Route], list[Itinerary]]:
     """
     This function accesses the data from the database and converts it into simulation
@@ -832,9 +832,12 @@ def get_data(
     Itinerary objects, for now just use placeholder which is a list of routes
     that the itinerary use
     """
+    day_of_week = snapshot_date.strftime("%A").lower()
 
     # Get all calendar objects (containing service info) that run on a Friday
-    calendars = CalendarM.objects.all().filter(service_id__in=service_ids)
+    calendars = CalendarM.objects.all().filter(
+        start_date__lte=snapshot_date, end_date__gte=snapshot_date, **{day_of_week: 1}
+    )
 
     # Get all routes that are used in the itineraries
     route_ids = {}
@@ -855,8 +858,12 @@ def get_data(
     sim_stations = {}
 
     for route in db_routes:
-        # Get trip_ids that run on a Friday for this particular route
+        # Get trip_ids that run on this day for this particular route
         db_trips = TripM.objects.all().filter(service_id__in=calendars, route_id=route)
+        if not db_trips:
+            raise Exception(
+                f"No trips exist for route {route.name} on {snapshot_date.strftime('%Y-%m-%d')}"
+            )
 
         if not db_trips:
             continue
