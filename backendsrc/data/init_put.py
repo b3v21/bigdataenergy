@@ -99,20 +99,37 @@ def parse_data(path: str, model: str) -> None:
 
 
 def add_suburbs_to_stations():
-    df = pd.read_csv("./output2.csv")
+    df = pd.read_csv("./gtfsdata/station_suburbs.csv")
     for i, row in df.iterrows():
         if i % 100 == 0:
             print(i)
         station = Station.objects.filter(station_id=row[0]).first()
         if station is not None:
-            station.suburb = row[5]
+            if pd.isna(row[4]):
+                station.suburb = None
+            else:
+                station.suburb = row[4]
             station.save()
         else:
             print("Station not found")
 
 
+def add_start_end_date_to_calendar():
+    df = pd.read_csv("./gtfsdata/calendar.txt")
+    for i, row in df.iterrows():
+        if i % 100 == 0:
+            print(i)
+        calendar = Calendar.objects.filter(service_id=row[0]).first()
+        if calendar is not None:
+            calendar.start_date = datetime.strptime(str(row[8]), "%Y%m%d").date()
+            calendar.end_date = datetime.strptime(str(row[9]), "%Y%m%d").date()
+            calendar.save()
+        else:
+            print("Calendar not found")
+
+
 if __name__ == "__main__":
-    add_suburbs_to_stations()
+    add_start_end_date_to_calendar()
     # Timetable.objects.all().delete()
     # PATH = "./gtfsdata/stop_times.txt"  # Change this param to read from diff file
     # MODEL = "Timetable"  # Change this param to insert other model types
