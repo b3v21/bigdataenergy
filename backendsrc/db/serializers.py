@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from db.models import (
-    Calender,
+    Calendar,
     Route,
     Shape,
     Station,
@@ -13,7 +13,7 @@ from db.models import (
 
 class CalendarSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Calender
+        model = Calendar
         fields = [
             "service_id",
             "monday",
