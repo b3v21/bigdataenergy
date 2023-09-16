@@ -487,7 +487,7 @@ class BusRoute(Route):
         )
         self.running = self.env.process(self.initiate_route())
         self.buses: list[Bus] = []
-        self.bus_time_log = []
+        self.bus_time_log = {}
         self.bus_passenger_changes = {}
 
     def initiate_route(self) -> None:
@@ -507,6 +507,7 @@ class BusRoute(Route):
                         station_info = (station, arrival_time)
                         trip_info = trip
                         # Now have a trip to start
+                        self.bus_time_log[self.transporters_spawned] = {}
                         new_bus = Bus(
                             env=self.env,
                             env_start=self.env_start,
@@ -519,7 +520,6 @@ class BusRoute(Route):
                         )
                         self.transporters_spawned += 1
                         self.add_bus(new_bus)
-                        self.bus_time_log.append({})
                         # if trip.timetable[0][0] == station:
                         #     print(
                         #         f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name} at station {station_info[0]}"
