@@ -1,37 +1,69 @@
 from rest_framework import serializers
-from db.models import Station, Route, SimulationOutput, TravelTimes, Timetable
+from db.models import (
+    Calender,
+    Route,
+    Shape,
+    Station,
+    Trip,
+    Timetable,
+    SimulationOutput,
+    TravelTimes,
+)
 
 
-class StationSerializer(serializers.ModelSerializer):
+class CalendarSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Station
-        fields = ["station_id", "name", "lat", "long"]
+        model = Calender
+        fields = [
+            "service_id",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+            "start_date",
+            "end_date",
+        ]
 
 
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
+        fields = ["route_id", "name", "transport_type", "capacity"]
+
+
+class ShapeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shape
+        fields = ["shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence"]
+
+
+class StationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Station
         fields = [
-            "route_id",
-            "translink_id",
+            "station_id",
+            "station_code",
             "name",
-            "transport_type",
-            "capacity",
+            "lat",
+            "long",
+            "location_type",
+            "suburb",
         ]
+
+
+class TripSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trip
+        fields = ["trip_id", "route_id", "service_id", "shape_id"]
 
 
 class TimetableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timetable
-        fields = [
-            "timetable_id",
-            "route",
-            "station",
-            "translink_trip_id",
-            "translink_trip_id_simple",
-            "arrival_time",
-            "sequence",
-        ]
+        fields = ["trip_id", "station", "arrival_time", "sequence"]
 
 
 class SimulationOutputSerializer(serializers.ModelSerializer):
