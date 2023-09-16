@@ -77,11 +77,51 @@ class Timetable(models.Model):
         unique_together = ("trip_id", "station", "arrival_time", "sequence")
 
 
+class BusTimeOut(models.Model):
+    bustimeout_id = models.IntegerField(primary_key=True)
+    stop_name = models.CharField(max_length=255)
+    time = models.IntegerField()
+
+
+class PassengerChanges(models.Model):
+    passenger_changes_id = models.IntegerField(primary_key=True)
+    time = models.IntegerField()
+    passenger_count = models.IntegerField()
+
+
+class BusOnRouteInfo(models.Model):
+    bus_id = models.CharField(max_length=255, primary_key=True)
+    bus_timeout = models.ForeignKey(BusTimeOut, on_delete=models.CASCADE)
+    bus_passenger_changes = models.ForeignKey(
+        PassengerChanges, on_delete=models.CASCADE
+    )
+
+
+class StationSim(models.Model):
+    station_id = models.CharField(max_length=255, primary_key=True)
+    name = models.CharField(max_length=255)
+    lat = models.FloatField()
+    long = models.FloatField()
+    passenger_count = models.ForeignKey(PassengerChanges, on_delete=models.CASCADE)
+
+
+class RouteSim(models.Model):
+    route_id = models.CharField(max_length=255, primary_key=True)
+    method = models.CharField(max_length=255)
+    buses_on_route = models.ForeignKey(BusOnRouteInfo, on_delete=models.CASCADE)
+    stations = models.ForeignKey(StationSim, on_delete=models.CASCADE)
+
+
+class ItinerarySim(models.Model):
+    itinerary_id = models.CharField(max_length=255, primary_key=True)
+    routes = models.ForeignKey(RouteSim, on_delete=models.CASCADE)
+
+
 class SimulationOutput(models.Model):
     simulation_id = models.IntegerField(primary_key=True)
-    route_id = models.ForeignKey("db.Route", on_delete=models.CASCADE)
-    station_id = models.ForeignKey("db.Station", on_delete=models.CASCADE)
-    itinerary_id = models.ForeignKey("db.Itinerary", on_delete=models.CASCADE)
+    route_id = models.ForeignKey(RouteSim, on_delete=models.CASCADE)
+    station_id = models.ForeignKey(StationSim, on_delete=models.CASCADE)
+    itinerary_id = models.ForeignKey(ItinerarySim, on_delete=models.CASCADE)
 
 
 class TravelTimes(models.Model):

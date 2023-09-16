@@ -17,9 +17,16 @@ from db.models import (
     Shape as ShapeM,
     Calendar as CalendarM,
     SimulationOutput,
+    RouteSim,
+    StationSim,
+    ItinerarySim,
+    BusOnRouteInfo,
+    BusTimeOut,
+    PassengerChanges,
 )  # noqa: E402
 from db.serializers import SimulationOutputSerializer
 from datetime import time, date, datetime
+import json
 
 
 def test_basic_sim_with_models():
@@ -184,16 +191,48 @@ def test_sim_with_db_models_412():
 
 
 def test_sim_output_serializer():
-    data = {
-        "simulation_id": 1,
-        "Routes": [],
-        "Stations": [],
-        "Itineraries": [],
-    }
+    station = StationSim(
+        station_id="0",
+        name="test_station",
+        lat=0,
+        long=0,
+        passenger_count=PassengerChanges(
+            passenger_changes_id=0,
+            time=0,
+            passenger_count=0,
+        ),
+    )
 
-    serializer = SimulationOutputSerializer(data=data)
-    assert serializer.is_valid()
-    print(serializer.validated_data)
+    route = RouteSim(
+        route_id="0",
+        method="test_route",
+        buses_on_route=BusOnRouteInfo(
+            bus_id="0",
+            bus_timeout=BusTimeOut(
+                bustimeout_id=0,
+                stop_name="0",
+                time=0,
+            ),
+            bus_passenger_changes=PassengerChanges(
+                passenger_changes_id=1,
+                time=0,
+                passenger_count=50,
+            ),
+        ),
+        stations=station,
+    )
+
+    output = SimulationOutput(
+        simulation_id=0,
+        route_id=route,
+        station_id=station,
+        itinerary_id=ItinerarySim(
+            itinerary_id="0",
+            routes=route,
+        ),
+    )
+    serializer = SimulationOutputSerializer(output)
+    print(json.dumps(serializer.data))
 
 
 if __name__ == "__main__":
