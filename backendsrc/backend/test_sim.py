@@ -9,7 +9,6 @@ from sim import (
     run_simulation,
 )
 from simpy import Environment
-
 from db.models import (
     Station as StationM,
     Route as RouteM,
@@ -17,8 +16,9 @@ from db.models import (
     Trip as TripM,
     Shape as ShapeM,
     Calendar as CalendarM,
+    SimulationOutput,
 )  # noqa: E402
-
+from db.serializers import SimulationOutputSerializer
 from datetime import time, date, datetime
 
 
@@ -181,6 +181,19 @@ def test_sim_with_db_models_412():
         },
         1,
     )
+
+
+def test_sim_output_serializer():
+    data = {
+        "simulation_id": 1,
+        "Routes": [],
+        "Stations": [],
+        "Itineraries": [],
+    }
+
+    serializer = SimulationOutputSerializer(data=data)
+    assert serializer.is_valid()
+    print(serializer.validated_data)
 
 
 if __name__ == "__main__":

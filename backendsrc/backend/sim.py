@@ -713,7 +713,9 @@ class Trip:
         self.timetable = timetable
 
 
-def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
+def run_simulation(
+    user_data: dict[dict], sim_id: int
+) -> tuple[list[Station], list[Trip], list[Route], list[Itinerary], int, dict[dict]]:
     """Main function to run the simulation"""
 
     env = Environment()
@@ -741,13 +743,13 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
 
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
+    output = process_simulation_output(stations, routes, itineraries, sim_id)
 
-    return process_simulation_output(stations, trips, routes, itineraries, sim_id)
+    return stations, routes, itineraries, sim_id, output
 
 
 def process_simulation_output(
     stations: list[Station],
-    trips: list[Trip],
     routes: list[Route],
     itineraries: list[Itinerary],
     sim_id: int,
@@ -853,7 +855,7 @@ def get_data(
     time_horizon: int,
     itineraries: list,
     snapshot_date: datetime.date,
-) -> tuple[dict[int, Station], list[Trip], dict[int, Route], list[Itinerary]]:
+) -> tuple[dict[int, Station], list[Trip], dict[int, BusRoute], list[Itinerary]]:
     """
     This function accesses the data from the database and converts it into simulation
     objects.
