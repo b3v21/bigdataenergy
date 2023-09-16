@@ -742,7 +742,7 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
 
-    return process_simulation_output(stations, trips, routes, itineraries)
+    return process_simulation_output(stations, trips, routes, itineraries, sim_id)
 
 
 def process_simulation_output(
@@ -750,28 +750,58 @@ def process_simulation_output(
     trips: list[Trip],
     routes: list[Route],
     itineraries: list[Itinerary],
+    sim_id: int,
 ) -> dict[dict]:
     """
     Analyse all the models once the simulation has finished running and returns the
-    information which will be sent to the frontend. Some information requested from the
-    frontend is as follows...
+    information which will be sent to the frontend.
 
-    Routes:
-    - occupancy of the route at each point (station) of the journey
+    output has the following format:
 
-    Stops
-    - Average wait times at stations
-    - Time taken to get to the destination from the starting station (for each group of people?)
-
-    - Distance from event
-
-    Itinerary
-    - Time taken at each step (walking, bus etc)
-    - Also will probably need to send some information about routes directly.
-      I think at the moment route data is just contained in the itinerary?
+    output = {
+        "SimulationID": sim_id,
+        "Routes": {
+            route_id: {
+                "method": "BusRoute" or "Walk",
+                "Timeout": {
+                    {bus_id: time, ...},
+                },
+                "PassengerChangesOverTime": {
+                    {bus_id: {time: num_passengers, ...}, ...}
+                },
+                "Walkout": {walk_id: time, ...},
+                "stations": {
+                    station_id: {
+                        "stationName": station_name,
+                        "pos": {
+                            "lat": lat,
+                            "long": long
+                        }
+                    }
+                }
+            },
+        ],
+        "Stations": [
+            station_id: {
+                "stationName": station_name,
+                "pos": {
+                    "lat": lat,
+                    "long": long
+                },
+                "PeopleChangesOverTime": {time: num_people, ...}
+            },
+        ],
+        "Itineraries": [
+            itinerary_id: {
+                "Routes": {
+                    route_id: {station_name, ...}
+                }
+            }
+        ]
+    }
     """
 
-    output = {"Routes": {}, "Stations": {}, "Itineraries": {}}
+    output = {"Simulation_id": sim_id, "Routes": {}, "Stations": {}, "Itineraries": {}}
 
     for route in routes:
         output["Routes"][route.id] = {}
@@ -832,6 +862,10 @@ def get_data(
     Itinerary objects, for now just use placeholder which is a list of routes
     that the itinerary use
     """
+
+    if not snapshot_date:
+        snapshot_date = datetime.date.today()
+
     day_of_week = snapshot_date.strftime("%A").lower()
 
     # Get all calendar objects (containing service info) that run on a Friday
