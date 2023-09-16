@@ -312,7 +312,6 @@ def test_efficiency():
         i += 1
 
 
-
 def test_sim_with_db_models_412():
     run_simulation(
         {
