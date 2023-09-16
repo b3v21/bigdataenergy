@@ -79,6 +79,9 @@ class Timetable(models.Model):
 
 class SimulationOutput(models.Model):
     simulation_id = models.IntegerField(primary_key=True)
+    route_id = models.ForeignKey("db.Route", on_delete=models.CASCADE)
+    station_id = models.ForeignKey("db.Station", on_delete=models.CASCADE)
+    itinerary_id = models.ForeignKey("db.Itinerary", on_delete=models.CASCADE)
 
 
 class TravelTimes(models.Model):

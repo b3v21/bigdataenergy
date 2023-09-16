@@ -66,13 +66,53 @@ class TimetableSerializer(serializers.ModelSerializer):
         fields = ["trip_id", "station", "arrival_time", "sequence"]
 
 
-class SimulationOutputSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SimulationOutput
-        fields = ["simulation_id"]
-
-
 class TravelTimesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TravelTimes
         fields = ["traveltime_id", "from_station", "to_station", "duration"]
+
+
+class SimulationOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SimulationOutput
+        fields = ["simulation_id, route_id, station_id, itinerary_id"]
+
+
+class SimPosSerializer(serializers.Serializer):
+    lat = serializers.FloatField()
+    long = serializers.FloatField()
+
+
+class BusTimeOutSerializer(serializers.Serializer):
+    stop_name = serializers.CharField(max_length=255)
+    time = serializers.IntegerField()
+
+
+class PassengerChangesSerializer(serializers.Serializer):
+    time = serializers.IntegerField()
+    passenger_count = serializers.IntegerField()
+
+
+class BusOnRouteInfoSerializer(serializers.Serializer):
+    bus_id = serializers.CharField(max_length=255)
+    bus_timeout = BusTimeOutSerializer(many=True)
+    bus_passenger_changes = PassengerChangesSerializer(many=True)
+
+
+class SimStationSerializer(serializers.Serializer):
+    station_id = serializers.CharField(max_length=255)
+    name = serializers.CharField(max_length=255)
+    pos = SimPosSerializer(many=False)
+    passenger_count = PassengerChangesSerializer(many=True)
+
+
+class SimRouteSerializer(serializers.Serializer):
+    route_id = serializers.CharField(max_length=255)
+    method = serializers.CharField(max_length=255)
+    buses_on_route = BusOnRouteInfoSerializer(many=True)
+    stations = SimStationSerializer(many=True)
+
+
+class SimItinerarySerializer(serializers.Serializer):
+    itinerary_id = serializers.CharField(max_length=255)
+    routes = SimRouteSerializer(many=True)
