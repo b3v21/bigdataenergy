@@ -832,6 +832,8 @@ def get_data(
     Itinerary objects, for now just use placeholder which is a list of routes
     that the itinerary use
     """
+    snapshot_date = datetime.strptime(snapshot_date, "%Y-%m-%d").date()
+    
     day_of_week = snapshot_date.strftime("%A").lower()
 
     # Get all calendar objects (containing service info) that run on a Friday

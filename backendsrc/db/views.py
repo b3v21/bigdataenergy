@@ -24,7 +24,7 @@ def sim_request(request: Request, sim_id: int) -> Response:
         "env_start": int,
         "time_horizon": int,
         "itineraries": [[(str, str, str)]],
-        "service_ids": [str],
+        "snapshot_date": [str], (yyyy-mm-dd format)
     }
     """
 

@@ -318,7 +318,7 @@ def test_sim_with_db_models_412():
             "env_start": 355,
             "time_horizon": 30,
             "itineraries": {0: [{"route_id": "412-3136", "start": "0", "end": "1850"}]},
-            "snapshot_date": datetime.strptime("2023-08-01", "%Y-%m-%d").date(),
+            "snapshot_date": "2023-08-01",
         },
         1,
     )
