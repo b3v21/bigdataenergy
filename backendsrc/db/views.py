@@ -23,7 +23,7 @@ def sim_request(request: Request, sim_id: int) -> Response:
     {
         "env_start": int,
         "time_horizon": int,
-        "itineraries": [[(str, str, str)]],
+        "itineraries": dict[list[dict[str, str])]],
         "snapshot_date": [str], (yyyy-mm-dd format)
     }
     """
