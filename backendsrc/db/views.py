@@ -24,7 +24,7 @@ def sim_request(request: Request, sim_id: int) -> Response:
         "env_start": int,
         "time_horizon": int,
         "itineraries": dict[list[dict[str, str])]], 
-        "snapshot_date": [str], (yyyy-mm-dd format)
+        "snapshot_date": str, (yyyy-mm-dd format)
     }
     
     NOTE: Go to test_sim.py to see examples
