@@ -3,21 +3,21 @@
 import { Simulation as SimulationData } from '@/@types/simulation';
 import { useGetSimulationData } from '@/hooks/useGetSimulationData';
 import Sidebar from './components/sidebar';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Plot, { PlotParams } from 'react-plotly.js';
 import { layout, data as plotData } from './plot';
+import HoverCard from './components/hover-card';
 
-// type HoverData = {
-// 	x: number;
-// 	y: number;
-// 	stop: Stop;
-// };
+type HoverData = {
+	x: number;
+	y: number;
+	stopName: string;
+};
 
 const HOVER_OFFSET = { x: 10, y: 10 };
 
 const Simulation = () => {
-	// const [hoverData, setHoverData] = useState<HoverData | null>(null);
-	// const { stops } = stubbedSimulation;
+	const [hoverData, setHoverData] = useState<HoverData | null>(null);
 	const { data, isLoading } = useGetSimulationData();
 
 	// Todo: remove once data typed correctly
@@ -35,7 +35,7 @@ const Simulation = () => {
 	return (
 		<div className="flex flex-row gap-4">
 			<Sidebar />
-			{/* <HoverCard data={hoverData} /> */}
+			<HoverCard data={hoverData} />
 			<div className="flex-1">
 				{/* @ts-ignore  */}
 				<Plot
@@ -59,27 +59,33 @@ const Simulation = () => {
 						overflow: 'hidden',
 						minHeight: '800px'
 					}}
-					// onHover={(event) => {
-					// 	const {
-					// 		lat,
-					// 		lon,
-					// 		bbox: { x0, y0 }
-					// 	} = event.points[0] as any;
+					onHover={(event) => {
+						if (!routeStations) return;
 
-					// 	const stop = stops.find(
-					// 		(stop) => stop.lat === lat && stop.lon === lon
-					// 	)!;
+						console.log('hover', routeStations);
 
-					// 	setHoverData({
-					// 		x: x0 + HOVER_OFFSET.x,
-					// 		y: y0 + HOVER_OFFSET.y,
-					// 		stop
-					// 	});
-					// }}
-					// onUnhover={() => setHoverData(null)}
-					// onClick={(event) => {
-					// 	// todo: Focus route tap on sidebar and display more route info
-					// }}
+						const {
+							lat,
+							lon,
+							bbox: { x0, y0 }
+						} = event.points[0] as any;
+
+						const stop = routeStations.find(
+							(station) =>
+								(station as any).pos.lat === lat &&
+								(station as any).pos.long === lon
+						)!;
+
+						setHoverData({
+							x: x0 + HOVER_OFFSET.x,
+							y: y0 + HOVER_OFFSET.y,
+							stopName: (stop as any).stationName
+						});
+					}}
+					onUnhover={() => setHoverData(null)}
+					onClick={(event) => {
+						// todo: Focus route tap on sidebar and display more route info
+					}}
 				/>
 			</div>
 		</div>
