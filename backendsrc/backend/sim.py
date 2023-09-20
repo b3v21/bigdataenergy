@@ -354,6 +354,8 @@ class Bus(Transporter):
         super().__init__(
             env, env_start, id, name, trip, route, location_index, people, capacity
         )
+        self.bus_time_log = {}
+        self.bus_passenger_changes = {}
 
     def get_type(self) -> str:
         return "Bus"
@@ -362,8 +364,7 @@ class Bus(Transporter):
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
 
     def bus_instance(self, bus_route: BusRoute) -> None:
-        bus_route.bus_passenger_changes[self.id] = {}
-        bus_route.bus_passenger_changes[self.id][
+        self.bus_passenger_changes[
             self.env.now + self.env_start
         ] = self.passenger_count()
         while True:
@@ -373,9 +374,9 @@ class Bus(Transporter):
                     print(
                         f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
                     )
-                bus_route.bus_time_log[self.id][
-                    bus_route.get_current_stop(self).name
-                ] = (self.env.now + self.env_start)
+                self.bus_time_log[bus_route.get_current_stop(self).name] = (
+                    self.env.now + self.env_start
+                )
                 if bus_route.get_current_stop(self) != bus_route.last_stop:
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
@@ -384,7 +385,7 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_passenger_changes[self.id][
+                    self.bus_passenger_changes[
                         self.env.now + self.env_start
                     ] = self.passenger_count()
 
@@ -392,7 +393,7 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_passenger_changes[self.id][
+                    self.bus_passenger_changes[
                         self.env.now + self.env_start
                     ] = self.passenger_count()
                     # Despawn
@@ -417,7 +418,7 @@ class Bus(Transporter):
                     travel_time = 1
 
             yield self.env.timeout(travel_time)
-            bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = (
+            self.bus_time_log[bus_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
             )
             if DEBUG:
@@ -487,8 +488,6 @@ class BusRoute(Route):
         )
         self.running = self.env.process(self.initiate_route())
         self.buses: list[Bus] = []
-        self.bus_time_log = {}
-        self.bus_passenger_changes = {}
 
     def initiate_route(self) -> None:
         """
@@ -507,7 +506,6 @@ class BusRoute(Route):
                         station_info = (station, arrival_time)
                         trip_info = trip
                         # Now have a trip to start
-                        self.bus_time_log[self.transporters_spawned] = {}
                         new_bus = Bus(
                             env=self.env,
                             env_start=self.env_start,
@@ -765,11 +763,11 @@ def process_simulation_output(
         "Routes": {
             route_id: {
                 "method": "BusRoute" or "Walk",
-                "Timeout": {
-                    {bus_id: time, ...},
-                },
-                "PassengerChangesOverTime": {
-                    {bus_id: {time: num_passengers, ...}, ...}
+                "TransportersOnRoute": {
+                    transporter_id: {
+                        "Timeout": {...},
+                        "PassengerChangesOverTime": {...},
+                    },
                 },
                 "Walkout": {walk_id: time, ...},
                 "stations": {
@@ -810,8 +808,13 @@ def process_simulation_output(
         rd = output["Routes"][route.id]
         rd["method"] = route.get_type()
         if route.get_type() == "BusRoute":
-            rd["Timeout"] = route.bus_time_log
-            rd["PassengerChangesOverTime"] = route.bus_passenger_changes
+            rd["BusesOnRoute"] = {}
+            br = rd["BusesOnRoute"]
+            for bus in route.buses:
+                br[bus.id] = {
+                    "Timeout": bus.bus_time_log,
+                    "PassengerChangesOverTime": bus.bus_passenger_changes,
+                }
         elif route.get_type() == "Walk":
             rd["Walkout"] = route.walk_time_log
 

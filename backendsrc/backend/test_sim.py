@@ -36,6 +36,7 @@ def test_basic_sim_with_models():
     StationM.objects.all().filter(station_id="0").delete()
     StationM.objects.all().filter(station_id="-1").delete()
     StationM.objects.all().filter(station_id="-2").delete()
+    CalendarM.objects.all().filter(service_id="0").delete()
 
     # make calender
     CalendarM.objects.get_or_create(
