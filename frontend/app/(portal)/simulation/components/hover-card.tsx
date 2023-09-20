@@ -1,4 +1,3 @@
-import { Stop } from '@/@types/simulation';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -7,14 +6,14 @@ type Props = {
 	data: {
 		y: number;
 		x: number;
-		stop: Stop;
+		stopName: string;
 	} | null;
 };
 
 const HoverCard = ({ data }: Props) => {
 	if (!data) return null;
 
-	const { x, y, stop } = data;
+	const { x, y, stopName } = data;
 
 	return (
 		<Card
@@ -24,7 +23,7 @@ const HoverCard = ({ data }: Props) => {
 				left: x
 			}}
 		>
-			<p className="font-bold cols-span-1">{stop.name}</p>
+			<p className="font-bold cols-span-1">{stopName}</p>
 			<div className="col-span-1 text-right">
 				<Badge
 					variant="outline"
@@ -42,7 +41,7 @@ const HoverCard = ({ data }: Props) => {
 			</div>
 			<div className="col-span-2 flex flex-row justify-between">
 				<p className="font-semibold text-sm">Travel Time</p>
-				<p className="font-mono text-muted-foreground">{stop.travel_time}min</p>
+				<p className="font-mono text-muted-foreground">69 min</p>
 			</div>
 		</Card>
 	);

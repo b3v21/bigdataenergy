@@ -15,6 +15,7 @@ Our goal is to build a website with an interactive map and other visualisations 
 1. setup & activate a python venv if you haven't already
 2. <code>pip install django</code>
    <code>pip install djangorestframework</code>
+   <code>pip install django-cors-headers</code>
 3. Go to the Big Data Energy Discord and grab the `db.sqlite3.zip` file, unzip it and put it in the `backendsrc` folder
 4. enter backendsrc directory and run <code>python manage.py migrate</code>
 5. run <code>python manage.py runserver</code>
