@@ -9,7 +9,6 @@ from sim import (
     run_simulation,
 )
 from simpy import Environment
-
 from db.models import (
     Station as StationM,
     Route as RouteM,
@@ -17,299 +16,167 @@ from db.models import (
     Trip as TripM,
     Shape as ShapeM,
     Calendar as CalendarM,
+    SimulationOutput,
+    RouteSim,
+    StationSim,
+    ItinerarySim,
+    BusOnRouteInfo,
+    BusTimeOut,
+    PassengerChanges,
 )  # noqa: E402
-
+from db.serializers import SimulationOutputSerializer
 from datetime import time, date, datetime
+import json
 
 
-def simple_example(env_start: int) -> None:
-    env = Environment()
+def test_basic_sim_with_models():
+    """Basic test of sim with models"""
 
-    first_stop = Station(
-        env=env,
-        id=0,
-        name="First Stop",
-        pos=(0, 0),
-        bays=1,
-        env_start=env_start,
-    )
-    last_stop = Station(
-        env=env,
-        id=1,
-        name="Last Stop",
-        pos=(2, 2),
-        bays=1,
-        env_start=env_start,
-    )
-    stadium = Station(
-        env=env,
-        id=2,
-        name="Stadium",
-        pos=(4, 4),
-        bays=1,
-        env_start=env_start,
+    test_date = datetime(2023, 9, 15)
+    StationM.objects.all().filter(station_id="0").delete()
+    StationM.objects.all().filter(station_id="-1").delete()
+    StationM.objects.all().filter(station_id="-2").delete()
+    CalendarM.objects.all().filter(service_id="0").delete()
+
+    # make calender
+    CalendarM.objects.get_or_create(
+        service_id="0",
+        monday=False,
+        tuesday=False,
+        wednesday=False,
+        thursday=False,
+        friday=True,
+        saturday=False,
+        sunday=False,
+        start_date=test_date,
+        end_date=test_date,
     )
 
-    trip = Trip(
-        timetable=[("First Stop", 0), ("Last Stop", 30)],
-    )
-    trip_2 = Trip(
-        timetable=[("First Stop", 15), ("Last Stop", 45)],
-    )
-    trip_3 = Trip(
-        timetable=[("First Stop", 30), ("Last Stop", 60)],
-    )
-
-    bus_route = BusRoute(
-        env=env,
-        env_start=env_start,
-        id=0,
-        name="R",
-        stops=[first_stop, last_stop],
-        trip_timing_data=[trip, trip_2, trip_3],
+    # make stations
+    StationM.objects.get_or_create(
+        station_id="0",
+        station_code="0",
+        name="first stop",
+        lat=0,
+        long=0,
+        location_type=3,
+        suburb="test suburb",
     )
 
-    walk_to_stadium = Walk(
-        id=10,
-        env=env,
-        env_start=env_start,
-        stops=[last_stop, stadium],
+    StationM.objects.get_or_create(
+        station_id="-1",
+        station_code="-1",
+        name="middle stop",
+        lat=2,
+        long=2,
+        location_type=3,
+        suburb="test suburb",
     )
 
-    itinerary1 = Itinerary(
-        env=env, id=0, routes=[(bus_route, None), (walk_to_stadium, None)]
-    )
-    ITINERARIES.append(itinerary1)
-
-    Suburb(
-        env=env,
-        name="Simple Suburb",
-        station_distribution={first_stop: 100, last_stop: 0},
-        population=100,
-        frequency=10,
-        max_distributes=0,
-        itineraries=[itinerary1],
-        env_start=env_start,
+    StationM.objects.get_or_create(
+        station_id="-2",
+        station_code="-2",
+        name="last stop",
+        lat=4,
+        long=4,
+        location_type=3,
+        suburb="test suburb",
     )
 
-    env.run(100)
-
-    """
-    Could this be done easier by have the arrays storing all objects of that being created 
-    from the instruction method and then could be called as an object on the class?
-    """
-    stops = [
-        first_stop,
-        last_stop,
-        stadium,
-    ]  # Maybe have this setup on construct from method?
-    station_out = {}
-    for stop in stops:
-        station_out[stop.id] = stop.people_over_time
-
-    bus_routes = [bus_route]
-    bus_route_time_out = {}
-    bus_route_pop_out = {}
-    for route in bus_routes:
-        bus_route_time_out[route.id] = route.bus_time_log
-        bus_route_pop_out[route.id] = route.bus_passenger_changes
-
-    walk_routes = [walk_to_stadium]
-    walk_route_out = {}
-    for route in walk_routes:
-        walk_route_out[route.id] = route.walk_time_log
-
-    print()
-    print(station_out)
-    print()
-    print(bus_route_time_out)
-    print(bus_route_pop_out)
-    print()
-    print(walk_route_out)
-
-    for stop in stops:
-        print(f"{stop.id}: {stop.name}")
-        for people in stop.people:
-            print(people.people_log)
-
-
-def complex_example(env_start: int) -> None:
-    env = Environment()
-
-    first_stop = Station(
-        env=env,
-        id=0,
-        name="First Stop",
-        pos=(0, 0),
-        bays=1,
-        env_start=env_start,
-    )
-    second_stop = Station(
-        env=env,
-        id=1,
-        name="Second Stop",
-        pos=(1, 1),
-        bays=1,
-        env_start=env_start,
-    )
-    last_stop = Station(
-        env=env,
-        id=2,
-        name="Last Stop",
-        pos=(2, 2),
-        bays=1,
-        env_start=env_start,
-    )
-    stadium = Station(
-        env=env,
-        id=3,
-        name="Stadium",
-        pos=(4, 4),
-        bays=1,
-        env_start=env_start,
+    # make route
+    RouteM.objects.get_or_create(
+        route_id="0", name="test", transport_type=3, capacity=50
     )
 
-    X_trip = Trip(
-        timetable=[("First Stop", 0), ("Last Stop", 30)],
+    # make shape
+    ShapeM.objects.get_or_create(
+        shape_id=0,
+        shape_pt_lat=0,
+        shape_pt_lon=0,
+        shape_pt_sequence=0,
     )
 
-    X_trip_2 = Trip(
-        timetable=[("First Stop", 30), ("Last Stop", 60)],
+    # make trip 1
+    TripM.objects.get_or_create(
+        trip_id=1,
+        route_id=RouteM.objects.get(route_id=0),
+        shape_id=ShapeM.objects.get(shape_id=0),
+        service_id=CalendarM.objects.get(service_id=0),
     )
 
-    Y_trip = Trip(
-        timetable=[("First Stop", 15), ("Second Stop", 30), ("Last Stop", 45)],
+    # make timetable for trip 1
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=1),
+        station=StationM.objects.get(station_id=0),
+        arrival_time=time(0, 10),
+        sequence=1,
     )
 
-    Z_trip = Trip(
-        timetable=[("Second Stop", 0), ("Last Stop", 15), ("Stadium", 20)],
+    # make timetable for trip 1
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=1),
+        station=StationM.objects.get(station_id=-1),
+        arrival_time=time(0, 20),
+        sequence=2,
     )
 
-    Z_trip_2 = Trip(
-        timetable=[
-            ("Second Stop", 45),
-            ("Last Stop", 60),
-            ("Stadium", 65),
-        ],  # How do we handle route wrap over, or is this covered by the datetime
+    # make timetable for trip 1
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=1),
+        station=StationM.objects.get(station_id=-2),
+        arrival_time=time(0, 30),
+        sequence=3,
     )
 
-    bus_route_X = BusRoute(
-        env=env,
-        env_start=env_start,
-        id=0,
-        name="X",
-        stops=[first_stop, last_stop],
-        trip_timing_data=[X_trip, X_trip_2],
+    # make trip 2
+    TripM.objects.get_or_create(
+        trip_id=2,
+        route_id=RouteM.objects.get(route_id=0),
+        shape_id=ShapeM.objects.get(shape_id=0),
+        service_id=CalendarM.objects.get(service_id=0),
     )
 
-    bus_route_Y = BusRoute(
-        env=env,
-        env_start=env_start,
-        id=1,
-        name="Y",
-        stops=[first_stop, second_stop, last_stop],
-        trip_timing_data=[Y_trip],
+    # make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=2),
+        station=StationM.objects.get(station_id=0),
+        arrival_time=time(0, 0),
+        sequence=1,
     )
 
-    bus_route_Z = BusRoute(
-        env=env,
-        env_start=env_start,
-        id=2,
-        name="Z",
-        stops=[second_stop, last_stop, stadium],
-        trip_timing_data=[Z_trip, Z_trip_2],
+    # make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=2),
+        station=StationM.objects.get(station_id=-1),
+        arrival_time=time(0, 10),
+        sequence=2,
     )
 
-    walk_to_stadium = Walk(
-        id=10,
-        env=env,
-        env_start=env_start,
-        stops=[last_stop, stadium],
+    # make timetable for trip 2
+    TimetableM.objects.get_or_create(
+        trip_id=TripM.objects.get(trip_id=2),
+        station=StationM.objects.get(station_id=-2),
+        arrival_time=time(0, 20),
+        sequence=3,
     )
 
-    itinerary1 = Itinerary(
-        env=env, id=1, routes=[(bus_route_X, None), (walk_to_stadium, None)]
+    run_simulation(
+        {
+            "env_start": 10,
+            "time_horizon": 30,
+            "itineraries": {
+                0: [
+                    {
+                        "route_id": "0",
+                        "start": "0",
+                        "end": "-1",
+                    }
+                ]
+            },
+            "snapshot_date": test_date.date(),
+        },
+        1,
     )
-    itinerary2 = Itinerary(
-        env=env, id=2, routes=[(bus_route_Y, None), (walk_to_stadium, None)]
-    )
-    itinerary3 = Itinerary(
-        env=env, id=3, routes=[(bus_route_Z, last_stop), (walk_to_stadium, None)]
-    )
-    itinerary4 = Itinerary(env=env, id=4, routes=[(bus_route_Z, None)])
-    ITINERARIES.append(itinerary1)
-    ITINERARIES.append(itinerary2)
-    ITINERARIES.append(itinerary3)
-    ITINERARIES.append(itinerary3)
-
-    Suburb(
-        env=env,
-        name="Simple Suburb",
-        station_distribution={first_stop: 50, second_stop: 40, last_stop: 10},
-        population=200,
-        frequency=10,
-        max_distributes=3,
-        itineraries=[itinerary1, itinerary2, itinerary3, itinerary4],
-        env_start=env_start,
-    )
-
-    env.run(125)
-
-    stops = [
-        first_stop,
-        second_stop,
-        last_stop,
-        stadium,
-    ]  # Maybe have this setup on construct from method?
-    station_out = {}
-    for stop in stops:
-        station_out[stop.id] = stop.people_over_time
-
-    bus_routes = [bus_route_Z]
-    bus_route_time_out = {}
-    bus_route_pop_out = {}
-    for route in bus_routes:
-        bus_route_time_out[route.id] = route.bus_time_log
-        bus_route_pop_out[route.id] = route.bus_passenger_changes
-
-    walk_routes = [walk_to_stadium]
-    walk_route_out = {}
-    for route in walk_routes:
-        walk_route_out[route.id] = route.walk_time_log
-
-    print()
-    print(station_out)
-    print()
-    print(bus_route_time_out)
-    print(bus_route_pop_out)
-    print()
-    print(walk_route_out)
-
-    print()
-
-    for stop in stops:
-        print(f"{stop.id}: {stop.name}")
-        for people in stop.people:
-            if stop.name == "Stadium":
-                print(people.get_num_people(), people.people_log)
-            else:
-                print(
-                    people.get_num_people(),
-                    people.people_log,
-                    ITINERARIES[people.itinerary_index].get_current_route(people).name,
-                )
-                print(people)
-                print(people.current_route_in_itin_index)
-
-        print()
-
-
-def test_efficiency():
-    print()
-    i = 0
-    while i < 1:
-        complex_example(0)
-        i += 1
 
 
 def test_sim_with_db_models_412():
@@ -324,6 +191,50 @@ def test_sim_with_db_models_412():
     )
 
 
+def test_sim_output_serializer():
+    station = StationSim(
+        station_id="0",
+        name="test_station",
+        lat=0,
+        long=0,
+        passenger_count=PassengerChanges(
+            passenger_changes_id=0,
+            time=0,
+            passenger_count=0,
+        ),
+    )
+
+    route = RouteSim(
+        route_id="0",
+        method="test_route",
+        buses_on_route=BusOnRouteInfo(
+            bus_id="0",
+            bus_timeout=BusTimeOut(
+                bustimeout_id=0,
+                stop_name="0",
+                time=0,
+            ),
+            bus_passenger_changes=PassengerChanges(
+                passenger_changes_id=1,
+                time=0,
+                passenger_count=50,
+            ),
+        ),
+        stations=station,
+    )
+
+    output = SimulationOutput(
+        simulation_id=0,
+        route_id=route,
+        station_id=station,
+        itinerary_id=ItinerarySim(
+            itinerary_id="0",
+            routes=route,
+        ),
+    )
+    serializer = SimulationOutputSerializer(output)
+    print(json.dumps(serializer.data))
+
+
 if __name__ == "__main__":
-    test_sim_with_db_models_412()
-    # test_efficiency()
+    test_basic_sim_with_models()

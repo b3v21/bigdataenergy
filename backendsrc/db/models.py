@@ -77,10 +77,6 @@ class Timetable(models.Model):
         unique_together = ("trip_id", "station", "arrival_time", "sequence")
 
 
-class SimulationOutput(models.Model):
-    simulation_id = models.IntegerField(primary_key=True)
-
-
 class TravelTimes(models.Model):
     traveltime_id = models.IntegerField(primary_key=True)
     from_station = models.ForeignKey(
@@ -90,3 +86,74 @@ class TravelTimes(models.Model):
         Station, on_delete=models.CASCADE, related_name="to_station"
     )
     duration = models.FloatField(default=0)
+
+
+######################################### Sim Output Stuff #########################################
+
+
+class SimulationOutput(models.Model):
+    simulation_id = models.IntegerField(primary_key=True)
+
+
+class BusTimeOut(models.Model):
+    bustimeout_id = models.IntegerField(primary_key=True)
+    sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
+    stop_name = models.CharField(max_length=255)
+    time = models.IntegerField()
+
+    class Meta:
+        unique_together = ("bustimeout_id", "sim_id", "time")
+
+
+class PassengerChanges(models.Model):
+    passenger_changes_id = models.IntegerField(primary_key=True)
+    sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
+    time = models.IntegerField()
+    passenger_count = models.IntegerField()
+
+    class Meta:
+        unique_together = ("passenger_changes_id", "sim_id", "time")
+
+
+class BusOnRouteInfo(models.Model):
+    bus_id = models.CharField(max_length=255)
+    sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
+    bus_timeout = models.ForeignKey(BusTimeOut, on_delete=models.CASCADE)
+    bus_passenger_changes = models.ForeignKey(
+        PassengerChanges, on_delete=models.CASCADE
+    )
+
+    class Meta:
+        unique_together = ("bus_id", "sim_id", "bus_timeout", "bus_passenger_changes")
+
+
+class StationSim(models.Model):
+    station_id = models.CharField(max_length=255)
+    sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    lat = models.FloatField()
+    long = models.FloatField()
+    passenger_count = models.ForeignKey(PassengerChanges, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("sim_id", "station_id", "passenger_count")
+
+
+class RouteSim(models.Model):
+    route_id = models.CharField(max_length=255)
+    sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
+    method = models.CharField(max_length=255)
+    buses_on_route = models.ForeignKey(BusOnRouteInfo, on_delete=models.CASCADE)
+    stations = models.ForeignKey(StationSim, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("sim_id", "route_id", "buses_on_route", "stations")
+
+
+class ItinerarySim(models.Model):
+    itinerary_id = models.CharField(max_length=255)
+    sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
+    routes = models.ForeignKey(RouteSim, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("sim_id", "itinerary_id")

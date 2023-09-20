@@ -10,7 +10,6 @@ import sys
 import copy
 from datetime import time, date, datetime
 
-
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
@@ -22,6 +21,13 @@ from db.models import (
     Trip as TripM,
     Shape as ShapeM,
     Calendar as CalendarM,
+    StationSim,
+    RouteSim,
+    ItinerarySim,
+    SimulationOutput,
+    BusOnRouteInfo,
+    PassengerChanges,
+    BusTimeOut,
 )  # noqa: E402
 
 
@@ -354,6 +360,8 @@ class Bus(Transporter):
         super().__init__(
             env, env_start, id, name, trip, route, location_index, people, capacity
         )
+        self.bus_time_log = {}
+        self.bus_passenger_changes = {}
 
     def get_type(self) -> str:
         return "Bus"
@@ -362,8 +370,7 @@ class Bus(Transporter):
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
 
     def bus_instance(self, bus_route: BusRoute) -> None:
-        bus_route.bus_passenger_changes[self.id] = {}
-        bus_route.bus_passenger_changes[self.id][
+        self.bus_passenger_changes[
             self.env.now + self.env_start
         ] = self.passenger_count()
         while True:
@@ -373,9 +380,9 @@ class Bus(Transporter):
                     print(
                         f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
                     )
-                bus_route.bus_time_log[self.id][
-                    bus_route.get_current_stop(self).name
-                ] = (self.env.now + self.env_start)
+                self.bus_time_log[bus_route.get_current_stop(self).name] = (
+                    self.env.now + self.env_start
+                )
                 if bus_route.get_current_stop(self) != bus_route.last_stop:
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
@@ -384,7 +391,7 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_passenger_changes[self.id][
+                    self.bus_passenger_changes[
                         self.env.now + self.env_start
                     ] = self.passenger_count()
 
@@ -392,7 +399,7 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
-                    bus_route.bus_passenger_changes[self.id][
+                    self.bus_passenger_changes[
                         self.env.now + self.env_start
                     ] = self.passenger_count()
                     # Despawn
@@ -417,7 +424,7 @@ class Bus(Transporter):
                     travel_time = 1
 
             yield self.env.timeout(travel_time)
-            bus_route.bus_time_log[self.id][bus_route.get_current_stop(self).name] = (
+            self.bus_time_log[bus_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
             )
             if DEBUG:
@@ -487,8 +494,6 @@ class BusRoute(Route):
         )
         self.running = self.env.process(self.initiate_route())
         self.buses: list[Bus] = []
-        self.bus_time_log = {}
-        self.bus_passenger_changes = {}
 
     def initiate_route(self) -> None:
         """
@@ -507,7 +512,6 @@ class BusRoute(Route):
                         station_info = (station, arrival_time)
                         trip_info = trip
                         # Now have a trip to start
-                        self.bus_time_log[self.transporters_spawned] = {}
                         new_bus = Bus(
                             env=self.env,
                             env_start=self.env_start,
@@ -713,7 +717,9 @@ class Trip:
         self.timetable = timetable
 
 
-def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
+def run_simulation(
+    user_data: dict[dict], sim_id: int
+) -> tuple[list[Station], list[Trip], list[Route], list[Itinerary], int, dict[dict]]:
     """Main function to run the simulation"""
 
     env = Environment()
@@ -741,45 +747,84 @@ def run_simulation(user_data: dict[dict], sim_id: int) -> dict[dict]:
 
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
+    output = process_simulation_output(stations, routes, itineraries, sim_id)
+    print(f"Simulation #{sim_id} output processed.")
+    load_sim_data_into_db(stations, routes, itineraries, sim_id)
+    print(f"Simulation #{sim_id} output loaded into db.")
 
-    return process_simulation_output(stations, trips, routes, itineraries)
+    return output
 
 
 def process_simulation_output(
     stations: list[Station],
-    trips: list[Trip],
     routes: list[Route],
     itineraries: list[Itinerary],
+    sim_id: int,
 ) -> dict[dict]:
     """
     Analyse all the models once the simulation has finished running and returns the
-    information which will be sent to the frontend. Some information requested from the
-    frontend is as follows...
+    information which will be sent to the frontend.
 
-    Routes:
-    - occupancy of the route at each point (station) of the journey
+    output has the following format:
 
-    Stops
-    - Average wait times at stations
-    - Time taken to get to the destination from the starting station (for each group of people?)
-
-    - Distance from event
-
-    Itinerary
-    - Time taken at each step (walking, bus etc)
-    - Also will probably need to send some information about routes directly.
-      I think at the moment route data is just contained in the itinerary?
+    output = {
+        "SimulationID": sim_id,
+        "Routes": {
+            route_id: {
+                "method": "BusRoute" or "Walk",
+                "TransportersOnRoute": {
+                    transporter_id: {
+                        "Timeout": {...},
+                        "PassengerChangesOverTime": {...},
+                    },
+                },
+                "Walkout": {walk_id: time, ...},
+                "stations": {
+                    station_id: {
+                        "stationName": station_name,
+                        "pos": {
+                            "lat": lat,
+                            "long": long
+                        }
+                        "seq": int
+                    }
+                }
+            },
+        ],
+        "Stations": [
+            station_id: {
+                "stationName": station_name,
+                "pos": {
+                    "lat": lat,
+                    "long": long
+                },
+                "PeopleChangesOverTime": {time: num_people, ...}
+            },
+        ],
+        "Itineraries": [
+            itinerary_id: {
+                "Routes": {
+                    route_id: {station_name, ...}
+                }
+            }
+        ]
+    }
     """
 
-    output = {"Routes": {}, "Stations": {}, "Itineraries": {}}
+    output = {"Simulation_id": sim_id, "Routes": {}, "Stations": {}, "Itineraries": {}}
 
     for route in routes:
         output["Routes"][route.id] = {}
         rd = output["Routes"][route.id]
         rd["method"] = route.get_type()
         if route.get_type() == "BusRoute":
-            rd["Timeout"] = route.bus_time_log
-            rd["PassengerChangesOverTime"] = route.bus_passenger_changes
+            rd["BusesOnRoute"] = {}
+            br = rd["BusesOnRoute"]
+            for bus in route.buses:
+                br[bus.id] = {
+                    "Timeout": bus.bus_time_log,
+                    "PassengerChangesOverTime": bus.bus_passenger_changes,
+                }
         elif route.get_type() == "Walk":
             rd["Walkout"] = route.walk_time_log
 
@@ -792,6 +837,7 @@ def process_simulation_output(
                 "lat": station.pos[0],
                 "long": station.pos[1],
             }
+            sd["sequence"] = route.stops.index(station)
 
     for station in stations:
         output["Stations"][station.id] = {}
@@ -823,7 +869,7 @@ def get_data(
     time_horizon: int,
     itineraries: list,
     snapshot_date: datetime.date,
-) -> tuple[dict[int, Station], list[Trip], dict[int, Route], list[Itinerary]]:
+) -> tuple[dict[int, Station], list[Trip], dict[int, BusRoute], list[Itinerary]]:
     """
     This function accesses the data from the database and converts it into simulation
     objects.
@@ -832,8 +878,10 @@ def get_data(
     Itinerary objects, for now just use placeholder which is a list of routes
     that the itinerary use
     """
-    snapshot_date = datetime.strptime(snapshot_date, "%Y-%m-%d").date()
-    
+
+    if not snapshot_date:
+        snapshot_date = datetime.date.today()
+
     day_of_week = snapshot_date.strftime("%A").lower()
 
     # Get all calendar objects (containing service info) that run on a Friday
@@ -954,3 +1002,89 @@ def get_data(
     itineraries_out = sim_itineraries
 
     return stations_out, trips_out, routes_out, itineraries_out
+
+
+def load_sim_data_into_db(
+    stations: list[Station],
+    routes: list[Route],
+    itineraries: list[Itinerary],
+    sim_id: int,
+) -> None:
+    """
+    Generate all the data for the simulation and load it into the database (convert to SimStation,
+    SimRoute, SimItinerary objects), then using these generation SimOutput object.
+    """
+
+    sim_output = SimulationOutput.objects.get_or_create(simulation_id=sim_id)[0]
+
+    # Create Stations
+    for station in stations:
+        for time, num_people in station.people_over_time.items():
+            passenger_count = PassengerChanges.objects.get_or_create(
+                sim_id=sim_output,
+                time=time,
+                passenger_count=num_people,
+            )
+
+            StationSim.objects.get_or_create(
+                station_id=station.id,
+                sim_id=sim_output,
+                name=station.name,
+                lat=station.pos[0],
+                long=station.pos[1],
+                passenger_count=passenger_count[0],
+            )
+
+    # Create Routes
+    for route in routes:
+        for station in route.stops:
+            for bus in route.buses:
+                for stop_name, time in bus.bus_time_log.items():
+                    for time, passenger_count in bus.bus_passenger_changes.items():
+                        bus_time_out = BusTimeOut.objects.get_or_create(
+                            sim_id=sim_output,
+                            stop_name=stop_name,
+                            time=time,
+                        )
+
+                        passenger_changes = PassengerChanges.objects.get_or_create(
+                            sim_id=sim_output,
+                            time=time,
+                            passenger_count=passenger_count,
+                        )
+
+                        bus_on_route = BusOnRouteInfo.objects.get_or_create(
+                            bus_id=bus.id,
+                            sim_id=sim_output,
+                            bus_timeout=BusTimeOut.objects.filter(
+                                bustimeout_id=bus_time_out[0].bustimeout_id
+                            ).first(),
+                            bus_passenger_changes=PassengerChanges.objects.filter(
+                                passenger_changes_id=passenger_changes[
+                                    0
+                                ].passenger_changes_id
+                            ).first(),
+                        )
+
+                        RouteSim.objects.get_or_create(
+                            route_id=route.id,
+                            sim_id=sim_output,
+                            method=route.get_type(),
+                            buses_on_route=BusOnRouteInfo.objects.filter(
+                                bus_id=bus_on_route[0].bus_id
+                            ).first(),
+                            stations=StationSim.objects.filter(
+                                sim_id=sim_output, name=station.name
+                            ).first(),
+                        )
+
+    # Create Itineraries
+    for itinerary in itineraries:
+        for route in itinerary.routes:
+            ItinerarySim.objects.get_or_create(
+                itinerary_id=itinerary.id,
+                sim_id=sim_output,
+                routes=RouteSim.objects.filter(
+                    sim_id=sim_id, route_id=route[0].id
+                ).first(),
+            )
