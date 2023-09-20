@@ -23,9 +23,11 @@ def sim_request(request: Request, sim_id: int) -> Response:
     {
         "env_start": int,
         "time_horizon": int,
-        "itineraries": [[(str, str, str)]],
-        "service_ids": [str],
+        "itineraries": dict[list[dict[str, str])]], 
+        "snapshot_date": str, (yyyy-mm-dd format)
     }
+    
+    NOTE: Go to test_sim.py to see examples
     """
 
     print(f"Simulation #{sim_id} request recieved.")
