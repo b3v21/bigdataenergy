@@ -1,9 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Plot, { PlotParams } from 'react-plotly.js';
-import { data, data1, layout, layout1 } from '../reports';
-import Status from './sidebar/components/status';
+import Status from './components/status';
 
 const Sidebar = () => {
 	return (
@@ -40,28 +38,8 @@ const Routes = () => (
 	<Card className="h-full">
 		<CardHeader>
 			<CardTitle>Routes</CardTitle>
+			<Input name="population" defaultValue="" />
 		</CardHeader>
-		<CardContent>
-			<div className="flex flex-col gap-4">
-				<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
-					{/* @ts-ignore */}
-					<Plot
-						data={
-							[
-								{
-									...data
-								}
-							] as PlotParams['data']
-						}
-						layout={layout}
-					/>
-				</Card>
-				<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
-					{/* @ts-ignore */}
-					<Plot data={data1} layout={layout1} />
-				</Card>
-			</div>
-		</CardContent>
 	</Card>
 );
 

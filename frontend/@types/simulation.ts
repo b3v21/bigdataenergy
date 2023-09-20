@@ -1,10 +1,38 @@
-export type Simulation = {
-	stops: Stop[];
+type Itinerary = {
+	[routeId: number]: { Routes: { [routeName: string]: string[] } }[];
 };
 
-export type Stop = {
-	lon: number;
-	lat: number;
-	name: string;
-	travel_time: number;
+type Routes = {
+	[routeId: string]: {
+		PassengerChangesOverTime: {
+			[busId: number]: {
+				[timestamp: number]: number;
+			};
+		}[];
+		Timeout: {
+			[busId: number]: {
+				[stopName: string]: number;
+			}[];
+		};
+		stations: {
+			[stationId: number]: {
+				pos: { lat: number; lon: number };
+				stationName: string;
+			};
+		}[];
+	};
+};
+
+type Station = {
+	[stationId: number]: {
+		PeopleChangeOverTime: { [timestamp: number]: number };
+		Pos: { lat: number; lon: number };
+		stationName: string;
+	}[];
+};
+
+export type Simulation = {
+	Itineraries: Itinerary[];
+	Routes: Routes;
+	Stations: Station[];
 };

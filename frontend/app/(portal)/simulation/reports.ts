@@ -112,7 +112,7 @@ const data = {
     },
   };
   
-  const data1 = [trace1, trace2, trace3];
+  const data1 = [trace1, trace2, trace3] as PlotParams['data'];
 
 
 export {data, layout, data1, layout1 };
