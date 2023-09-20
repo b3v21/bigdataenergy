@@ -8,6 +8,12 @@ from db.models import (
     Timetable,
     SimulationOutput,
     TravelTimes,
+    BusTimeOut,
+    PassengerChanges,
+    BusOnRouteInfo,
+    StationSim,
+    RouteSim,
+    ItinerarySim,
 )
 
 
@@ -66,13 +72,50 @@ class TimetableSerializer(serializers.ModelSerializer):
         fields = ["trip_id", "station", "arrival_time", "sequence"]
 
 
-class SimulationOutputSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SimulationOutput
-        fields = ["simulation_id"]
-
-
 class TravelTimesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TravelTimes
         fields = ["traveltime_id", "from_station", "to_station", "duration"]
+
+
+class SimulationOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SimulationOutput
+        fields = ["simulation_id", "route_id", "station_id", "itinerary_id"]
+        depth = 3
+
+
+class BusTimeOutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusTimeOut
+        fields = ["bustimeout_id", "stop_name", "time"]
+
+
+class PassengerChangesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PassengerChanges
+        fields = ["passenger_changes_id", "time", "passenger_count"]
+
+
+class BusOnRouteInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusOnRouteInfo
+        fields = ["bus_id", "bus_timeout", "bus_passenger_changes"]
+
+
+class StationSimSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StationSim
+        fields = ["station_id", "name", "pos", "passenger_count"]
+
+
+class RouteSimSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RouteSim
+        fields = ["route_id", "method", "buses_on_route", "stations"]
+
+
+class ItinerarySimSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItinerarySim
+        fields = ["itinerary_id", "routes"]

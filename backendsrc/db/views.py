@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
-from db.models import Station
+from db.models import Station, SimulationOutput
 from rest_framework.response import Response
 from db.serializers import StationSerializer
 from rest_framework import status
@@ -35,10 +35,9 @@ def sim_request(request: Request, sim_id: int) -> Response:
         warning(f"Simulation #{sim_id} has not recieved any user data.")
 
     print(f"Running simulation #{sim_id}.")
-    simulation_output = run_simulation(request.data, sim_id)
-    print(f"Simulation #{sim_id} output processed.")
+    output = run_simulation(request.data, sim_id)
 
-    return Response(data=simulation_output, status=status.HTTP_201_CREATED)
+    return Response(data=output, status=status.HTTP_201_CREATED)
 
 
 ######################## PRACTICE VIEWS ########################
