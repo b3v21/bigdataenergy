@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowRight } from 'lucide-react';
+import Plot, { PlotParams } from 'react-plotly.js';
+import { data, layout, data1, layout1 } from '../reports';
 
 const Sidebar = () => {
 	return (
@@ -100,8 +102,27 @@ const Routes = () => (
 	<Card className="h-full">
 		<CardHeader>
 			<CardTitle>Routes</CardTitle>
-			<Input name="population" defaultValue="" />
 		</CardHeader>
+		<CardContent>
+		<div className="flex flex-col gap-4">
+		<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
+		<Plot
+        data={[
+			{
+				...data,
+			}
+		] as PlotParams['data']}
+        layout={layout}
+      	/>
+		</Card>
+		<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
+		<Plot
+        data={data1}
+        layout={layout1}
+      	/>
+		</Card>
+		</div>
+	  </CardContent>
 	</Card>
 );
 
