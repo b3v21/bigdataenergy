@@ -10,7 +10,6 @@ import sys
 import copy
 from datetime import time, date, datetime
 
-
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
@@ -22,6 +21,13 @@ from db.models import (
     Trip as TripM,
     Shape as ShapeM,
     Calendar as CalendarM,
+    StationSim,
+    RouteSim,
+    ItinerarySim,
+    SimulationOutput,
+    BusOnRouteInfo,
+    PassengerChanges,
+    BusTimeOut,
 )  # noqa: E402
 
 
@@ -742,8 +748,11 @@ def run_simulation(
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
     output = process_simulation_output(stations, routes, itineraries, sim_id)
+    print(f"Simulation #{sim_id} output processed.")
+    load_sim_data_into_db(stations, routes, itineraries, sim_id)
+    print(f"Simulation #{sim_id} output loaded into db.")
 
-    return stations, routes, itineraries, sim_id, output
+    return output
 
 
 def process_simulation_output(
@@ -777,6 +786,7 @@ def process_simulation_output(
                             "lat": lat,
                             "long": long
                         }
+                        "seq": int
                     }
                 }
             },
@@ -827,6 +837,7 @@ def process_simulation_output(
                 "lat": station.pos[0],
                 "long": station.pos[1],
             }
+            sd["sequence"] = route.stops.index(station)
 
     for station in stations:
         output["Stations"][station.id] = {}
@@ -991,3 +1002,89 @@ def get_data(
     itineraries_out = sim_itineraries
 
     return stations_out, trips_out, routes_out, itineraries_out
+
+
+def load_sim_data_into_db(
+    stations: list[Station],
+    routes: list[Route],
+    itineraries: list[Itinerary],
+    sim_id: int,
+) -> None:
+    """
+    Generate all the data for the simulation and load it into the database (convert to SimStation,
+    SimRoute, SimItinerary objects), then using these generation SimOutput object.
+    """
+
+    sim_output = SimulationOutput.objects.get_or_create(simulation_id=sim_id)[0]
+
+    # Create Stations
+    for station in stations:
+        for time, num_people in station.people_over_time.items():
+            passenger_count = PassengerChanges.objects.get_or_create(
+                sim_id=sim_output,
+                time=time,
+                passenger_count=num_people,
+            )
+
+            StationSim.objects.get_or_create(
+                station_id=station.id,
+                sim_id=sim_output,
+                name=station.name,
+                lat=station.pos[0],
+                long=station.pos[1],
+                passenger_count=passenger_count[0],
+            )
+
+    # Create Routes
+    for route in routes:
+        for station in route.stops:
+            for bus in route.buses:
+                for stop_name, time in bus.bus_time_log.items():
+                    for time, passenger_count in bus.bus_passenger_changes.items():
+                        bus_time_out = BusTimeOut.objects.get_or_create(
+                            sim_id=sim_output,
+                            stop_name=stop_name,
+                            time=time,
+                        )
+
+                        passenger_changes = PassengerChanges.objects.get_or_create(
+                            sim_id=sim_output,
+                            time=time,
+                            passenger_count=passenger_count,
+                        )
+
+                        bus_on_route = BusOnRouteInfo.objects.get_or_create(
+                            bus_id=bus.id,
+                            sim_id=sim_output,
+                            bus_timeout=BusTimeOut.objects.filter(
+                                bustimeout_id=bus_time_out[0].bustimeout_id
+                            ).first(),
+                            bus_passenger_changes=PassengerChanges.objects.filter(
+                                passenger_changes_id=passenger_changes[
+                                    0
+                                ].passenger_changes_id
+                            ).first(),
+                        )
+
+                        RouteSim.objects.get_or_create(
+                            route_id=route.id,
+                            sim_id=sim_output,
+                            method=route.get_type(),
+                            buses_on_route=BusOnRouteInfo.objects.filter(
+                                bus_id=bus_on_route[0].bus_id
+                            ).first(),
+                            stations=StationSim.objects.filter(
+                                sim_id=sim_output, name=station.name
+                            ).first(),
+                        )
+
+    # Create Itineraries
+    for itinerary in itineraries:
+        for route in itinerary.routes:
+            ItinerarySim.objects.get_or_create(
+                itinerary_id=itinerary.id,
+                sim_id=sim_output,
+                routes=RouteSim.objects.filter(
+                    sim_id=sim_id, route_id=route[0].id
+                ).first(),
+            )

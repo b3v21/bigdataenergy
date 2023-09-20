@@ -35,10 +35,7 @@ def sim_request(request: Request, sim_id: int) -> Response:
         warning(f"Simulation #{sim_id} has not recieved any user data.")
 
     print(f"Running simulation #{sim_id}.")
-    stations, routes, itineraries, sim_id, output = run_simulation(request.data, sim_id)
-    print(f"Simulation #{sim_id} output processed.")
-
-    SimulationOutput.objects.get_or_create(simulation_id=sim_id)
+    output = run_simulation(request.data, sim_id)
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 
