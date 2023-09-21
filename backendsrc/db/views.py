@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from backend.sim import run_simulation
+from backend.queries import get_station_suburbs
 from logging import warning
 
 
@@ -36,6 +37,28 @@ def sim_request(request: Request, sim_id: int) -> Response:
 
     print(f"Running simulation #{sim_id}.")
     output = run_simulation(request.data, sim_id)
+
+    return Response(data=output, status=status.HTTP_201_CREATED)
+
+@api_view(["GET"])
+def station_suburbs(request: Request) -> Response:
+    """
+    This is the request responsible for returning the station, suburb pairings
+    to be presented to the user in the frontend.
+
+    Currently has no body but perhaps later on a frontend setting could edit this
+    
+    returns a dict of the form:
+    {
+        suburb1:
+        [[station_id1, station_name1], [station_id2, station_name2], ...],
+        ...
+    }
+    """
+    
+    print(f"Sending location data to backend")
+
+    output = get_station_suburbs()
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 
