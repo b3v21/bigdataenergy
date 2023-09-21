@@ -48,12 +48,18 @@ def station_suburbs(request: Request) -> Response:
 
     Currently has no body but perhaps later on a frontend setting could edit this
     
-    returns a dict of the form:
-    {
-        suburb1:
-        [[station_id1, station_name1], [station_id2, station_name2], ...],
-        ...
-    }
+    return json of the form:
+    [
+        {
+            "suburb" : suburb_name,
+            "stations" : [
+                {
+                    "id" : 0,
+                    "name" : "station
+                }, ...
+            ]
+        }, ...
+    ]
     """
     
     print(f"Sending location data to backend")

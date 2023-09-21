@@ -12,24 +12,25 @@ django.setup()
 from db.models import Station
 
 
-def get_station_suburbs() -> dict[str: list[list[str, str]]]:
+def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     """
     This function returns a dictionary of station, suburb pairings
-    
+
     """
     result = []
-    
+
     stations = Station.objects.all()
     suburbs = {}
-    
+
     for station in stations:
         if station.suburb not in suburbs:
-            suburbs[station.suburb] = [{"id" : station.station_id, "name" : station.name}]
+            suburbs[station.suburb] = [{"id": station.station_id, "name": station.name}]
         else:
-            suburbs[station.suburb].append({"id" : station.station_id, "name" : station.name})
-            
+            suburbs[station.suburb].append(
+                {"id": station.station_id, "name": station.name}
+            )
+
     for suburb, station_data in suburbs.items():
-        result.append({"suburb" : suburb, "stations" : station_data})
-    
+        result.append({"suburb": suburb, "stations": station_data})
+
     return result
-    
