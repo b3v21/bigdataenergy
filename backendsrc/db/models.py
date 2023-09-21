@@ -129,7 +129,7 @@ class BusOnRouteInfo(models.Model):
 
 class StationSim(models.Model):
     station_id = models.CharField(max_length=255)
-    sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
+    sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=255)
     lat = models.FloatField()
     long = models.FloatField()
@@ -140,14 +140,12 @@ class StationSim(models.Model):
 
 
 class RouteSim(models.Model):
+    route_sim_id = models.IntegerField(primary_key=True)
     route_id = models.CharField(max_length=255)
     sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
     method = models.CharField(max_length=255)
     buses_on_route = models.ForeignKey(BusOnRouteInfo, on_delete=models.CASCADE)
     stations = models.ForeignKey(StationSim, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ("sim_id", "route_id", "buses_on_route", "stations")
 
 
 class ItinerarySim(models.Model):
