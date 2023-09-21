@@ -173,7 +173,7 @@ def test_basic_sim_with_models():
                     }
                 ]
             },
-            "snapshot_date": test_date.date(),
+            "snapshot_date": "2023-09-15",
         },
         1,
     )

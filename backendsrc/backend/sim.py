@@ -869,7 +869,7 @@ def get_data(
     env_start: int,
     time_horizon: int,
     itineraries: list,
-    snapshot_date: datetime.date,
+    snapshot_date: str,
 ) -> tuple[dict[int, Station], list[Trip], dict[int, BusRoute], list[Itinerary]]:
     """
     This function accesses the data from the database and converts it into simulation
@@ -882,6 +882,8 @@ def get_data(
 
     if not snapshot_date:
         snapshot_date = datetime.date.today()
+    else:
+        snapshot_date = datetime.strptime(snapshot_date, "%Y-%m-%d").date()
 
     day_of_week = snapshot_date.strftime("%A").lower()
 
