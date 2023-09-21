@@ -1016,7 +1016,7 @@ def load_sim_data_into_db(
     SimRoute, SimItinerary objects), then using these generation SimOutput object.
     """
 
-    sim_output,_ = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
+    sim_output, _ = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
 
     # Create Stations
     for station in stations:
@@ -1026,7 +1026,7 @@ def load_sim_data_into_db(
                 time=time,
                 passenger_count=num_people,
             )
-            
+
             passenger_changes.save()
 
             station_sim = StationSim.objects.create(
@@ -1035,18 +1035,19 @@ def load_sim_data_into_db(
                 name=station.name,
                 lat=station.pos[0],
                 long=station.pos[1],
-                passenger_count=PassengerChanges.objects.order_by('-passenger_changes_id').first(),
+                passenger_count=PassengerChanges.objects.order_by(
+                    "-passenger_changes_id"
+                ).first(),
             )
-            
-            station_sim.save()     
-    
+
+            station_sim.save()
+
     # Create Routes
     for route in routes:
         for station in route.stops:
             for bus in route.buses:
                 for stop_name, time in bus.bus_time_log.items():
                     for time, passenger_count in bus.bus_passenger_changes.items():
-                        
                         bus_time_out = BusTimeOut.objects.create(
                             sim_id=sim_output,
                             stop_name=stop_name,
@@ -1064,8 +1065,12 @@ def load_sim_data_into_db(
                         bus_on_route = BusOnRouteInfo.objects.create(
                             bus_id=bus.id,
                             sim_id=sim_output,
-                            bus_timeout=BusTimeOut.objects.order_by('-bustimeout_id').first(),
-                            bus_passenger_changes=PassengerChanges.objects.order_by('-passenger_changes_id').first()
+                            bus_timeout=BusTimeOut.objects.order_by(
+                                "-bustimeout_id"
+                            ).first(),
+                            bus_passenger_changes=PassengerChanges.objects.order_by(
+                                "-passenger_changes_id"
+                            ).first(),
                         )
                         bus_on_route.save()
 
@@ -1073,14 +1078,15 @@ def load_sim_data_into_db(
                             route_id=route.id,
                             sim_id=sim_output,
                             method=route.get_type(),
-                            buses_on_route=BusOnRouteInfo.objects.order_by('-bus_id').first(),
+                            buses_on_route=BusOnRouteInfo.objects.order_by(
+                                "-bus_id"
+                            ).first(),
                             stations=StationSim.objects.filter(
                                 sim_id=sim_output, name=station.name
                             ).first(),
                         )
                         route_sim.save()
 
-        
     # Create Itineraries
 
     for itinerary in itineraries:
@@ -1088,8 +1094,7 @@ def load_sim_data_into_db(
             itin = ItinerarySim.objects.create(
                 itinerary_id=itinerary.id,
                 sim_id=sim_output,
-                routes=RouteSim.objects.order_by('-route_sim_id').first()
+                routes=RouteSim.objects.order_by("-route_sim_id").first(),
             )
 
             itin.save()
-

@@ -112,7 +112,7 @@ class StationSimSerializer(serializers.ModelSerializer):
 class RouteSimSerializer(serializers.ModelSerializer):
     class Meta:
         model = RouteSim
-        fields = ["route_id", "method", "buses_on_route", "stations"]
+        fields = ["route_sim_id", "route_id", "method", "buses_on_route", "stations"]
 
 
 class ItinerarySimSerializer(serializers.ModelSerializer):
