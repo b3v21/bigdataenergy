@@ -729,8 +729,8 @@ def run_simulation(
         user_data["time_horizon"],
         user_data["itineraries"],
         user_data["snapshot_date"],
-        ["St Lucia"], #Active Suburbs
-        ["Boomerang Rd W at St Lucia South near Hawken Dr"] #Active Stations TODO ------------ Add these as apart of user data
+        user_data["active_suburbs"],
+        user_data["active_stations"],
     )
 
     print(f"Models successfully created for simulation #{sim_id}.")
