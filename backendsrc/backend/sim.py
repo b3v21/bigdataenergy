@@ -420,11 +420,17 @@ class Bus(Transporter):
                         travel_time = time - self.trip.timetable[index - 1][1]
                         break
                     index += 1
-                if travel_time <= 0:
+                if travel_time == 0:
+                    #Some bus stops have very small distances between, to stop teleportation, make min one
+                    print("**Had a case where travel time was 0**")
+                    travel_time = 1
+
+                if travel_time < 0:
                     if DEBUG:
                         print(
-                            "***ERROR*** Travel time <= 0 due to current implementation of trip, forcing 1"
+                            "***ERROR*** Travel time <= 0!!!"
                         )
+                        exit()
                     travel_time = 1
 
             yield self.env.timeout(travel_time)
