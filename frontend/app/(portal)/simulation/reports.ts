@@ -29,6 +29,7 @@ const layout: PlotParams['layout'] = {
   yaxis:{
     tickformat: '.0%'
   },
+  datarevision: 0
 };
 
 const data = {
@@ -39,9 +40,6 @@ const data = {
 	mode: 'lines+markers',
 	marker: {color: 'blue'},
 };
-
-
-
   //fake data
 
   const layout1: PlotParams['layout'] = {
@@ -111,8 +109,11 @@ const data = {
       width: 1,
     },
   };
-  
+
   const data1 = [trace1, trace2, trace3] as PlotParams['data'];
 
+  const config: PlotParams['config'] = {
+    modeBarButtonsToRemove: ['pan2d','select2d','lasso2d','resetScale2d','zoomOut2d', 'zoomIn2d']
+  }
 
-export {data, layout, data1, layout1 };
+export {data, layout, config, data1, layout1 };
