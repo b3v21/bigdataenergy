@@ -26,6 +26,8 @@ def sim_request(request: Request, sim_id: int) -> Response:
         "time_horizon": int,
         "itineraries": dict[list[dict[str, str])]], 
         "snapshot_date": str, (yyyy-mm-dd format)
+        "active_suburbs": list[str], (suburb names)
+        "active_stations": list[str], (station ids)
     }
     
     NOTE: Go to test_sim.py to see examples
