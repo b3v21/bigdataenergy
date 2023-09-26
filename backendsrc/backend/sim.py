@@ -133,6 +133,7 @@ class Station:
         pos: tuple[float, float],
         bays: int,
         env_start: int,
+        itin: int = None #By default has no itin, only active ones have index of itin
     ) -> None:
         self.env_start = env_start
         self.env = env
@@ -142,6 +143,8 @@ class Station:
         self.bays = Resource(env, capacity=bays)
         self.people = []
         self.people_over_time = {}
+        self.station = None # None on init, will be assigned by Suburb init
+        self.itin = itin
         self.log_cur_people()
 
     def log_cur_people(self) -> None:
@@ -414,14 +417,23 @@ class Bus(Transporter):
                 self.move_to_next_stop(len(bus_route.stops))
                 cur_stop = bus_route.get_current_stop(self)
                 travel_time = 0
+                index = 0
                 for stop, time in self.trip.timetable:
                     if cur_stop.name == stop:
-                        travel_time = time - (self.env.now + self.env_start)
-                if travel_time <= 0:
+                        travel_time = time - self.trip.timetable[index - 1][1]
+                        break
+                    index += 1
+                if travel_time == 0:
+                    #Some bus stops have very small distances between, to stop teleportation, make min one
+                    print("**Had a case where travel time was 0**")
+                    travel_time = 1
+
+                if travel_time < 0:
                     if DEBUG:
                         print(
-                            "***ERROR*** Travel time <= 0 due to current implementation of trip, forcing 1"
+                            "***ERROR*** Travel time <= 0!!!"
                         )
+                        exit()
                     travel_time = 1
 
             yield self.env.timeout(travel_time)
@@ -616,23 +628,27 @@ class Suburb:
         env: Environment,
         name: str,
         station_distribution: dict[Station, float],
+        stations: list[Station],
         population: int,
         frequency: int,
         max_distributes: int,
-        itineraries: list[Itinerary],
+        active: bool,
         env_start: int,
     ) -> None:
         self.env = env
         self.env_start = env_start
         self.name = name
         self.station_distribution = station_distribution
+        for station in self.station_distribution.keys():
+            station.suburb = self # Depending on use case for this, may change to id
         self.population = population
         self.frequency = frequency  # How often to try and distribute the population
         self.max_distributes = max_distributes
-        self.itineraries = itineraries
+        self.active = active
 
-        # Start process
-        self.pop_proc = self.env.process(self.suburb())
+        # Start process IF active
+        if active:
+            self.pop_proc = self.env.process(self.suburb())
 
     def suburb(self) -> None:
         """
@@ -662,21 +678,12 @@ class Suburb:
         TODO: This will be replaced with a standard form of distribution + the
         possibility for user inputs via the frontend.
 
-        Currently just randomly selects itinerary -> randomly selects route on itinerary
-        -> randomly selects station on route and drops a percentage of num_people at that
-        station based off the self.station_distribution dict.
+        Current assigns random amount of people to each of the active stations within this active suburb.
         """
         people_distributed = 0
         while people_distributed != num_people:
-            # Pick a itin to distribute to
-            itin = choice(self.itineraries)
-
-            # Pick a route from it to distribute to
-            route_tuple = choice(itin.routes)
-            route = route_tuple[0]
-
             possible_stations = list(
-                set(self.station_distribution.keys()) & set(route.stops)
+                self.station_distribution.keys()
             )
 
             if not possible_stations:
@@ -685,7 +692,7 @@ class Suburb:
             if not self.station_distribution[station]:
                 continue
 
-            num_for_stop = ceil(self.station_distribution[station] / 100 * num_people)
+            num_for_stop = ceil((self.station_distribution[station] / 100) * num_people)
 
             if num_for_stop > num_people - people_distributed:
                 num_for_stop = num_people - people_distributed
@@ -695,8 +702,8 @@ class Suburb:
                 count=num_for_stop,
                 start_time=self.env.now,
                 start_location=station,
-                itinerary_index=self.itineraries.index(itin),
-                current_route_in_itin_index=itin.routes.index(route_tuple),
+                itinerary_index=station.itin,
+                current_route_in_itin_index = 0, #SHOULD always be 0, each active station has unique itin.
                 env_start=self.env_start,
             )
 
@@ -725,16 +732,19 @@ def run_simulation(
 
     env = Environment()
 
-    stations, trips, routes, itineraries = get_data(
+    stations, trips, routes, itineraries, suburbs = get_data(
         env,
         user_data["env_start"],
         user_data["time_horizon"],
         user_data["itineraries"],
         user_data["snapshot_date"],
+        user_data["active_suburbs"],
+        user_data["active_stations"],
     )
 
     print(f"Models successfully created for simulation #{sim_id}.")
 
+    """
     suburb = Suburb(
         env=env,
         name="Simple Suburb",
@@ -742,9 +752,9 @@ def run_simulation(
         population=200,
         frequency=10,
         max_distributes=0,
-        itineraries=[itineraries[0]],
         env_start=user_data["env_start"],
     )
+    """
 
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
@@ -870,7 +880,9 @@ def get_data(
     time_horizon: int,
     itineraries: list,
     snapshot_date: str,
-) -> tuple[dict[int, Station], list[Trip], dict[int, BusRoute], list[Itinerary]]:
+    active_suburbs: list[str],
+    active_stations: list[str]
+) -> tuple[dict[int, Station], list[Trip], dict[int, BusRoute], list[Itinerary], list[Suburb]]:
     """
     This function accesses the data from the database and converts it into simulation
     objects.
@@ -996,15 +1008,54 @@ def get_data(
                 for route in itinerary
             ],
         )
+        
         sim_itineraries.append(new_itin)
         ITINERARIES.append(new_itin)
+        new_itin.routes[0][0].first_stop.itin = ITINERARIES.index(new_itin) #Assign itin index to station
+    
+
+    suburbs_db = StationM.objects.order_by().values('suburb').distinct()
+   
+    suburb_names = [suburb['suburb'] for suburb in suburbs_db.values()]
+    list_set = set(suburb_names)
+    suburb_names = (list(list_set))
+    suburbs_out = []
+    for sub_name in suburb_names:
+        #Create suburb for each
+        average_suburb_pop = 12600 #Very rough average
+        distribute_frequency = 15
+        max_distributes = 3
+        stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
+        active_stations_in_suburb_id = [station['station_id'] for station in StationM.objects.order_by().filter(suburb=sub_name, station_id__in=active_stations).values()]
+        active_stations_in_suburb = []
+        for id in active_stations_in_suburb_id:
+            active_stations_in_suburb.append(sim_stations[id])
+        stations = [station['station_id'] for station in stations_in_suburb.values()]
+        num_stations = len(active_stations_in_suburb)
+        pop_distribution = {}
+        active = sub_name in active_suburbs
+        for station in active_stations_in_suburb: #Will need some changes when proper user input changed.
+            pop_distribution[station] = (1 / num_stations) * 100 #Currently evenly assign to all stations...
+        suburb = Suburb(
+            env,
+            sub_name,
+            pop_distribution, #Distribution across stations
+            stations, #Station ids in suburb
+            average_suburb_pop, #Population
+            distribute_frequency, #Freq
+            max_distributes, #Max distributes
+            active,
+            env_start
+        )
+        suburbs_out.append(suburb)
+
 
     stations_out = [station for station in sim_stations.values()]
     trips_out = sim_trips
     routes_out = [route for route in sim_routes.values()]
     itineraries_out = sim_itineraries
 
-    return stations_out, trips_out, routes_out, itineraries_out
+    return stations_out, trips_out, routes_out, itineraries_out, suburbs_out
 
 
 def load_sim_data_into_db(
