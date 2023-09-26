@@ -1017,7 +1017,7 @@ def get_data(
         distribute_frequency = 15
         max_distributes = 3
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
-        active_stations_in_suburb_id = [station['station_id'] for station in StationM.objects.order_by().filter(suburb=sub_name, name__in=active_stations).values()]
+        active_stations_in_suburb_id = [station['station_id'] for station in StationM.objects.order_by().filter(suburb=sub_name, station_id__in=active_stations).values()]
         active_stations_in_suburb = []
         for id in active_stations_in_suburb_id:
             active_stations_in_suburb.append(sim_stations[id])

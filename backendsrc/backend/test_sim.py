@@ -187,7 +187,7 @@ def test_sim_with_db_models_412():
             "itineraries": {0: [{"route_id": "412-3136", "start": "0", "end": "1850"}]},
             "snapshot_date": "2023-08-01",
             "active_suburbs":["St Lucia"],
-            "active_stations" : ["Boomerang Rd W at St Lucia South near Hawken Dr"]
+            "active_stations" : ["1815"]
         },
         1,
     )
