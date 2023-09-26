@@ -414,9 +414,12 @@ class Bus(Transporter):
                 self.move_to_next_stop(len(bus_route.stops))
                 cur_stop = bus_route.get_current_stop(self)
                 travel_time = 0
+                index = 0
                 for stop, time in self.trip.timetable:
                     if cur_stop.name == stop:
-                        travel_time = time - (self.env.now + self.env_start)
+                        travel_time = time - self.trip.timetable[index - 1][1]
+                        break
+                    index += 1
                 if travel_time <= 0:
                     if DEBUG:
                         print(
