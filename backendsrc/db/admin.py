@@ -33,20 +33,26 @@ class CalendarAdmin(admin.ModelAdmin):
 class TripAdmin(admin.ModelAdmin):
     pass
 
+
 class PassengerChangesAdmin(admin.ModelAdmin):
     pass
+
 
 class BusTimeAdmin(admin.ModelAdmin):
     pass
 
+
 class BusOnRouteInfoAdmin(admin.ModelAdmin):
     pass
+
 
 class StationSimAdmin(admin.ModelAdmin):
     pass
 
+
 class RouteSimAdmin(admin.ModelAdmin):
     pass
+
 
 class ItinerarySimAdmin(admin.ModelAdmin):
     pass

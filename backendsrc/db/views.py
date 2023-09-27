@@ -24,12 +24,12 @@ def sim_request(request: Request, sim_id: int) -> Response:
     {
         "env_start": int,
         "time_horizon": int,
-        "itineraries": dict[list[dict[str, str])]], 
+        "itineraries": dict[list[dict[str, str])]],
         "snapshot_date": str, (yyyy-mm-dd format)
         "active_suburbs": list[str], (suburb names)
         "active_stations": list[str], (station ids)
     }
-    
+
     NOTE: Go to test_sim.py to see examples
     """
 
@@ -42,6 +42,7 @@ def sim_request(request: Request, sim_id: int) -> Response:
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 
+
 @api_view(["GET"])
 def station_suburbs(request: Request) -> Response:
     """
@@ -49,7 +50,7 @@ def station_suburbs(request: Request) -> Response:
     to be presented to the user in the frontend.
 
     Currently has no body but perhaps later on a frontend setting could edit this
-    
+
     return json of the form:
     [
         {
@@ -63,7 +64,7 @@ def station_suburbs(request: Request) -> Response:
         }, ...
     ]
     """
-    
+
     print(f"Sending location data to backend")
 
     output = get_station_suburbs()
