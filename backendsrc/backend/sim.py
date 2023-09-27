@@ -1003,7 +1003,7 @@ def get_data(
                     sim_routes[route["route_id"]],
                     sim_stations[route_ids[route["route_id"]]],
                 )
-                for route in itinerary
+                for route in itinerary["routes"]
             ],
         )
 

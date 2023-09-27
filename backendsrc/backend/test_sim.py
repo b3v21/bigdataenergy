@@ -184,7 +184,19 @@ def test_sim_with_db_models_412():
         {
             "env_start": 355,
             "time_horizon": 30,
-            "itineraries": {0: [{"route_id": "412-3136", "start": "0", "end": "1850"}]},
+            "itineraries": 
+            [
+                {
+                    "itinerary_id" : 0, 
+                    "routes" : [
+                        {
+                            "route_id": "412-3136", 
+                            "start": "0", 
+                            "end": "1850"
+                        }
+                    ]
+                }
+            ],
             "snapshot_date": "2023-08-01",
             "active_suburbs": ["St Lucia"],
             "active_stations": ["1815"],
