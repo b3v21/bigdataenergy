@@ -70,7 +70,7 @@ class Itinerary:
         return self.routes[people.current_route_in_itin_index][0]
 
     def last_leg(self, people: People) -> bool:
-        return people.current_route_in_itin_index == len(self.routes)
+        return people.current_route_in_itin_index == len(self.routes) - 1
 
 
 class People:
@@ -203,8 +203,6 @@ class Station:
                 or ITINERARIES[group.itinerary_index].get_current_route(group).last_stop
                 == self
             ):
-                # At current last part of their itin
-
                 group.next_route()
             if ITINERARIES[group.itinerary_index].last_leg(group):
                 self.people.append(group)
@@ -873,7 +871,7 @@ def get_data(
     env: Environment,
     env_start: int,
     time_horizon: int,
-    itineraries: list, # Go to views.py for format
+    itineraries: list,  # Go to views.py for format
     snapshot_date: str,
     active_suburbs: list[str],
     active_stations: list[str],
@@ -1078,7 +1076,7 @@ def load_sim_data_into_db(
     """
 
     sim_output, created = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
-    
+
     if not created:
         print(f"Simulation #{sim_id} already exists in database, skipping save...")
         return
