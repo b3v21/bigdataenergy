@@ -133,7 +133,7 @@ class Station:
         pos: tuple[float, float],
         bays: int,
         env_start: int,
-        itin: int = None #By default has no itin, only active ones have index of itin
+        itin: int = None,  # By default has no itin, only active ones have index of itin
     ) -> None:
         self.env_start = env_start
         self.env = env
@@ -143,7 +143,7 @@ class Station:
         self.bays = Resource(env, capacity=bays)
         self.people = []
         self.people_over_time = {}
-        self.station = None # None on init, will be assigned by Suburb init
+        self.station = None  # None on init, will be assigned by Suburb init
         self.itin = itin
         self.log_cur_people()
 
@@ -424,15 +424,13 @@ class Bus(Transporter):
                         break
                     index += 1
                 if travel_time == 0:
-                    #Some bus stops have very small distances between, to stop teleportation, make min one
+                    # Some bus stops have very small distances between, to stop teleportation, make min one
                     print("**Had a case where travel time was 0**")
                     travel_time = 1
 
                 if travel_time < 0:
                     if DEBUG:
-                        print(
-                            "***ERROR*** Travel time <= 0!!!"
-                        )
+                        print("***ERROR*** Travel time <= 0!!!")
                         exit()
                     travel_time = 1
 
@@ -640,7 +638,7 @@ class Suburb:
         self.name = name
         self.station_distribution = station_distribution
         for station in self.station_distribution.keys():
-            station.suburb = self # Depending on use case for this, may change to id
+            station.suburb = self  # Depending on use case for this, may change to id
         self.population = population
         self.frequency = frequency  # How often to try and distribute the population
         self.max_distributes = max_distributes
@@ -682,9 +680,7 @@ class Suburb:
         """
         people_distributed = 0
         while people_distributed != num_people:
-            possible_stations = list(
-                self.station_distribution.keys()
-            )
+            possible_stations = list(self.station_distribution.keys())
 
             if not possible_stations:
                 continue
@@ -703,7 +699,7 @@ class Suburb:
                 start_time=self.env.now,
                 start_location=station,
                 itinerary_index=station.itin,
-                current_route_in_itin_index = 0, #SHOULD always be 0, each active station has unique itin.
+                current_route_in_itin_index=0,  # SHOULD always be 0, each active station has unique itin.
                 env_start=self.env_start,
             )
 
@@ -761,7 +757,6 @@ def run_simulation(
     output = process_simulation_output(stations, routes, itineraries, sim_id)
     print(f"Simulation #{sim_id} output processed.")
     load_sim_data_into_db(stations, routes, itineraries, sim_id)
-    print(f"Simulation #{sim_id} output loaded into db.")
 
     return output
 
@@ -878,11 +873,13 @@ def get_data(
     env: Environment,
     env_start: int,
     time_horizon: int,
-    itineraries: list,
+    itineraries: list, # Go to views.py for format
     snapshot_date: str,
     active_suburbs: list[str],
-    active_stations: list[str]
-) -> tuple[dict[int, Station], list[Trip], dict[int, BusRoute], list[Itinerary], list[Suburb]]:
+    active_stations: list[str],
+) -> tuple[
+    dict[int, Station], list[Trip], dict[int, BusRoute], list[Itinerary], list[Suburb]
+]:
     """
     This function accesses the data from the database and converts it into simulation
     objects.
@@ -899,7 +896,7 @@ def get_data(
 
     day_of_week = snapshot_date.strftime("%A").lower()
 
-    # Get all calendar objects (containing service info) that run on a Friday
+    # Get all calendar objects (containing service info) that run on the requested d.o.t.w
     calendars = CalendarM.objects.all().filter(
         start_date__lte=snapshot_date, end_date__gte=snapshot_date, **{day_of_week: 1}
     )
@@ -907,8 +904,8 @@ def get_data(
     # Get all routes that are used in the itineraries
     route_ids = {}
 
-    for itinerary_id, itinerary in itineraries.items():
-        for route in itinerary:
+    for itinerary in itineraries:
+        for route in itinerary["routes"]:
             route_id = route["route_id"]
             start = route["start"]
             end = route["end"]
@@ -996,59 +993,70 @@ def get_data(
             sim_routes[route.route_id] = new_route
 
     sim_itineraries = []
-    for itinerary_id, itinerary in itineraries.items():
+    for itinerary in itineraries:
         new_itin = Itinerary(
             env,
-            itinerary_id,
+            itinerary["itinerary_id"],
             [
                 (
                     sim_routes[route["route_id"]],
                     sim_stations[route_ids[route["route_id"]]],
                 )
-                for route in itinerary
+                for route in itinerary["routes"]
             ],
         )
-        
+
         sim_itineraries.append(new_itin)
         ITINERARIES.append(new_itin)
-        new_itin.routes[0][0].first_stop.itin = ITINERARIES.index(new_itin) #Assign itin index to station
-    
+        new_itin.routes[0][0].first_stop.itin = ITINERARIES.index(
+            new_itin
+        )  # Assign itin index to station
 
-    suburbs_db = StationM.objects.order_by().values('suburb').distinct()
-   
-    suburb_names = [suburb['suburb'] for suburb in suburbs_db.values()]
+    suburbs_db = StationM.objects.order_by().values("suburb").distinct()
+
+    suburb_names = [suburb["suburb"] for suburb in suburbs_db.values()]
     list_set = set(suburb_names)
-    suburb_names = (list(list_set))
+    suburb_names = list(list_set)
     suburbs_out = []
     for sub_name in suburb_names:
-        #Create suburb for each
-        average_suburb_pop = 12600 #Very rough average
+        # Create suburb for each
+        average_suburb_pop = 12600  # Very rough average
         distribute_frequency = 15
         max_distributes = 3
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
-        active_stations_in_suburb_id = [station['station_id'] for station in StationM.objects.order_by().filter(suburb=sub_name, station_id__in=active_stations).values()]
+        active_stations_in_suburb_id = [
+            station["station_id"]
+            for station in StationM.objects.order_by()
+            .filter(suburb=sub_name, station_id__in=active_stations)
+            .values()
+        ]
         active_stations_in_suburb = []
         for id in active_stations_in_suburb_id:
             active_stations_in_suburb.append(sim_stations[id])
-        stations = [station['station_id'] for station in stations_in_suburb.values()]
+        stations = [station["station_id"] for station in stations_in_suburb.values()]
         num_stations = len(active_stations_in_suburb)
         pop_distribution = {}
         active = sub_name in active_suburbs
-        for station in active_stations_in_suburb: #Will need some changes when proper user input changed.
-            pop_distribution[station] = (1 / num_stations) * 100 #Currently evenly assign to all stations...
+        for (
+            station
+        ) in (
+            active_stations_in_suburb
+        ):  # Will need some changes when proper user input changed.
+            pop_distribution[station] = (
+                1 / num_stations
+            ) * 100  # Currently evenly assign to all stations...
         suburb = Suburb(
             env,
             sub_name,
-            pop_distribution, #Distribution across stations
-            stations, #Station ids in suburb
-            average_suburb_pop, #Population
-            distribute_frequency, #Freq
-            max_distributes, #Max distributes
+            pop_distribution,  # Distribution across stations
+            stations,  # Station ids in suburb
+            average_suburb_pop,  # Population
+            distribute_frequency,  # Freq
+            max_distributes,  # Max distributes
             active,
-            env_start
+            env_start,
         )
         suburbs_out.append(suburb)
-
 
     stations_out = [station for station in sim_stations.values()]
     trips_out = sim_trips
@@ -1069,7 +1077,11 @@ def load_sim_data_into_db(
     SimRoute, SimItinerary objects), then using these generation SimOutput object.
     """
 
-    sim_output, _ = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
+    sim_output, created = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
+    
+    if not created:
+        print(f"Simulation #{sim_id} already exists in database, skipping save...")
+        return
 
     # Create Stations
     for station in stations:
@@ -1151,3 +1163,4 @@ def load_sim_data_into_db(
             )
 
             itin.save()
+    print(f"Simulation #{sim_id} output loaded into db.")

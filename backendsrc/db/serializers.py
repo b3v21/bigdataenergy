@@ -14,6 +14,8 @@ from db.models import (
     StationSim,
     RouteSim,
     ItinerarySim,
+    RouteInItinerary,
+    ItineraryCache,
 )
 
 
@@ -119,3 +121,15 @@ class ItinerarySimSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItinerarySim
         fields = ["itinerary_id", "routes"]
+
+
+class RouteInItinerarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RouteInItinerary
+        fields = ["start", "end"]
+
+
+class ItineraryCacheSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RouteInItinerary
+        fields = ["itinerary_id", "route", "sequence"]

@@ -127,6 +127,7 @@ def add_start_end_date_to_calendar():
         else:
             print("Calendar not found")
 
+
 def load_everything():
     parse_data("./gtfsdata/calendar.txt", "Calendar")
     parse_data("./gtfsdata/stops.txt", "Station")
@@ -136,6 +137,7 @@ def load_everything():
     parse_data("./gtfsdata/stop_times.txt", "Timetable")
     add_suburbs_to_stations("./gtfsdata/stop_id_postcode_suburb.csv")
     add_start_end_date_to_calendar()
+
 
 if __name__ == "__main__":
     # add_start_end_date_to_calendar()
