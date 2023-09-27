@@ -164,18 +164,23 @@ def test_basic_sim_with_models():
         {
             "env_start": 10,
             "time_horizon": 30,
-            "itineraries": {
-                0: [
-                    {
-                        "route_id": "0",
-                        "start": "0",
-                        "end": "-1",
-                    }
-                ]
-            },
+            "itineraries": [
+                {
+                    "itinerary_id" : 0, 
+                    "routes" : [
+                        {
+                            "route_id": "0", 
+                            "start": "0", 
+                            "end": "-2"
+                        }
+                    ]
+                }
+            ],
             "snapshot_date": "2023-09-15",
+            "active_suburbs": ["test suburb"],
+            "active_stations": ["0"],
         },
-        1,
+        2,
     )
 
 
@@ -251,4 +256,4 @@ def test_sim_output_serializer():
 
 
 if __name__ == "__main__":
-    test_sim_with_db_models_412()
+    test_basic_sim_with_models()
