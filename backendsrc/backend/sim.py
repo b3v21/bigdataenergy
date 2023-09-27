@@ -927,7 +927,6 @@ def run_simulation(
     output = process_simulation_output(stations, routes, itineraries, sim_id)
     print(f"Simulation #{sim_id} output processed.")
     load_sim_data_into_db(stations, routes, itineraries, sim_id)
-    print(f"Simulation #{sim_id} output loaded into db.")
 
     return output
 
@@ -1044,7 +1043,7 @@ def get_data(
     env: Environment,
     env_start: int,
     time_horizon: int,
-    itineraries: list,
+    itineraries: list, # Go to views.py for format
     snapshot_date: str,
     active_suburbs: list[str],
     active_stations: list[str],
@@ -1067,7 +1066,7 @@ def get_data(
 
     day_of_week = snapshot_date.strftime("%A").lower()
 
-    # Get all calendar objects (containing service info) that run on a Friday
+    # Get all calendar objects (containing service info) that run on the requested d.o.t.w
     calendars = CalendarM.objects.all().filter(
         start_date__lte=snapshot_date, end_date__gte=snapshot_date, **{day_of_week: 1}
     )
@@ -1075,8 +1074,8 @@ def get_data(
     # Get all routes that are used in the itineraries
     route_ids = {}
 
-    for itinerary_id, itinerary in itineraries.items():
-        for route in itinerary:
+    for itinerary in itineraries:
+        for route in itinerary["routes"]:
             route_id = route["route_id"]
             start = route["start"]
             end = route["end"]
@@ -1164,16 +1163,16 @@ def get_data(
             sim_routes[route.route_id] = new_route
 
     sim_itineraries = []
-    for itinerary_id, itinerary in itineraries.items():
+    for itinerary in itineraries:
         new_itin = Itinerary(
             env,
-            itinerary_id,
+            itinerary["itinerary_id"],
             [
                 (
                     sim_routes[route["route_id"]],
                     sim_stations[route_ids[route["route_id"]]],
                 )
-                for route in itinerary
+                for route in itinerary["routes"]
             ],
         )
 
@@ -1248,7 +1247,11 @@ def load_sim_data_into_db(
     SimRoute, SimItinerary objects), then using these generation SimOutput object.
     """
 
-    sim_output, _ = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
+    sim_output, created = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
+    
+    if not created:
+        print(f"Simulation #{sim_id} already exists in database, skipping save...")
+        return
 
     # Create Stations
     for station in stations:
@@ -1330,3 +1333,4 @@ def load_sim_data_into_db(
             )
 
             itin.save()
+    print(f"Simulation #{sim_id} output loaded into db.")
