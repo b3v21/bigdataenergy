@@ -466,6 +466,12 @@ class Train(Transporter):
     def get_type(self) -> str:
         return "Train"
 
+    def __str__(self) -> str:
+        return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
+
+    def train_instance(self, train_route: TrainRoute) -> None:
+        pass
+
 
 class Route(ABC):
     """
@@ -581,6 +587,49 @@ class BusRoute(Route):
 
     def get_current_stop(self, bus: Bus) -> Station:
         return self.stops[bus.location_index]
+
+    def get_stop_with_name(self, name: str) -> Station:
+        return [stop.name for stop in self.stops].index(name)
+
+
+class TrainRoute(Route):
+    """
+    A route for trains to take. This works similarly to the BusRoute class, but more care needs to
+    be taken when spawning trains on routes as it needs to be ensured that collisions do not
+    occur.
+    """
+
+    def __init__(
+        self,
+        env: Environment,
+        env_start: int,
+        id: int,
+        name: str,
+        stops: list[Station],
+        trip_timing_data: list[Trip],
+        transporter_spawn_max: int = 3,
+    ) -> None:
+        super().__init__(
+            env, env_start, id, name, stops, trip_timing_data, transporter_spawn_max
+        )
+        self.running = self.env.process(self.initiate_route())
+        self.trains: list[Train] = []
+
+    def initiate_route(self) -> None:
+        """
+        A function to initiate the route. Will spawn trains at stops according to the trip timing
+        data.
+        """
+        pass
+
+    def get_type(self) -> str:
+        return "TrainRoute"
+
+    def add_train(self, new_train: Train) -> None:
+        self.trains.append(new_train)
+
+    def get_current_stop(self, train: Train) -> Station:
+        return self.stops[train.location_index]
 
     def get_stop_with_name(self, name: str) -> Station:
         return [stop.name for stop in self.stops].index(name)
