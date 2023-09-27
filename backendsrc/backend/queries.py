@@ -33,7 +33,7 @@ def get_station_suburbs() -> dict[str : list[list[str, str]]]:
             )
 
     for suburb, station_data in suburbs.items():
-        result.append({"suburb": suburb, "stations": station_data})
+        result.append({"suburb": suburb, "stations": station_data, "lat": station.lat, "long": station.long})
 
     return result
 
