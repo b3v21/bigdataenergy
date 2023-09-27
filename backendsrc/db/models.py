@@ -168,6 +168,6 @@ class ItineraryCache(models.Model):
     seqeuence = models.IntegerField()
     
     class Meta:
-        unique_together = ("itinerary_id", "routes", "seqeuence")
+        unique_together = ("itinerary_id", "route", "seqeuence")
     
     
