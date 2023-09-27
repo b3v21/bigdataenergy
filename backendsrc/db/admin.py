@@ -51,6 +51,11 @@ class RouteSimAdmin(admin.ModelAdmin):
 class ItinerarySimAdmin(admin.ModelAdmin):
     pass
 
+class RouteInItineraryAdmin(admin.ModelAdmin):
+    pass
+
+class ItineraryCacheAdmin(admin.ModelAdmin):
+    pass
 
 admin.site.register(Route, RouteAdmin)
 admin.site.register(Station, StationAdmin)
@@ -66,3 +71,5 @@ admin.site.register(BusOnRouteInfo, BusOnRouteInfoAdmin)
 admin.site.register(StationSim, StationSimAdmin)
 admin.site.register(RouteSim, RouteSimAdmin)
 admin.site.register(ItinerarySim, ItinerarySimAdmin)
+admin.site.register(RouteInItinerary, RouteInItineraryAdmin)
+admin.site.register(ItineraryCache, ItineraryCacheAdmin)

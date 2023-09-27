@@ -155,3 +155,19 @@ class ItinerarySim(models.Model):
 
     class Meta:
         unique_together = ("sim_id", "itinerary_id")
+        
+######################################### Itinerary Cache #########################################
+
+class RouteInItinerary(Route):
+    start = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="start")
+    end = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="end")
+        
+class ItineraryCache(models.Model):
+    itinerary_id = models.CharField(max_length=255)
+    route = models.ForeignKey(RouteInItinerary, on_delete=models.CASCADE)
+    seqeuence = models.IntegerField()
+    
+    class Meta:
+        unique_together = ("itinerary_id", "routes", "seqeuence")
+    
+    
