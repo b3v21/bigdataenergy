@@ -757,7 +757,6 @@ def run_simulation(
     output = process_simulation_output(stations, routes, itineraries, sim_id)
     print(f"Simulation #{sim_id} output processed.")
     load_sim_data_into_db(stations, routes, itineraries, sim_id)
-    print(f"Simulation #{sim_id} output loaded into db.")
 
     return output
 
@@ -1078,7 +1077,11 @@ def load_sim_data_into_db(
     SimRoute, SimItinerary objects), then using these generation SimOutput object.
     """
 
-    sim_output, _ = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
+    sim_output, created = SimulationOutput.objects.get_or_create(simulation_id=sim_id)
+    
+    if not created:
+        print(f"Simulation #{sim_id} already exists in database, skipping save...")
+        return
 
     # Create Stations
     for station in stations:
@@ -1160,3 +1163,4 @@ def load_sim_data_into_db(
             )
 
             itin.save()
+    print(f"Simulation #{sim_id} output loaded into db.")
