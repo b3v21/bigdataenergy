@@ -300,7 +300,6 @@ class Transporter(ABC):
         return people
 
     def deload_passengers(self, station: Station) -> None:
-        # Currently all passengers get off...
         get_off_list = []
         if self.route.last_stop == station:
             # Everyone left needs to get off
@@ -470,7 +469,68 @@ class Train(Transporter):
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
 
     def train_instance(self, train_route: TrainRoute) -> None:
-        pass
+        while True:
+            with train_route.get_current_stop(self).bays.request() as req:
+                yield req
+                if DEBUG:
+                    print(
+                        f"({self.env.now+train_route.env_start}): Train {self.get_name()} arrived at {train_route.get_current_stop(self).name}"
+                    )
+                if train_route.get_current_stop(self) != train_route.last_stop:
+                    yield self.env.process(
+                        self.load_passengers(train_route.get_current_stop(self))
+                    )
+
+                    yield self.env.process(
+                        self.deload_passengers(train_route.get_current_stop(self))
+                    )
+                    self.bus_passenger_changes[
+                        self.env.now + self.env_start
+                    ] = self.passenger_count()
+
+                else:
+                    yield self.env.process(
+                        self.deload_passengers(train_route.get_current_stop(self))
+                    )
+                    self.bus_passenger_changes[
+                        self.env.now + self.env_start
+                    ] = self.passenger_count()
+                    # Despawn
+                    if DEBUG:
+                        print(
+                            f"({self.env.now+train_route.env_start}): Bus {self.get_name()} ended its journey."
+                        )
+                    break
+
+                previous_stop = train_route.stops[self.location_index]
+                self.move_to_next_stop(len(train_route.stops))
+                cur_stop = train_route.get_current_stop(self)
+                travel_time = 0
+                index = 0
+                for stop, time in self.trip.timetable:
+                    if cur_stop.name == stop:
+                        travel_time = time - self.trip.timetable[index - 1][1]
+                        break
+                    index += 1
+                if travel_time == 0:
+                    # Some bus stops have very small distances between, to stop teleportation, make min one
+                    print("**Had a case where travel time was 0**")
+                    travel_time = 1
+
+                if travel_time < 0:
+                    if DEBUG:
+                        print("***ERROR*** Travel time <= 0!!!")
+                        exit()
+                    travel_time = 1
+
+            yield self.env.timeout(travel_time)
+            self.bus_time_log[train_route.get_current_stop(self).name] = (
+                self.env.now + self.env_start
+            )
+            if DEBUG:
+                print(
+                    f"({self.env.now+train_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {train_route.get_current_stop(self).name} ({travel_time} mins)"
+                )
 
 
 class Route(ABC):
@@ -618,9 +678,47 @@ class TrainRoute(Route):
     def initiate_route(self) -> None:
         """
         A function to initiate the route. Will spawn trains at stops according to the trip timing
-        data.
+        data. TODO: will the trip timing data be all that is required to correctly spawn
+        trains? Or will we also need additional information to ensure that trains do not
+        collide?
         """
-        pass
+        trips_to_iniate = self.trip_timing_data
+        while True:
+            station_info = None
+            trip_info = None
+            trips_inited = []
+            for trip in trips_to_iniate:
+                for station, arrival_time in trip.timetable:
+                    if arrival_time == (self.env.now + self.env_start):
+                        station_info = (station, arrival_time)
+                        trip_info = trip
+                        # Now have a trip to start
+                        new_train = Train(
+                            env=self.env,
+                            env_start=self.env_start,
+                            id=self.transporters_spawned,
+                            name=f"B{self.transporters_spawned}_{self.name}",
+                            trip=trip_info,
+                            route=self,
+                            location_index=self.get_stop_with_name(station_info[0]),
+                            people=[],
+                        )
+                        self.transporters_spawned += 1
+                        self.add_train(new_train)
+                        # if trip.timetable[0][0] == station:
+                        #     print(
+                        #         f"({self.env.now+self.env_start}): Train {new_train.get_name()} started on route {self.name} at station {station_info[0]}"
+                        #     )
+                        # else:
+                        #     print(
+                        #         f"({self.env.now+self.env_start}): Train {new_train.get_name()} already on route {self.name} at station {station_info[0]}"
+                        #     )
+                        self.env.process(new_train.train_instance(self))
+                        trips_inited.append(trip)
+            for trip in trips_inited:
+                trips_to_iniate.remove(trip)
+
+            yield self.env.timeout(1)
 
     def get_type(self) -> str:
         return "TrainRoute"
