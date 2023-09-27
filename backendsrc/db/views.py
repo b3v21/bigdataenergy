@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from backend.sim import run_simulation
-from backend.queries import get_station_suburbs
+from backend.queries import get_station_suburbs, get_cached_itineraries
 from logging import warning
 
 
@@ -24,12 +24,24 @@ def sim_request(request: Request, sim_id: int) -> Response:
     {
         "env_start": int,
         "time_horizon": int,
-        "itineraries": dict[list[dict[str, str])]], 
+        "itineraries":
+        [
+            {
+                "itinerary_id" : 0,
+                "routes" : [
+                    {
+                        "route_id": "412-3136",
+                        "start": "0",
+                        "end": "1850"
+                    }
+                ]
+            }
+        ]
         "snapshot_date": str, (yyyy-mm-dd format)
         "active_suburbs": list[str], (suburb names)
         "active_stations": list[str], (station ids)
     }
-    
+
     NOTE: Go to test_sim.py to see examples
     """
 
@@ -42,6 +54,7 @@ def sim_request(request: Request, sim_id: int) -> Response:
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 
+
 @api_view(["GET"])
 def station_suburbs(request: Request) -> Response:
     """
@@ -49,7 +62,7 @@ def station_suburbs(request: Request) -> Response:
     to be presented to the user in the frontend.
 
     Currently has no body but perhaps later on a frontend setting could edit this
-    
+
     return json of the form:
     [
         {
@@ -63,10 +76,50 @@ def station_suburbs(request: Request) -> Response:
         }, ...
     ]
     """
-    
+
     print(f"Sending location data to backend")
 
     output = get_station_suburbs()
+
+    return Response(data=output, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+def cached_itineraries(request: Request) -> Response:
+    """
+    This is the request responsible for returning the cached itineraries
+    to be presented to the user in the frontend.
+
+    request.data is currently expected to be of the following form:
+    [
+        {
+            "start" : "station_id",
+            "end" : "station_id",
+        }, ...
+    ]
+
+    return json of the form:
+    [
+        {
+            "itinerary_id" : 0,
+            "routes" : [
+                {
+                    "route_id": "412-3136",
+                    "start": "0",
+                    "end": "1850"
+                }
+            ]
+        }
+    ]
+    """
+    if not request.data:
+        warning(
+            "No station data was given to check cached itineraries, see views.py for correct request format"
+        )
+
+    print(f"Collecting cached itineraries from backend")
+
+    output = get_cached_itineraries(request.data)
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 
