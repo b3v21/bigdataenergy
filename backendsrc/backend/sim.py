@@ -7,7 +7,7 @@ from math import ceil, floor
 import django
 import os
 import sys
-import copy
+from copy import deepcopy
 from datetime import time, date, datetime
 import time as t
 
@@ -180,7 +180,7 @@ class Station:
                     self.env_start,
                     people.current_route_in_itin_index,
                 )
-                split.people_log = copy.deepcopy(people.people_log)
+                split.people_log = deepcopy(people.people_log)
                 people.change_num_people(-excess)
                 self.people.append(split)
                 people_to_get.append(people)
@@ -275,7 +275,6 @@ class Transporter(ABC):
             return
 
         people_to_ride = station.board(min(people_at_stop, seats_left), self.route)
-
         num_people_to_board = sum([p.get_num_people() for p in people_to_ride])
         load_time = int(num_people_to_board * PERSON_BOARD_TIME)
         self.people += people_to_ride
@@ -298,36 +297,31 @@ class Transporter(ABC):
         return people
 
     def deload_passengers(self, station: Station) -> None:
-        get_off_list = []
+        people_deloading = []
         if self.route.last_stop == station:
             # Everyone left needs to get off
-            get_off_list = self.people
+            people_deloading = self.people
         else:
             # Only those who want to get off should get off
-            get_off_list = self.get_people_deloading(station)
+            people_deloading = self.get_people_deloading(station)
 
-        get_off = 0
-        if get_off_list != None:
-            for people in get_off_list:
-                get_off += people.get_num_people()
-        else:
-            get_off = None
+        num_passengers_deloaded = sum(p.get_num_people() for p in people_deloading)
 
-        if not get_off:
+        if not num_passengers_deloaded:
             if DEBUG:
                 print(
                     f"({self.env.now+self.env_start}): No passengers got off {self.get_type()}: {self.get_name()}"
                 )
             return
 
-        off_time = int(get_off * PERSON_BOARD_TIME)
-        yield self.env.timeout(off_time)
+        deload_time = int(num_passengers_deloaded * PERSON_BOARD_TIME)
+        yield self.env.timeout(deload_time)
         if DEBUG:
             print(
-                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {get_off} people at {station.name} ({off_time} mins)"
+                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {num_passengers_deloaded} people at {station.name} ({deload_time} mins)"
             )
 
-        station.put(get_off_list)
+        station.put(people_deloading)
 
         self.people.clear()
 
@@ -381,10 +375,12 @@ class Bus(Transporter):
                     print(
                         f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
                     )
-                self.bus_time_log[bus_route.get_current_stop(self).name] = (
-                    self.env.now + self.env_start
-                )
+                self.bus_time_log[
+                    f"{bus_route.get_current_stop(self).name} ({bus_route.get_current_stop(self).id})"
+                ] = (self.env.now + self.env_start)
                 if bus_route.get_current_stop(self) != bus_route.last_stop:
+                    prev_passenger_count = self.passenger_count()
+
                     yield self.env.process(
                         self.load_passengers(bus_route.get_current_stop(self))
                     )
@@ -392,9 +388,11 @@ class Bus(Transporter):
                     yield self.env.process(
                         self.deload_passengers(bus_route.get_current_stop(self))
                     )
-                    self.bus_passenger_changes[
-                        self.env.now + self.env_start
-                    ] = self.passenger_count()
+
+                    if prev_passenger_count != self.passenger_count():
+                        self.bus_passenger_changes[
+                            self.env.now + self.env_start
+                        ] = self.passenger_count()
 
                 else:
                     yield self.env.process(
@@ -432,9 +430,6 @@ class Bus(Transporter):
                     travel_time = 1
 
             yield self.env.timeout(travel_time)
-            self.bus_time_log[bus_route.get_current_stop(self).name] = (
-                self.env.now + self.env_start
-            )
             if DEBUG:
                 print(
                     f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {bus_route.get_current_stop(self).name} ({travel_time} mins)"
@@ -606,7 +601,10 @@ class BusRoute(Route):
             trips_inited = []
             for trip in trips_to_iniate:
                 for station, arrival_time in trip.timetable:
-                    if arrival_time == (self.env.now + self.env_start):
+                    if (
+                        arrival_time == (self.env.now + self.env_start)
+                        and self.transporter_spawn_max != self.transporters_spawned
+                    ):
                         station_info = (station, arrival_time)
                         trip_info = trip
                         # Now have a trip to start
@@ -825,11 +823,9 @@ class Suburb:
 
         while current_distribution < self.max_distributes:
             if (self.env.now + self.env_start) % self.frequency == 0:
-                num_people = randint(0, self.population)
-                # have_distributed = self.distribute_people(num_people)
                 have_distributed = self.distribute_people(
                     ceil(self.population / (self.max_distributes))
-                )  # Do this num generation better
+                )
 
                 current_distribution += 1
                 self.population -= have_distributed
@@ -1188,9 +1184,9 @@ def get_data(
     suburbs_out = []
     for sub_name in suburb_names:
         # Create suburb for each
-        average_suburb_pop = 12600  # Very rough average
-        distribute_frequency = 15
-        max_distributes = 3
+        average_suburb_pop = 100  # Very rough average
+        distribute_frequency = 5
+        max_distributes = 0
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
         active_stations_in_suburb_id = [
             station["station_id"]
