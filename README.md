@@ -10,6 +10,8 @@ Our goal is to build a website with an interactive map and other visualisations 
 - Summary tools that allow the review of data and results through different lenses, such as station specific graphs and data summaries. Python to aggregate and display via JS libraries 
 - Back end server to process and simulate the flow of traffic along different routes. Django REST framework + Some Database that Django supports (Either MySQL, PostgreSql or SQLLite)
 
+# Initial Setup
+Begin by running `pip install -r requirements.txt` in the root directory to install all dependencies. Note that this should mean you don't need to run any of the pip installations in the db / frontend setup below.
 
 # Database Setup
 1. setup & activate a python venv if you haven't already
