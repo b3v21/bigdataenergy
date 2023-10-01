@@ -956,8 +956,16 @@ def get_data(
                 timetable_station = StationM.objects.filter(
                     station_id=timetable.station.station_id
                 ).first()
+                if  "Queen Elizabeth Dr at Corso Street" in timetable_station.name:
+                        print(timetable_station.name)
+                        print("Queen Elizabeth Dr at Corso Street YAYYY")
+                if timetable_station.station_id == "010063":
+                    print(timetable_station.name)
+                    print("Queen Elizabeth Dr at Corso Street YAYYY")
+                    print(timetable_station.station_id)
 
                 if timetable_station.station_id not in sim_stations.keys():
+                    
                     new_station = Station(
                         env,
                         timetable_station.station_id,

@@ -170,7 +170,7 @@ def test_basic_sim_with_models():
                         "route_id": "0",
                         "start": "0",
                         "end": "-1",
-                    }
+                    },
                 ]
             },
             "snapshot_date": "2023-09-15",
