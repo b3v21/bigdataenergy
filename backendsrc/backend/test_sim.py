@@ -162,9 +162,19 @@ def test_basic_sim_with_models():
 
     run_simulation(
         {
-            "env_start": 10,
+            "env_start": 0,
             "time_horizon": 30,
             "itineraries": [
+                {
+                    "itinerary_id" : 1, 
+                    "routes" : [
+                        {
+                            "route_id": "walk", 
+                            "start": "0", 
+                            "end": "-2"
+                        }
+                    ]
+                },
                 {
                     "itinerary_id" : 0, 
                     "routes" : [
@@ -174,7 +184,8 @@ def test_basic_sim_with_models():
                             "end": "-2"
                         }
                     ]
-                }
+                },
+                
             ],
             "snapshot_date": "2023-09-15",
             "active_suburbs": ["test suburb"],
