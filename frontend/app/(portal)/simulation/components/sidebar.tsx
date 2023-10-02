@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useGetSimulationData } from '@/hooks/useGetSimulationData';
-import {callAPI} from '../stubbed'
 
 const Sidebar = () => {
 	return (

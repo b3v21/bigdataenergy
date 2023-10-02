@@ -10,6 +10,8 @@ import sys
 import copy
 from datetime import time, date, datetime
 import time as t
+import requests
+
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
@@ -1171,8 +1173,34 @@ def generate_itins(user_data: dict) -> dict:
     print(f"Generating itineraries for {active_stations} at start time {start_time} and end time {end_time}")
 
     #trigger functions to create itineraries etc here
-    return user_data
+    #todo: move environment variables
+    modes = ["pt_pub_bus"]
+    api = "https://api.tripgo.com/v1/routing.json"
+    key = "2286d1ca160dd724a3da27802c7aba91"
+    endStation = '(-27.4979739, 153.0111389)"UQ Chancellor\'s Place, zone D'
 
+    itin_id = 0
+    for station in active_stations:
+            itin_id = itin_id + 1
+            parameters = {
+                "v": "11",
+                "from" : f'({station["lat"]}, {station["long"]})',
+                "to" : endStation,
+                "modes": modes,
+                "bestOnly": "true",
+                "includeStops": "false",
+            }
+            headers = {
+                "X-TripGo-Key": key  
+            }
+            data = callTripGoAPI(api, parameters, headers)
+            print(data)
+            format_data = formatItins(data, 1, station["station_id"], itin_id)
+            print(format_data)
+    #return format_data
+    return "itinerary data"
+
+    
 
 def convert_epoch(time: int, date_str: str)-> int:
     """
@@ -1182,3 +1210,75 @@ def convert_epoch(time: int, date_str: str)-> int:
     epoch_date = int(datetime.strptime(date_str, "%Y-%m-%d").timestamp())
     epoch_time = epoch_date + time
     return epoch_time
+
+def does_contain(itin, itins):
+    for i in itins:
+        if i["routes"] == itin["routes"]:
+            return True
+    return False
+
+def formatItins(response, num_itins, start_station_id, start_itin_id):
+    itins = []
+    itin_id = start_itin_id
+    for group in response["groups"]:
+        options = group["trips"]
+        options = sorted(options, key=lambda k: k["weightedScore"])
+        trips_parsed = 0
+        for trip in options:
+            exit = False
+            routes = []
+            count = 0
+            for segment in trip["segments"]:
+                #Want to find bus/walk route
+                hash = segment["segmentTemplateHashCode"]
+                #Now find associated segmentTemplate
+                template = None
+                for segTemp in response["segmentTemplates"]:
+                        if segTemp["hashCode"] == hash:
+                            template = segTemp
+                            break
+                route_id = ""
+                if "WALK" in template["action"].upper():
+                    route_id = "walk"
+                else:
+                    route_id = segment["routeID"]
+
+                #Now want to get from where to where
+                from_station = template["from"]["stopCode"]
+                if count == 0 and from_station != start_station_id:
+                    #Coords where too close to another stop and it tried to make that the start
+                    exit = True #for double break
+                    break
+                to_station = template["to"]["stopCode"]
+                route = {
+                    "route_id": route_id, 
+                    "start": from_station, 
+                    "end": to_station
+                }
+                count += 1
+                routes.append(route)
+            if exit:
+                exit = False
+                continue
+            itin = {
+                "itinerary_id" : itin_id, 
+                "routes" : routes
+            }
+            if not does_contain(itin, itins):
+                itin_id += 1
+                trips_parsed += 1
+                itins.append(itin)
+                if (trips_parsed >= num_itins):
+                    break
+    print(itins)
+
+def callTripGoAPI(api, parameters, headers):
+        response = requests.get(api, params = parameters, headers = headers)
+        if response.status_code == 200:
+            print("sucessfully fetched TripGo data")
+            #print(response.json())
+            #print()
+            #print(response.json().get("groups", {})[0].get("trips"))
+            return response.json()
+        else:
+            raise Exception(f"{response.status_code}")
