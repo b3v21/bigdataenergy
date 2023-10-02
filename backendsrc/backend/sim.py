@@ -1159,3 +1159,26 @@ def load_sim_data_into_db(
             )
 
             itin.save()
+
+
+def generate_itins(user_data: dict) -> dict:
+    """
+    formats user input data in prep for itinerary generation
+    """
+    user_data["env_end"] = convert_epoch(user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"])
+    user_data["env_start"] = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
+    start_time, end_time, active_stations = user_data["env_start"], user_data["env_end"], user_data["active_stations"]
+    print(f"Generating itineraries for {active_stations}")
+
+    #trigger functions to create itineraries etc here
+    return user_data
+
+
+def convert_epoch(time: int, date_str: str)-> int:
+    """
+    converts a given time in seconds from midnight and a date string of format "yyyy--mm-dd"
+    to seconds since 1970
+    """
+    epoch_date = int(datetime.strptime(date_str, "%Y-%m-%d").timestamp())
+    epoch_time = epoch_date + time
+    return epoch_time
