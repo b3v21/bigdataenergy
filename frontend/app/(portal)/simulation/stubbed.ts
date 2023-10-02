@@ -7,11 +7,27 @@ export const callAPIPost = async () => {
 				'Content-Type': 'application/json'
 			},
 			body: `{
-				
 					"env_start": 43200,
 					"time_horizon": 3600,
 					"snapshot_date": "2023-10-02",
-					"active_stations": "[1, 10, 1797]"	
+					"active_stations": [
+						{
+							"station_id" : "1",
+							"lat" : -27.467834,
+							"long" : 153.019079
+						},
+						{
+							"station_id" : "10",
+							"lat" : -27.468003,
+							"long" : 153.02397
+						},
+						{
+							"station_id" : "1797",
+							"lat" : -27.497974,
+							"long" : 153.01113
+
+						}
+					]
     			}`
 		});
 		const data = await res.json();

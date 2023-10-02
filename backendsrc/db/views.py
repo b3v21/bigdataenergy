@@ -73,16 +73,35 @@ def station_suburbs(request: Request) -> Response:
 @api_view(["POST"])
 def itin_check(request: Request) -> Response:
     """
-    this is the request responsible for receiving the active stations and generating corresponding itineraries
-    it returns the count of itineraries starting from that stop.
-
+    this is the request responsible for receiving the active stations and generating corresponding itineraries.
        request.data is currently expected to be a dict containing the following fields:
     {
         "env_start": int,
         "time_horizon": int,
         "snapshot_date": str, (yyyy-mm-dd format)
-        "active_stations": list[str], (station ids)
+        "active_stations": [
+                 {
+                    "station_id" : str,
+                    "lat":float,
+                    "long":float
+                }
+            ]
     }
+
+    WIP: return json of the form: 
+    "itineraries": 
+            [
+                {
+                    "itinerary_id" : 0, 
+                    "routes" : [
+                        {
+                            "route_id": "412-3136", 
+                            "start": "0", 
+                            "end": "1850"
+                        }
+                    ]
+                }
+            ]
 
     """
     if not request.data:
