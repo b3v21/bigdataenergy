@@ -180,7 +180,7 @@ class Station:
                     self.env_start,
                     people.current_route_in_itin_index,
                 )
-                split.people_log = copy.deepcopy(people.people_log)
+                split.people_log = copy.copy(people.people_log) #Changed from deepcopy to copy to avoid pickle error
                 people.change_num_people(-excess)
                 self.people.append(split)
                 people_to_get.append(people)

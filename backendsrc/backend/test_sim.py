@@ -166,21 +166,26 @@ def test_basic_sim_with_models():
             "time_horizon": 30,
             "itineraries": [
                 {
-                    "itinerary_id" : 1, 
+                    "itinerary_id" : 0, 
                     "routes" : [
                         {
-                            "route_id": "walk", 
+                            "route_id": "0", 
                             "start": "0", 
                             "end": "-2"
                         }
                     ]
                 },
                 {
-                    "itinerary_id" : 0, 
+                    "itinerary_id" : 1, 
                     "routes" : [
                         {
-                            "route_id": "0", 
+                            "route_id": "walk", 
                             "start": "0", 
+                            "end": "-1"
+                        },
+                        {
+                            "route_id": "0", 
+                            "start": "-1", 
                             "end": "-2"
                         }
                     ]
