@@ -1165,10 +1165,10 @@ def generate_itins(user_data: dict) -> dict:
     """
     formats user input data in prep for itinerary generation
     """
-    user_data["env_end"] = convert_epoch(user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"])
-    user_data["env_start"] = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
-    start_time, end_time, active_stations = user_data["env_start"], user_data["env_end"], user_data["active_stations"]
-    print(f"Generating itineraries for {active_stations}")
+    end_time = convert_epoch(user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"])
+    start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
+    active_stations = user_data["active_stations"]
+    print(f"Generating itineraries for {active_stations} at start time {start_time} and end time {end_time}")
 
     #trigger functions to create itineraries etc here
     return user_data
