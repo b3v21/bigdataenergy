@@ -70,7 +70,9 @@ def station_suburbs(request: Request) -> Response:
             "stations" : [
                 {
                     "id" : 0,
-                    "name" : "station
+                    "name" : "station"
+                    "lat" : 0.0,
+                    "long" : 0.0,
                 }, ...
             ]
         }, ...
