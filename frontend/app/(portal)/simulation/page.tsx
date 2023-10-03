@@ -6,6 +6,12 @@ import Plot, { PlotParams } from 'react-plotly.js';
 import HoverCard from './components/hover-card';
 import Sidebar from './components/sidebar';
 import { layout, data as plotData } from './plot';
+import { Stations, Suburbs } from '@/@types';
+
+export type SimulationSettings = {
+	selectedSuburbs: Suburbs;
+	selectedStations: Stations;
+};
 
 type HoverData = {
 	x: number;
@@ -16,34 +22,54 @@ type HoverData = {
 const HOVER_OFFSET = { x: 10, y: 10 };
 
 const Simulation = () => {
+	// Stores information showed on the hover card
 	const [hoverData, setHoverData] = useState<HoverData | null>(null);
-	const { data, isLoading } = useGetSimulationData({
-		env_start: 355,
-		time_horizon: 30,
-		itineraries: [
-			{
-				itinerary_id: 0,
-				routes: [
-					{
-						route_id: '412-3136',
-						start: '0',
-						end: '1850'
-					}
-				]
-			}
-		],
-		snapshot_date: '2023-08-01',
-		active_suburbs: ['St Lucia'],
-		active_stations: ['1815']
-	});
+	// Stores simulation details
+	const [simulationSettings, setSimulationSettings] =
+		useState<SimulationSettings>({
+			selectedSuburbs: [],
+			selectedStations: []
+		});
+
+	// Retrieves the simulation data
+	const {
+		data: simulationResult,
+		isLoading,
+		refetch: fetchSimulationData
+	} = useGetSimulationData(
+		{
+			env_start: 355,
+			time_horizon: 30,
+			itineraries: [
+				{
+					itinerary_id: 0,
+					routes: [
+						{
+							route_id: '412-3136',
+							start: '0',
+							end: '1850'
+						}
+					]
+				}
+			],
+			snapshot_date: '2023-08-01',
+			active_suburbs: ['St Lucia'],
+			active_stations: ['1815']
+		},
+		{
+			enabled: false
+		}
+	);
 
 	// todo: remove any types once data typed correctly
-	const simulationData = data as any;
+	const simulationData = simulationResult as any;
 
+	// The following recomputes the stations into a readable format every time simulation data changes
 	const routeStations = useMemo(() => {
-		if (!data) return null;
+		if (!simulationResult) return null;
 
 		return (
+			// Formatting data for plotly
 			Object.entries(simulationData?.Routes)
 				.map((route) =>
 					Object.entries((route as any)[1].stations).map(
@@ -58,7 +84,11 @@ const Simulation = () => {
 
 	return (
 		<div className="flex flex-row gap-4">
-			<Sidebar />
+			<Sidebar
+				simulationSettings={simulationSettings}
+				setSimulationSettings={setSimulationSettings}
+				fetchSimulationData={fetchSimulationData}
+			/>
 			<HoverCard data={hoverData} />
 			<div className="flex-1">
 				{/* @ts-ignore  */}

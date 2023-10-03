@@ -4,7 +4,7 @@ import { Simulation } from '@/@types/simulation';
 import { simulationKeys } from './queryKeys';
 import axios from 'axios';
 
-type SimulationPayload = {
+export type SimulationPayload = {
 	env_start: number;
 	time_horizon: number;
 	itineraries: {
