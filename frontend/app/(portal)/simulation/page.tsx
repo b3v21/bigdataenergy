@@ -7,6 +7,7 @@ import HoverCard from './components/hover-card';
 import Sidebar from './components/sidebar';
 import { layout, data as plotData } from './plot';
 import { Stations, Suburbs } from '@/@types';
+import { Card } from '@/components/ui/card';
 
 export type SimulationSettings = {
 	selectedSuburbs: Suburbs;
@@ -53,8 +54,14 @@ const Simulation = () => {
 				}
 			],
 			snapshot_date: '2023-08-01',
-			active_suburbs: ['St Lucia'],
-			active_stations: ['1815']
+			active_suburbs: simulationSettings.selectedSuburbs.map(
+				// default st lucia
+				(suburb) => suburb.suburb
+			),
+			active_stations: simulationSettings.selectedStations.map(
+				// default 1815
+				(station) => station.id
+			)
 		},
 		{
 			enabled: false
@@ -90,7 +97,16 @@ const Simulation = () => {
 				fetchSimulationData={fetchSimulationData}
 			/>
 			<HoverCard data={hoverData} />
-			<div className="flex-1">
+			<div className="flex-1 relative">
+				{!simulationData && (
+					<div className="absolute z-50 inset-0 flex items-center justify-center rounded-md ">
+						<Card className="flex flex-col items-center gap-4 p-4 bg-transparent backdrop-blur-sm border-slate-600">
+							<p className="text-2xl font-bold">No simulation data</p>
+							<p className="text-xl">Please select suburbs and stations</p>
+						</Card>
+					</div>
+				)}
+
 				{/* @ts-ignore  */}
 				<Plot
 					data={
