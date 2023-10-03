@@ -904,18 +904,6 @@ def run_simulation(
 
     print(f"Models successfully created for simulation #{sim_id}.")
 
-    """
-    suburb = Suburb(
-        env=env,
-        name="Simple Suburb",
-        station_distribution={stations[0]: 100, stations[1]: 0},
-        population=200,
-        frequency=10,
-        max_distributes=0,
-        env_start=user_data["env_start"],
-    )
-    """
-
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
     output = process_simulation_output(stations, routes, itineraries, sim_id)
