@@ -88,7 +88,7 @@ def itin_check(request: Request) -> Response:
             ]
     }
 
-    WIP: return json of the form: 
+    return json of the form: 
     "itineraries": 
             [
                 {
@@ -108,7 +108,12 @@ def itin_check(request: Request) -> Response:
         warning(f"No user data received.")
 
     print(f"Request for itineraries received")
-    output = generate_itins(request.data)
+    try:
+        output ={"itinieraries": generate_itins(request.data)}
+    except:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    print(output)
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 

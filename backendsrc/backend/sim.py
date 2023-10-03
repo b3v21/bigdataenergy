@@ -1168,6 +1168,7 @@ def generate_itins(user_data: dict) -> dict:
     Collects itineraries for given user input data and returns them in the required format for running simulations
     Warning: This will call the TripGo API in bulk 
     """
+    #format user data how we need it
     end_time = convert_epoch(user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"])
     start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
     active_stations = user_data["active_stations"]
@@ -1182,6 +1183,7 @@ def generate_itins(user_data: dict) -> dict:
 
     itin_id = 0
     itins_collected = []
+    #collect itineraries for each active station
     for station in active_stations:
             parameters = {
                 "v": "11",
