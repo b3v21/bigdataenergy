@@ -899,28 +899,6 @@ def run_simulation(
     )
 
     print(f"Models successfully created for simulation #{sim_id}.")
-    print(itineraries)
-    for itin in itineraries:
-        print(itin)
-        for route, station in itin.routes:
-            print(f"\t, {route.id}, {route.name}, {station.name}\n")
-
-    for route in routes:
-        print(route.id)
-        print(route.stops)
-
-    """
-    suburb = Suburb(
-        env=env,
-        name="Simple Suburb",
-        station_distribution={stations[0]: 100, stations[1]: 0},
-        population=200,
-        frequency=10,
-        max_distributes=0,
-        env_start=user_data["env_start"],
-    )
-    """
-
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
     output = process_simulation_output(stations, routes, itineraries, sim_id)
@@ -1085,7 +1063,6 @@ def get_data(
                 route_ids[route_id] = end
             else:
                 # Walk
-                route_ids[f"Walk_{walk_id}"] = end
                 walks[f"Walk_{walk_id}"] = (start, end)
                 walk_id += 1
 
@@ -1170,22 +1147,16 @@ def get_data(
 
     # Create walks
     walks_from_stops = {}
-    for route_id in route_ids:
-        if route_id not in sim_routes:
-            # Walk route that hasnt been added yet
-            if "Walk" not in route_id:
-                print("****ERROR*** Non-Walk Didn't Get Made")
-            else:
-                # Want to create walk object for sim
-                stops = [
-                    sim_stations[walks[route_id][0]],
-                    sim_stations[walks[route_id][1]],
-                ]
-                walk = Walk(env, env_start, route_id, stops, 0, [])
-                walks_from_stops[(walks[route_id][0], walks[route_id][1])] = walk
-                sim_routes[route_id] = walk  # For general routes
-    print(walks_from_stops)
-
+    for walk_id in walks:
+        if walk_id not in sim_routes:
+            stops = [
+                sim_stations[walks[walk_id][0]],
+                sim_stations[walks[walk_id][1]],
+            ]
+            walk = Walk(env, env_start, walk_id, stops, 0, [])
+            walks_from_stops[(walks[walk_id][0], walks[walk_id][1])] = walk
+            sim_routes[walk_id] = walk  # For general routes
+    
     sim_itineraries = []
     for itinerary in itineraries:
         routes = []
@@ -1198,9 +1169,8 @@ def get_data(
                     )
                 )
             else:
-                print(itinerary)
                 walk = walks_from_stops[(route["start"], route["end"])]
-                routes.append((walk, sim_stations[route_ids[walk.id]]))
+                routes.append((walk, sim_stations[walks[walk.id][1]]))
 
         new_itin = Itinerary(
             env,
