@@ -94,7 +94,7 @@ def formatItins(response, num_itins, start_station_id, start_itin_id):
                 route_id = ""
                 if "WALK" in template["action"].upper():
                     route_id = "walk"
-                else:
+                elif "TAKE" in template["action"].upper():
                     route_id = segment["routeID"]
 
                 #Now want to get from where to where
