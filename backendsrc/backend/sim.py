@@ -1165,23 +1165,24 @@ def load_sim_data_into_db(
 
 def generate_itins(user_data: dict) -> dict:
     """
-    formats user input data in prep for itinerary generation
+    Collects itineraries for given user input data and returns them in the required format for running simulations
+    Warning: This will call the TripGo API in bulk 
     """
     end_time = convert_epoch(user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"])
     start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
     active_stations = user_data["active_stations"]
     print(f"Generating itineraries for {active_stations} at start time {start_time} and end time {end_time}")
 
-    #trigger functions to create itineraries etc here
     #todo: move environment variables
     modes = ["pt_pub_bus"]
     api = "https://api.tripgo.com/v1/routing.json"
     key = "2286d1ca160dd724a3da27802c7aba91"
     endStation = '(-27.4979739, 153.0111389)"UQ Chancellor\'s Place, zone D'
+    num_itins = 3
 
     itin_id = 0
+    itins_collected = []
     for station in active_stations:
-            itin_id = itin_id + 1
             parameters = {
                 "v": "11",
                 "from" : f'({station["lat"]}, {station["long"]})',
@@ -1189,16 +1190,20 @@ def generate_itins(user_data: dict) -> dict:
                 "modes": modes,
                 "bestOnly": "true",
                 "includeStops": "false",
+                "departAfter": start_time,
+                "arriveBefore": end_time
             }
             headers = {
                 "X-TripGo-Key": key  
             }
             data = callTripGoAPI(api, parameters, headers)
-            print(data)
-            format_data = formatItins(data, 1, station["station_id"], itin_id)
-            print(format_data)
-    #return format_data
-    return "itinerary data"
+            #print(data)
+            format_data = formatItins(data, num_itins, station["station_id"].zfill(6), itin_id)
+            itins_collected += format_data
+            itin_id += num_itins
+    print("itins ", itins_collected)
+    return itins_collected
+
 
     
 
@@ -1218,6 +1223,9 @@ def does_contain(itin, itins):
     return False
 
 def formatItins(response, num_itins, start_station_id, start_itin_id):
+    """
+    Formats itineraries from response of a single api call 
+    """
     itins = []
     itin_id = start_itin_id
     for group in response["groups"]:
@@ -1270,15 +1278,15 @@ def formatItins(response, num_itins, start_station_id, start_itin_id):
                 itins.append(itin)
                 if (trips_parsed >= num_itins):
                     break
-    print(itins)
+    return itins
 
 def callTripGoAPI(api, parameters, headers):
+        """
+        Calls the TripGoAPI and returns the response 
+        """
         response = requests.get(api, params = parameters, headers = headers)
         if response.status_code == 200:
             print("sucessfully fetched TripGo data")
-            #print(response.json())
-            #print()
-            #print(response.json().get("groups", {})[0].get("trips"))
             return response.json()
         else:
-            raise Exception(f"{response.status_code}")
+            return(f"failed to fetch TripGo data: {response.status_code}")
