@@ -26,10 +26,10 @@ def get_station_suburbs() -> dict[str : list[list[str, str]]]:
 
     for station in stations:
         if station.suburb not in suburbs:
-            suburbs[station.suburb] = [{"id": station.station_id, "name": station.name}]
+            suburbs[station.suburb] = [{"id": station.station_id, "name": station.name, "lat": station.lat, "long": station.long}]
         else:
             suburbs[station.suburb].append(
-                {"id": station.station_id, "name": station.name}
+                {"id": station.station_id, "name": station.name, "lat": station.lat, "long": station.long}
             )
 
     for suburb, station_data in suburbs.items():
