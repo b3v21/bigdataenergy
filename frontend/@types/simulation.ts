@@ -37,3 +37,15 @@ export type Simulation = {
 	Routes: Routes;
 	Stations: Station[];
 };
+
+
+type StationData = {
+	id: string;
+	name: string;
+  };
+  
+export type SuburbResponse = {
+	[suburb: string]: {
+	stations: StationData[];
+	};
+  };
