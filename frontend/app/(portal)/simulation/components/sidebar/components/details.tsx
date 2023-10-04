@@ -30,7 +30,7 @@ export type DetailsProps = {
 };
 
 const Details = ({
-	simulationSettings: { selectedSuburbs, selectedStations },
+	simulationSettings,
 	setSimulationSettings,
 	fetchSimulationData
 }: DetailsProps) => {
@@ -40,10 +40,12 @@ const Details = ({
 	const { data: suburbs, isLoading } = useGetSuburbs();
 
 	const stations = useMemo(() => {
-		if (!suburbs || !selectedSuburbs.length) return [];
+		if (!suburbs || !simulationSettings.selectedSuburbs.length) return [];
 
-		return selectedSuburbs.map((suburb) => suburb.stations).flat();
-	}, [suburbs, selectedSuburbs]);
+		return simulationSettings.selectedSuburbs
+			.map((suburb) => suburb.stations)
+			.flat();
+	}, [suburbs, simulationSettings.selectedSuburbs]);
 
 	const handleRunSimulation = () => {
 		fetchSimulationData();
@@ -63,8 +65,10 @@ const Details = ({
 							role="combobox"
 							className="w-full justify-between"
 						>
-							{selectedSuburbs.length
-								? selectedSuburbs.map((suburb) => suburb.suburb).join(', ')
+							{simulationSettings.selectedSuburbs.length
+								? simulationSettings.selectedSuburbs
+										.map((suburb) => suburb.suburb)
+										.join(', ')
 								: 'Select suburb...'}
 							<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 						</Button>
@@ -79,18 +83,20 @@ const Details = ({
 										key={suburb.suburb}
 										onSelect={(currentValue) => {
 											setSimulationSettings({
-												selectedSuburbs: selectedSuburbs.includes(suburb)
-													? selectedSuburbs.filter(
-															(suburb) =>
-																suburb.suburb.toLowerCase() !== currentValue
-													  )
-													: [
-															...selectedSuburbs,
-															suburbs!.find(
+												...simulationSettings,
+												selectedSuburbs:
+													simulationSettings.selectedSuburbs.includes(suburb)
+														? simulationSettings.selectedSuburbs.filter(
 																(suburb) =>
-																	suburb.suburb.toLowerCase() === currentValue
-															)!
-													  ],
+																	suburb.suburb.toLowerCase() !== currentValue
+														  )
+														: [
+																...simulationSettings.selectedSuburbs,
+																suburbs!.find(
+																	(suburb) =>
+																		suburb.suburb.toLowerCase() === currentValue
+																)!
+														  ],
 												selectedStations: []
 											});
 											setSuburbSelectorOpen(false);
@@ -99,7 +105,7 @@ const Details = ({
 										<Check
 											className={cn(
 												'mr-2 h-4 w-4',
-												selectedSuburbs.includes(suburb)
+												simulationSettings.selectedSuburbs.includes(suburb)
 													? 'opacity-100'
 													: 'opacity-0'
 											)}
@@ -117,13 +123,15 @@ const Details = ({
 				>
 					<PopoverTrigger asChild>
 						<Button
-							disabled={!selectedSuburbs.length}
+							disabled={!simulationSettings.selectedSuburbs.length}
 							variant="outline"
 							role="combobox"
 							className="w-full justify-between"
 						>
-							{selectedStations.length
-								? selectedStations.map((station) => station.id).join(', ')
+							{simulationSettings.selectedStations.length
+								? simulationSettings.selectedStations
+										.map((station) => station.id)
+										.join(', ')
 								: 'Select stations...'}
 							<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 						</Button>
@@ -138,17 +146,18 @@ const Details = ({
 										key={station.id}
 										onSelect={(currentValue) => {
 											setSimulationSettings({
-												selectedSuburbs,
-												selectedStations: selectedStations.includes(station)
-													? selectedStations.filter(
-															(station) => station.id !== currentValue
-													  )
-													: [
-															...selectedStations,
-															stations!.find(
-																(station) => station.id === currentValue
-															)!
-													  ]
+												...simulationSettings,
+												selectedStations:
+													simulationSettings.selectedStations.includes(station)
+														? simulationSettings.selectedStations.filter(
+																(station) => station.id !== currentValue
+														  )
+														: [
+																...simulationSettings.selectedStations,
+																stations!.find(
+																	(station) => station.id === currentValue
+																)!
+														  ]
 											});
 											setStationSelectorOpen(false);
 										}}
@@ -156,7 +165,7 @@ const Details = ({
 										<Check
 											className={cn(
 												'mr-2 h-4 w-4',
-												selectedStations.includes(station)
+												simulationSettings.selectedStations.includes(station)
 													? 'opacity-100'
 													: 'opacity-0'
 											)}
@@ -170,7 +179,7 @@ const Details = ({
 				</Popover>
 				<Button
 					className="w-full"
-					disabled={!selectedStations.length}
+					disabled={!simulationSettings.selectedStations.length}
 					onClick={handleRunSimulation}
 				>
 					run simulation

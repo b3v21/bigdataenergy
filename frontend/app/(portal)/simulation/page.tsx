@@ -6,12 +6,13 @@ import Plot, { PlotParams } from 'react-plotly.js';
 import HoverCard from './components/hover-card';
 import Sidebar from './components/sidebar';
 import { layout, data as plotData } from './plot';
-import { Stations, Suburbs } from '@/@types';
+import { Itineraries, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
 
 export type SimulationSettings = {
 	selectedSuburbs: Suburbs;
 	selectedStations: Stations;
+	selectedItineraries: Itineraries;
 };
 
 type HoverData = {
@@ -29,19 +30,8 @@ const Simulation = () => {
 	const [simulationSettings, setSimulationSettings] =
 		useState<SimulationSettings>({
 			selectedSuburbs: [],
-			selectedStations: []
-		});
-
-	// Retrieves the simulation data
-	const {
-		data: simulationResult,
-		isLoading,
-		refetch: fetchSimulationData
-	} = useGetSimulationData(
-		{
-			env_start: 355,
-			time_horizon: 30,
-			itineraries: [
+			selectedStations: [],
+			selectedItineraries: [
 				{
 					itinerary_id: 0,
 					routes: [
@@ -52,21 +42,30 @@ const Simulation = () => {
 						}
 					]
 				}
-			],
-			snapshot_date: '2023-08-01',
-			active_suburbs: simulationSettings.selectedSuburbs.map(
-				// default st lucia
-				(suburb) => suburb.suburb
-			),
-			active_stations: simulationSettings.selectedStations.map(
-				// default 1815
-				(station) => station.id
-			)
-		},
-		{
-			enabled: false
-		}
-	);
+			]
+		});
+
+	// Retrieves the simulation data
+	const { data: simulationResult, refetch: fetchSimulationData } =
+		useGetSimulationData(
+			{
+				env_start: 355,
+				time_horizon: 30,
+				itineraries: simulationSettings.selectedItineraries,
+				snapshot_date: '2023-08-01',
+				active_suburbs: simulationSettings.selectedSuburbs.map(
+					// default st lucia
+					(suburb) => suburb.suburb
+				),
+				active_stations: simulationSettings.selectedStations.map(
+					// default 1815
+					(station) => station.id
+				)
+			},
+			{
+				enabled: false
+			}
+		);
 
 	// todo: remove any types once data typed correctly
 	const simulationData = simulationResult as any;
