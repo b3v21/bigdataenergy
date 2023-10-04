@@ -277,16 +277,15 @@ class Transporter(ABC):
 
         people_to_ride = station.board(min(people_at_stop, seats_left), self.route)
         num_people_to_board = sum([p.get_num_people() for p in people_to_ride])
-        load_time = int(num_people_to_board * PERSON_BOARD_TIME)
         self.people += people_to_ride
 
-        yield self.env.timeout(load_time)
+        yield self.env.timeout(0.5)
         station.log_cur_people()
         for people in people_to_ride:
             people.log((self.name, self.id))
         if DEBUG:
             print(
-                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} loaded {num_people_to_board} people from {station.name} ({load_time} mins)"
+                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} loaded {num_people_to_board} people from {station.name} (30 secs)"
             )
 
     def get_people_deloading(self, station: Station) -> list[People]:
@@ -315,11 +314,10 @@ class Transporter(ABC):
                 )
             return
 
-        deload_time = int(num_passengers_deloaded * PERSON_BOARD_TIME)
-        yield self.env.timeout(deload_time)
+        yield self.env.timeout(0.5)
         if DEBUG:
             print(
-                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {num_passengers_deloaded} people at {station.name} ({deload_time} mins)"
+                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {num_passengers_deloaded} people at {station.name} (30 secs)"
             )
 
         station.put(people_deloading)
@@ -450,11 +448,13 @@ class Train(Transporter):
         route: Route,
         location_index: int = 0,
         people: list[People] = [],
-        capacity: int = 50,
+        capacity: int = 100,
     ) -> None:
         super().__init__(
             env, env_start, id, name, trip, route, location_index, people, capacity
         )
+        self.time_log = {}
+        self.passenger_changes = {}
 
     def get_type(self) -> str:
         return "Train"
@@ -478,7 +478,7 @@ class Train(Transporter):
                     yield self.env.process(
                         self.deload_passengers(train_route.get_current_stop(self))
                     )
-                    self.bus_passenger_changes[
+                    self.passenger_changes[
                         self.env.now + self.env_start
                     ] = self.passenger_count()
 
@@ -486,13 +486,13 @@ class Train(Transporter):
                     yield self.env.process(
                         self.deload_passengers(train_route.get_current_stop(self))
                     )
-                    self.bus_passenger_changes[
+                    self.passenger_changes[
                         self.env.now + self.env_start
                     ] = self.passenger_count()
                     # Despawn
                     if DEBUG:
                         print(
-                            f"({self.env.now+train_route.env_start}): Bus {self.get_name()} ended its journey."
+                            f"({self.env.now+train_route.env_start}): Train {self.get_name()} ended its journey."
                         )
                     break
 
@@ -507,7 +507,7 @@ class Train(Transporter):
                         break
                     index += 1
                 if travel_time == 0:
-                    # Some bus stops have very small distances between, to stop teleportation, make min one
+                    # Some train stops have very small distances between, to stop teleportation, make min one
                     print("**Had a case where travel time was 0**")
                     travel_time = 1
 
@@ -518,18 +518,18 @@ class Train(Transporter):
                     travel_time = 1
 
             yield self.env.timeout(travel_time)
-            self.bus_time_log[train_route.get_current_stop(self).name] = (
+            self.time_log[train_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
             )
             if DEBUG:
                 print(
-                    f"({self.env.now+train_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {train_route.get_current_stop(self).name} ({travel_time} mins)"
+                    f"({self.env.now+train_route.env_start}): Train {self.get_name()} travelled from {previous_stop.name} to {train_route.get_current_stop(self).name} ({travel_time} mins)"
                 )
 
 
 class Route(ABC):
     """
-    Object to store series of routes, needs to spawn the initial stops bus spawn process.
+    Object to store series of routes, needs to spawn the initial stops transporter spawn process.
     """
 
     def __init__(
@@ -694,7 +694,7 @@ class TrainRoute(Route):
                             env=self.env,
                             env_start=self.env_start,
                             id=self.transporters_spawned,
-                            name=f"B{self.transporters_spawned}_{self.name}",
+                            name=f"T{self.transporters_spawned}_{self.name}",
                             trip=trip_info,
                             route=self,
                             location_index=self.get_stop_with_name(station_info[0]),
@@ -808,7 +808,6 @@ class Suburb:
         self.max_distributes = max_distributes
         self.active = active
 
-        # Start process IF active
         if active:
             self.pop_proc = self.env.process(self.suburb())
 
@@ -1348,7 +1347,7 @@ def generate_itins(user_data: dict) -> dict:
         f"Generating itineraries for {active_stations} at start time {start_time} and end time {end_time}"
     )
 
-    # todo: move environment variables
+    # TODO: move environment variables
     modes = ["pt_pub_bus"]
     api = "https://api.tripgo.com/v1/routing.json"
     key = "2286d1ca160dd724a3da27802c7aba91"
@@ -1460,3 +1459,62 @@ def callTripGoAPI(api, parameters, headers):
         return response.json()
     else:
         return f"failed to fetch TripGo data: {response.status_code}"
+
+
+def test_sim_with_trains_basic():
+    """
+    Create the sim objects manually and test that train functionality works correctly.
+    This test will have the following setup:
+
+                       StationA (200 waiting) ---> StationB (0 waiting) ---> StationC (0 waiting)
+    Train_1 (route 1)          0                          20                         40
+    Train_2 (route 1)          20                         40                         60
+
+    RouteA: people going from StationA to StationC.
+    Itinerary: just RouteA
+
+    This will simply test that the trains objects work as expected when nothing goes wrong and no
+    waiting is required.
+
+    Assumptions:
+    - I am assuming that trains wait for the same amount of time at each stop and so we don't need
+      to worry about the time spent loading people at each station.
+    """
+
+    env = Environment()
+
+    # Create Stations.
+    StationA = Station(env, 0, "StationA", (0, 0), 1, 0, 0)
+    StationB = Station(env, 1, "StationB", (1, 1), 1, 0, 0)
+    StationC = Station(env, 2, "StationC", (2, 2), 1, 0, 0)
+
+    # Create Trips.
+    TripA = Trip([("StationA", 5), ("StationB", 25), ("StationC", 45)])
+    TripB = Trip([("StationA", 25), ("StationB", 45), ("StationC", 65)])
+
+    # Create Suburbs.
+    SuburbA = Suburb(
+        env,
+        "SuburbA",
+        {StationA: 100, StationB: 0, StationC: 0},
+        [StationA, StationB, StationC],
+        200,
+        1,
+        0,
+        True,
+        0,
+    )
+
+    # Create Routes.
+    RouteA = TrainRoute(
+        env, 0, 0, "RouteA", [StationA, StationB, StationC], [TripA, TripB], 2
+    )
+
+    # Create Itineraries.
+    ITINERARIES.append(Itinerary(env, 0, [(RouteA, StationC)]))
+
+    env.run(100)
+
+
+if __name__ == "__main__":
+    test_sim_with_trains_basic()
