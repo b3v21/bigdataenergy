@@ -70,7 +70,7 @@ const Simulation = () => {
 	// todo: remove any types once data typed correctly
 	const simulationData = simulationResult as any;
 
-	// The following recomputes the stations into a readable format every time simulation data changes
+	// Recomputes the stations into a readable format every time simulation data changes
 	const routeStations = useMemo(() => {
 		if (!simulationResult) return null;
 
