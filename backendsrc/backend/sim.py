@@ -1064,6 +1064,7 @@ def get_data(
             else:
                 # Walk
                 walks[f"Walk_{walk_id}"] = (start, end)
+                # route_ids[f"Walk_{walk_id}"] = end TODO: UNCOMMENT THIS WHEN WE WANT WALKS IN DB
                 walk_id += 1
 
     db_routes = RouteM.objects.all().filter(route_id__in=list(route_ids.keys()))
@@ -1156,7 +1157,7 @@ def get_data(
             walk = Walk(env, env_start, walk_id, stops, 0, [])
             walks_from_stops[(walks[walk_id][0], walks[walk_id][1])] = walk
             sim_routes[walk_id] = walk  # For general routes
-    
+
     sim_itineraries = []
     for itinerary in itineraries:
         routes = []
