@@ -6,3 +6,10 @@ export const simulationKeys = {
 export const suburbKeys = {
 	all: ['suburbs']
 };
+export const stationKeys = {
+	all: ['stations']
+};
+
+export const itineraryKeys = {
+	all: ['itineraries']
+};
