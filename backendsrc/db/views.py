@@ -8,7 +8,7 @@ from db.serializers import StationSerializer
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
-from backend.sim import run_simulation
+from backend.sim import run_simulation, generate_itins
 from backend.queries import get_station_suburbs, get_cached_itineraries
 from logging import warning
 
@@ -82,6 +82,53 @@ def station_suburbs(request: Request) -> Response:
     print(f"Sending location data to backend")
 
     output = get_station_suburbs()
+
+    return Response(data=output, status=status.HTTP_201_CREATED)
+
+@api_view(["POST"])
+def itin_check(request: Request) -> Response:
+    """
+    this is the request responsible for receiving the active stations and generating corresponding itineraries.
+       request.data is currently expected to be a dict containing the following fields:
+    {
+        "env_start": int,
+        "time_horizon": int,
+        "snapshot_date": str, (yyyy-mm-dd format)
+        "active_stations": [
+                 {
+                    "station_id" : str,
+                    "lat":float,
+                    "long":float
+                }
+            ]
+    }
+
+    return json of the form: 
+    "itineraries": 
+            [
+                {
+                    "itinerary_id" : 0, 
+                    "routes" : [
+                        {
+                            "route_id": "412-3136", 
+                            "start": "0", 
+                            "end": "1850"
+                        }
+                    ]
+                }
+            ]
+
+    """
+    if not request.data:
+        warning(f"No user data received.")
+
+    print(f"Request for itineraries received")
+    try:
+        output ={"itinieraries": generate_itins(request.data)}
+    except:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    print(output)
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 

@@ -1,12 +1,19 @@
 'use client';
 
-import { Simulation as SimulationData } from '@/@types/simulation';
 import { useGetSimulationData } from '@/hooks/useGetSimulationData';
-import Sidebar from './components/sidebar';
 import { useMemo, useState } from 'react';
 import Plot, { PlotParams } from 'react-plotly.js';
-import { layout, data as plotData } from './plot';
 import HoverCard from './components/hover-card';
+import Sidebar from './components/sidebar';
+import { layout, data as plotData } from './plot';
+import { Itineraries, Stations, Suburbs } from '@/@types';
+import { Card } from '@/components/ui/card';
+
+export type SimulationSettings = {
+	selectedSuburbs: Suburbs;
+	selectedStations: Stations;
+	selectedItineraries: Itineraries;
+};
 
 type HoverData = {
 	x: number;
@@ -17,26 +24,88 @@ type HoverData = {
 const HOVER_OFFSET = { x: 10, y: 10 };
 
 const Simulation = () => {
+	// Stores information showed on the hover card
 	const [hoverData, setHoverData] = useState<HoverData | null>(null);
-	const { data, isLoading } = useGetSimulationData();
+	// Stores simulation details
+	const [simulationSettings, setSimulationSettings] =
+		useState<SimulationSettings>({
+			selectedSuburbs: [],
+			selectedStations: [],
+			selectedItineraries: [
+				{
+					itinerary_id: 0,
+					routes: [
+						{
+							route_id: '412-3136',
+							start: '0',
+							end: '1850'
+						}
+					]
+				}
+			]
+		});
 
-	// Todo: remove once data typed correctly
-	const simulationData = data as any;
+	// Retrieves the simulation data
+	const { data: simulationResult, refetch: fetchSimulationData } =
+		useGetSimulationData(
+			{
+				env_start: 355,
+				time_horizon: 30,
+				itineraries: simulationSettings.selectedItineraries,
+				snapshot_date: '2023-08-01',
+				active_suburbs: simulationSettings.selectedSuburbs.map(
+					// default st lucia
+					(suburb) => suburb.suburb
+				),
+				active_stations: simulationSettings.selectedStations.map(
+					// default 1815
+					(station) => station.id
+				)
+			},
+			{
+				enabled: false
+			}
+		);
 
+	// todo: remove any types once data typed correctly
+	const simulationData = simulationResult as any;
+
+	// The following recomputes the stations into a readable format every time simulation data changes
 	const routeStations = useMemo(() => {
-		if (!data) return null;
+		if (!simulationResult) return null;
 
-		return Object.entries(simulationData?.Routes).map((route) =>
-			Object.entries((route as any)[1].stations).map((station) => station[1])
-		)[0];
+		return (
+			// Formatting data for plotly
+			Object.entries(simulationData?.Routes)
+				.map((route) =>
+					Object.entries((route as any)[1].stations).map(
+						(station) => station[1]
+					)
+				)[0]
+				// todo: remove any types once data typed correctly
+				.sort((a, b) => (a as any).sequence - (b as any).sequence)
+		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [simulationData?.Routes]);
 
 	return (
 		<div className="flex flex-row gap-4">
-			<Sidebar />
+			<Sidebar
+				simulationSettings={simulationSettings}
+				setSimulationSettings={setSimulationSettings}
+				fetchSimulationData={fetchSimulationData}
+			/>
 			<HoverCard data={hoverData} />
-			<div className="flex-1">
+			<div className="flex-1 relative">
+				{!simulationData && (
+					<div className="absolute z-50 inset-0 flex items-center justify-center rounded-md ">
+						<Card className="flex flex-col items-center gap-4 p-4 bg-transparent backdrop-blur-sm border-slate-600">
+							<p className="text-2xl font-bold">No simulation data</p>
+							<p className="text-xl">Please select suburbs and stations</p>
+						</Card>
+					</div>
+				)}
+
 				{/* @ts-ignore  */}
 				<Plot
 					data={
