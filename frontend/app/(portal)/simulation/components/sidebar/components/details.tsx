@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useGetSuburbs } from '@/hooks/useGetSuburbs';
 import { SimulationSettings } from '../../../page';
+import { useGetItineraries } from '@/hooks/useGetItineraries';
 
 export type DetailsProps = {
 	simulationSettings: SimulationSettings;
@@ -38,6 +39,26 @@ const Details = ({
 	const [stationSelectorOpen, setStationSelectorOpen] = useState(false);
 
 	const { data: suburbs, isLoading } = useGetSuburbs();
+	const { data: itineraries } = useGetItineraries(
+		{
+			env_start: 355,
+			time_horizon: 30,
+			snapshot_date: '2023-08-01',
+			active_stations: simulationSettings.selectedStations.map(
+				({ lat, long, id }) => ({
+					station_id: id,
+					lat,
+					long
+				})
+			)
+		},
+		{
+			enabled: !!simulationSettings.selectedStations.length,
+			retry: false
+		}
+	);
+
+	console.log(itineraries);
 
 	const stations = useMemo(() => {
 		if (!suburbs || !simulationSettings.selectedSuburbs.length) return [];
