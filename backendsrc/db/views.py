@@ -85,6 +85,7 @@ def station_suburbs(request: Request) -> Response:
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 
+
 @api_view(["POST"])
 def itin_check(request: Request) -> Response:
     """
@@ -103,15 +104,15 @@ def itin_check(request: Request) -> Response:
             ]
     }
 
-    return json of the form: 
-    "itineraries": 
+    return json of the form:
+    "itineraries":
             [
                 {
-                    "itinerary_id" : 0, 
+                    "itinerary_id" : 0,
                     "routes" : [
                         {
-                            "route_id": "412-3136", 
-                            "start": "0", 
+                            "route_id": "412-3136",
+                            "start": "0",
                             "end": "1850"
                         }
                     ]
@@ -124,7 +125,7 @@ def itin_check(request: Request) -> Response:
 
     print(f"Request for itineraries received")
     try:
-        output ={"itinieraries": generate_itins(request.data)}
+        output = {"itinieraries": generate_itins(request.data)}
     except:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 

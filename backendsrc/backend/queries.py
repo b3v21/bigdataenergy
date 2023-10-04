@@ -13,6 +13,49 @@ django.setup()
 
 from db.models import Station, ItineraryCache, RouteInItinerary
 
+ALLOWED_SUBURBS = [
+    "Toowong",
+    "Indooroopilly",
+    "Taringa",
+    "St Lucia",
+    "Chapel Hill",
+    "West End",
+    "Bardon",
+    "Paddington",
+    "Ashgrove",
+    "Herston",
+    "Newstead",
+    "Teneriffe",
+    "New Farm",
+    "Fortitude Valley",
+    "Brisbane City",
+    "Highgate Hill",
+    "South Brisbane",
+    "Kangaroo Point",
+    "East Brisbane",
+    "Dutton Park",
+    "Fairfield",
+    "Stones Corner",
+    "Coorparoo",
+    "Norman Park",
+    "Seven  Hills",
+    "Cannon Hill",
+    "Morningside",
+    "Hawthorne",
+    "Balmoral",
+    "Bulimba",
+    "Murarrie",
+    "Hamilton",
+    "Eagle Farm",
+    "Ascot",
+    "Hendra",
+    "Clayfield",
+    "Albion",
+    "Windsor",
+    "Kelvin Grove",
+    "Red Hill",
+]
+
 
 def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     """
@@ -25,24 +68,25 @@ def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     suburbs = {}
 
     for station in stations:
-        if station.suburb not in suburbs:
-            suburbs[station.suburb] = [
-                {
-                    "id": station.station_id,
-                    "name": station.name,
-                    "lat": station.lat,
-                    "long": station.long,
-                }
-            ]
-        else:
-            suburbs[station.suburb].append(
-                {
-                    "id": station.station_id,
-                    "name": station.name,
-                    "lat": station.lat,
-                    "long": station.long,
-                }
-            )
+        if station.suburb in ALLOWED_SUBURBS:
+            if station.suburb not in suburbs:
+                suburbs[station.suburb] = [
+                    {
+                        "id": station.station_id,
+                        "name": station.name,
+                        "lat": station.lat,
+                        "long": station.long,
+                    }
+                ]
+            else:
+                suburbs[station.suburb].append(
+                    {
+                        "id": station.station_id,
+                        "name": station.name,
+                        "lat": station.lat,
+                        "long": station.long,
+                    }
+                )
 
     for suburb, station_data in suburbs.items():
         result.append({"suburb": suburb, "stations": station_data})
