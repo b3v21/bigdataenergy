@@ -833,9 +833,6 @@ class Suburb:
 
     def distribute_people(self, num_people: int) -> int:
         """
-        TODO: This will be replaced with a standard form of distribution + the
-        possibility for user inputs via the frontend.
-
         Current assigns random amount of people to each of the active stations within this active suburb.
         """
         people_distributed = 0
@@ -1030,10 +1027,6 @@ def get_data(
     """
     This function accesses the data from the database and converts it into simulation
     objects.
-
-    TODO: Itineraries need to be generated elsewhere and converted here into
-    Itinerary objects, for now just use placeholder which is a list of routes
-    that the itinerary use
     """
 
     if not snapshot_date:
