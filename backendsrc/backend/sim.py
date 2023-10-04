@@ -980,7 +980,7 @@ def process_simulation_output(
             
             shape_out = [(shape.shape_pt_sequence, shape.shape_pt_lat, shape.shape_pt_lon) for shape in shapes]
             shape_out.sort(key=lambda x: x[0])
-            shape_out = [(i,b,c) for i, (a,b,c) in enumerate(shape_out)]
+            shape_out = [{"sequence" : i, "lat" : b, "long" : c} for i, (a,b,c) in enumerate(shape_out)]
             
             rd["shape"] = shape_out
             for bus in route.buses:
