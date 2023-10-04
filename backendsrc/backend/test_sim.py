@@ -162,20 +162,26 @@ def test_basic_sim_with_models():
 
     run_simulation(
         {
-            "env_start": 10,
+            "env_start": 0,
             "time_horizon": 30,
-            "itineraries": {
-                0: [
-                    {
-                        "route_id": "0",
-                        "start": "0",
-                        "end": "-1",
-                    },
-                ]
-            },
+            "itineraries": [
+                {
+                    "itinerary_id": 0,
+                    "routes": [{"route_id": "0", "start": "0", "end": "-2"}],
+                },
+                {
+                    "itinerary_id": 1,
+                    "routes": [
+                        {"route_id": "walk", "start": "0", "end": "-1"},
+                        {"route_id": "0", "start": "-1", "end": "-2"},
+                    ],
+                },
+            ],
             "snapshot_date": "2023-09-15",
+            "active_suburbs": ["test suburb"],
+            "active_stations": ["0"],
         },
-        1,
+        2,
     )
 
 
@@ -184,10 +190,15 @@ def test_sim_with_db_models_412():
         {
             "env_start": 355,
             "time_horizon": 30,
-            "itineraries": {0: [{"route_id": "412-3136", "start": "0", "end": "1850"}]},
+            "itineraries": [
+                {
+                    "itinerary_id": 0,
+                    "routes": [{"route_id": "412-3136", "start": "0", "end": "1850"}],
+                }
+            ],
             "snapshot_date": "2023-08-01",
-            "active_suburbs":["St Lucia"],
-            "active_stations" : ["1815"]
+            "active_suburbs": ["St Lucia"],
+            "active_stations": ["1815"],
         },
         1,
     )
@@ -239,4 +250,4 @@ def test_sim_output_serializer():
 
 
 if __name__ == "__main__":
-    test_sim_with_db_models_412()
+    test_basic_sim_with_models()

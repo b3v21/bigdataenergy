@@ -18,6 +18,7 @@ type Routes = {
 			[stationId: number]: {
 				pos: { lat: number; lon: number };
 				stationName: string;
+				sequence: number;
 			};
 		}[];
 	};
