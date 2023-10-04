@@ -1470,15 +1470,10 @@ def test_sim_with_trains_basic():
     Train_1 (route 1)          0                          20                         40
     Train_2 (route 1)          20                         40                         60
 
-    RouteA: people going from StationA to StationC.
-    Itinerary: just RouteA
+    RouteA: StationA -> StationB -> StationC.
 
     This will simply test that the trains objects work as expected when nothing goes wrong and no
     waiting is required.
-
-    Assumptions:
-    - I am assuming that trains wait for the same amount of time at each stop and so we don't need
-      to worry about the time spent loading people at each station.
     """
 
     env = Environment()
@@ -1493,7 +1488,7 @@ def test_sim_with_trains_basic():
     TripB = Trip([("StationA", 25), ("StationB", 45), ("StationC", 65)])
 
     # Create Suburbs.
-    SuburbA = Suburb(
+    Suburb(
         env,
         "SuburbA",
         {StationA: 100, StationB: 0, StationC: 0},
@@ -1516,5 +1511,55 @@ def test_sim_with_trains_basic():
     env.run(100)
 
 
+def test_sim_with_trains_collision():
+    """
+                       StationA (100 waiting) ---> StationB (0 waiting) ---> StationC (0 waiting)
+    Train_1 (route 1)          5                         25                         45
+
+                       StationD (0 waiting) ---> StationB (100 waiting) ---> StationC (0 waiting)
+    Train_1 (route 2)          5                         25                         45
+
+    RouteA: StationA -> StationB -> StationC.
+    RouteB: StationD -> StationB -> StationC.
+
+    This will simply test that the trains objects work as expected when nothing goes wrong and no
+    waiting is required.
+    """
+
+    env = Environment()
+
+    # Create Stations.
+    StationA = Station(env, 0, "StationA", (0, 0), 1, 0, 0)
+    StationB = Station(env, 1, "StationB", (1, 1), 1, 0, 0)
+    StationC = Station(env, 2, "StationC", (2, 2), 1, 0, 0)
+    StationD = Station(env, 3, "StationD", (3, 3), 1, 0, 0)
+
+    # Create Trips.
+    TripA = Trip([("StationA", 5), ("StationB", 25), ("StationC", 45)])
+    TripB = Trip([("StationD", 5), ("StationB", 25), ("StationC", 45)])
+
+    # Create Suburbs.
+    Suburb(
+        env,
+        "SuburbA",
+        {StationA: 50, StationB: 50, StationC: 0, StationD: 0},
+        [StationA, StationB, StationC, StationD],
+        200,
+        2,
+        1,
+        True,
+        0,
+    )
+
+    # Create Routes.
+    RouteA = TrainRoute(env, 0, 0, "RouteA", [StationA, StationB, StationC], [TripA], 1)
+    RouteB = TrainRoute(env, 0, 0, "RouteB", [StationD, StationB, StationC], [TripB], 1)
+
+    # Create Itineraries.
+    ITINERARIES.append(Itinerary(env, 0, [(RouteA, StationC), (RouteB, StationD)]))
+
+    env.run(100)
+
+
 if __name__ == "__main__":
-    test_sim_with_trains_basic()
+    test_sim_with_trains_collision()
