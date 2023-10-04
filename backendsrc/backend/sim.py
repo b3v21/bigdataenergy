@@ -10,6 +10,7 @@ import sys
 from datetime import time, date, datetime
 import time as t
 import requests
+import json
 
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -900,7 +901,7 @@ def run_simulation(
     print(f"Models successfully created for simulation #{sim_id}.")
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
-    output = process_simulation_output(stations, routes, itineraries, sim_id)
+    output = process_simulation_output(stations, routes, itineraries, sim_id, trips)
     print(f"Simulation #{sim_id} output processed.")
     load_sim_data_into_db(stations, routes, itineraries, sim_id)
 
@@ -912,6 +913,7 @@ def process_simulation_output(
     routes: list[Route],
     itineraries: list[Itinerary],
     sim_id: int,
+    trips: list[Trip],
 ) -> dict[dict]:
     """
     Analyse all the models once the simulation has finished running and returns the
@@ -921,7 +923,7 @@ def process_simulation_output(
 
     output = {
         "SimulationID": sim_id,
-        "Routes": {
+        "Routes": [
             route_id: {
                 "method": "BusRoute" or "Walk",
                 "TransportersOnRoute": {
@@ -930,6 +932,7 @@ def process_simulation_output(
                         "PassengerChangesOverTime": {...},
                     },
                 },
+                "shape" : [("sequence", "lat", "long"), ...)]
                 "Walkout": {walk_id: time, ...},
                 "stations": {
                     station_id: {
@@ -972,6 +975,14 @@ def process_simulation_output(
         if route.get_type() == "BusRoute":
             rd["BusesOnRoute"] = {}
             br = rd["BusesOnRoute"]
+            shape_id = TripM.objects.filter(route_id=route.id).first().shape_id.shape_id  
+            shapes = ShapeM.objects.filter(shape_id=shape_id)
+            
+            shape_out = [(shape.shape_pt_sequence, shape.shape_pt_lat, shape.shape_pt_lon) for shape in shapes]
+            shape_out.sort(key=lambda x: x[0])
+            shape_out = [(i,b,c) for i, (a,b,c) in enumerate(shape_out)]
+            
+            rd["shape"] = shape_out
             for bus in route.buses:
                 br[bus.id] = {
                     "Timeout": bus.bus_time_log,
