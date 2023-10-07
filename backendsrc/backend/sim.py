@@ -1054,8 +1054,13 @@ def process_simulation_output(
     num_arrived = destination.num_people()
     num_late = People.num_in_simulation - num_arrived
 
-    avg_wait_times = []
-    print(stations)
+    
+    """
+    Calculating outliers only looks at stations who HAVE an average waiting time.
+    Stations without one have N/A and would polute data set with impossible to beat times.
+    """
+    avg_wait_times = {}
+    bottles = {}
     for station in stations:
         output["Stations"][station.id] = {}
         sd = output["Stations"][station.id]
@@ -1066,16 +1071,12 @@ def process_simulation_output(
         }
         if station.id in station_waits:
             sd["avg_wait"] = sum(station_waits[station.id])/len(station_waits[station.id])
-            avg_wait_times.append(sum(station_waits[station.id])/len(station_waits[station.id]))
+            avg_wait_times[station.id] = sum(station_waits[station.id])/len(station_waits[station.id])
         else:
             sd["avg_wait"] = "N/A"
         print(station.id, sd["avg_wait"])
         sd["PeopleChangesOverTime"] = station.people_over_time
-    """
-    Calculating outliers only looks at stations who HAVE an average waiting time.
-    Stations without one have N/A and would polute data set with impossible to beat times.
-    """
-    data = np.array(avg_wait_times)
+    data = np.array(list(avg_wait_times.values()))
     print(data)
     mean = np.mean(data)
     std = np.std(data)
@@ -1083,11 +1084,18 @@ def process_simulation_output(
     threshold = 1 # May need tweaking ---
     outliers = []
     for x in data:
-        z_score = (x - mean) / std
-        print(z_score)
-        if abs(z_score) > threshold:
+        z = (x - mean) / std
+        if abs(z) > threshold and x > mean:
             outliers.append(x)
-    print("\nOutliers  : ", outliers)
+    print("Outliers  : ", outliers)
+    for station in stations:
+        sd = output["Stations"][station.id]
+        if sd["avg_wait"] in outliers:
+            sd["bottleneck"] = True
+            bottles[station.id] = True
+        else:
+            sd["bottleneck"] = False
+    print(bottles)
 
     percentage_arrived = (num_arrived)/(num_late + num_arrived) * 100
     print(percentage_arrived, num_arrived, num_late) #---
