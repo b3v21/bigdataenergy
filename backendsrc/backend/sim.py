@@ -962,7 +962,8 @@ def process_simulation_output(
                     "long": long
                 },
                 "avg_wait" : avg_wait,
-                "PeopleChangesOverTime": {time: num_people, ...}
+                "PeopleChangesOverTime": {time: num_people, ...},
+                "bottleneck" : True/False
             },
         ],
         "Itineraries": [
@@ -1110,7 +1111,7 @@ def process_simulation_output(
             rd = itin_d["Routes"][route.id]
             for stop in route.stops:
                 rd.add(stop.name)
-
+    output["Bottlenecks"] = list(bottles.values())
     return output
 
 
