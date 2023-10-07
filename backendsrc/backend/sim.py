@@ -11,6 +11,7 @@ from datetime import time, date, datetime
 import time as t
 import requests
 import json
+import numpy as np
 
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -1031,7 +1032,7 @@ def process_simulation_output(
                         station_waits[entry[1]].append(list(log.keys())[index + 1] - time)
                 else:
                     #Is the last entry in log
-                    end_sim = station.env.now
+                    end_sim = station.env_start + station.env.now
                     print("end sim", end_sim)
                     if entry[1] not in station_waits:
                         station_waits[entry[1]] = [end_sim - time]
@@ -1053,6 +1054,7 @@ def process_simulation_output(
     num_arrived = destination.num_people()
     num_late = People.num_in_simulation - num_arrived
 
+    avg_wait_times = []
     print(stations)
     for station in stations:
         output["Stations"][station.id] = {}
@@ -1064,10 +1066,24 @@ def process_simulation_output(
         }
         if station.id in station_waits:
             sd["avg_wait"] = sum(station_waits[station.id])/len(station_waits[station.id])
+            avg_wait_times.append(sum(station_waits[station.id])/len(station_waits[station.id]))
         else:
             sd["avg_wait"] = "N/A"
+            avg_wait_times.append(0) #Testing only otherwise very much outweight normal wait times.
         print(station.id, sd["avg_wait"])
         sd["PeopleChangesOverTime"] = station.people_over_time
+    
+    data = np.array(avg_wait_times)
+    print(data)
+    q1 = np.percentile(data, 25)
+    q3 = np.percentile(data, 75)
+    iqr = q3 - q1
+    lower_fence = q1 - 1.5 * iqr
+    upper_fence = q3 + 1.5 * iqr
+    outliers = np.where((data > upper_fence))
+    print(upper_fence)
+    print(data[outliers])
+    print() #Test with larger set ------
 
     percentage_arrived = (num_arrived)/(num_late + num_arrived) * 100
     print(percentage_arrived, num_arrived, num_late) #---
