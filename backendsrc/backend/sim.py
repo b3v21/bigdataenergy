@@ -1069,21 +1069,25 @@ def process_simulation_output(
             avg_wait_times.append(sum(station_waits[station.id])/len(station_waits[station.id]))
         else:
             sd["avg_wait"] = "N/A"
-            avg_wait_times.append(0) #Testing only otherwise very much outweight normal wait times.
         print(station.id, sd["avg_wait"])
         sd["PeopleChangesOverTime"] = station.people_over_time
-    
+    """
+    Calculating outliers only looks at stations who HAVE an average waiting time.
+    Stations without one have N/A and would polute data set with impossible to beat times.
+    """
     data = np.array(avg_wait_times)
     print(data)
-    q1 = np.percentile(data, 25)
-    q3 = np.percentile(data, 75)
-    iqr = q3 - q1
-    lower_fence = q1 - 1.5 * iqr
-    upper_fence = q3 + 1.5 * iqr
-    outliers = np.where((data > upper_fence))
-    print(upper_fence)
-    print(data[outliers])
-    print() #Test with larger set ------
+    mean = np.mean(data)
+    std = np.std(data)
+    
+    threshold = 1 # May need tweaking ---
+    outliers = []
+    for x in data:
+        z_score = (x - mean) / std
+        print(z_score)
+        if abs(z_score) > threshold:
+            outliers.append(x)
+    print("\nOutliers  : ", outliers)
 
     percentage_arrived = (num_arrived)/(num_late + num_arrived) * 100
     print(percentage_arrived, num_arrived, num_late) #---
