@@ -99,6 +99,8 @@ class People:
         self.itinerary_index = itinerary_index
         self.current_route_in_itin_index = current_route_in_itin_index
         self.people_log = {}
+    
+    num_in_simulation = 0
 
     def log(self, where: tuple[str, int]) -> None:
         self.people_log[self.env.now + self.env_start] = where
@@ -864,6 +866,7 @@ class Suburb:
             )
 
             station.put([people_arriving_at_stop], from_suburb=True)
+            People.num_in_simulation += people_arriving_at_stop.get_num_people()
 
             if DEBUG:
                 print(
@@ -1002,6 +1005,11 @@ def process_simulation_output(
             }
             sd["sequence"] = route.stops.index(station)
 
+    destination = itineraries[0].routes[-1][1]
+    print(destination)
+    num_arrived = destination.num_people()
+    num_late = People.num_in_simulation - num_arrived
+
     for station in stations:
         output["Stations"][station.id] = {}
         sd = output["Stations"][station.id]
@@ -1011,6 +1019,9 @@ def process_simulation_output(
             "long": station.pos[1],
         }
         sd["PeopleChangesOverTime"] = station.people_over_time
+
+    percentage_arrived = (num_arrived)/(num_late + num_arrived) * 100
+    print(percentage_arrived, num_arrived, num_late) #---
 
     for itinerary in itineraries:
         output["Itineraries"][itinerary.id] = {}
