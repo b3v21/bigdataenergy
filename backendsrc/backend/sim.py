@@ -80,6 +80,9 @@ class People:
     A group of people which will travel along a route.
     """
 
+    num_in_simulation = 0
+    all_people = []
+
     def __init__(
         self,
         env: Environment,
@@ -99,8 +102,9 @@ class People:
         self.itinerary_index = itinerary_index
         self.current_route_in_itin_index = current_route_in_itin_index
         self.people_log = {}
+        People.all_people.append(self)
     
-    num_in_simulation = 0
+    
 
     def log(self, where: tuple[str, int]) -> None:
         self.people_log[self.env.now + self.env_start] = where
@@ -956,6 +960,7 @@ def process_simulation_output(
                     "lat": lat,
                     "long": long
                 },
+                "avg_wait" : avg_wait,
                 "PeopleChangesOverTime": {time: num_people, ...}
             },
         ],
@@ -1005,11 +1010,50 @@ def process_simulation_output(
             }
             sd["sequence"] = route.stops.index(station)
 
+    """
+    This process isnt entirely perfect, the error will cut out some of the indexing issues.
+    However this dict will still extract info it thinks is about a station even tho its not.
+    This will be fixed by accessing only valid entries from within station parsing.
+    """
+    people = People.all_people
+    station_waits = {}
+    station_groups = {}
+    for group in people:
+        log = group.people_log
+        print(log)
+        index = 0
+        for time, entry in log.items():
+            try:
+                if index != len(list(log.keys())) - 1:
+                    if entry[1] not in station_waits:
+                        station_waits[entry[1]] = [list(log.keys())[index + 1] - time]
+                    else:
+                        station_waits[entry[1]].append(list(log.keys())[index + 1] - time)
+                else:
+                    #Is the last entry in log
+                    end_sim = station.env.now
+                    print("end sim", end_sim)
+                    if entry[1] not in station_waits:
+                        station_waits[entry[1]] = [end_sim - time]
+                    else:
+                        station_waits[entry[1]].append(end_sim - time)
+                if entry[1] not in station_groups:
+                    station_groups[entry[1]] = 1
+                else:
+                    station_groups[entry[1]] += 1
+            except:
+                #Format error
+                pass
+            index += 1
+    print(station_groups)
+    print(station_waits)
+
     destination = itineraries[0].routes[-1][1]
     print(destination)
     num_arrived = destination.num_people()
     num_late = People.num_in_simulation - num_arrived
 
+    print(stations)
     for station in stations:
         output["Stations"][station.id] = {}
         sd = output["Stations"][station.id]
@@ -1018,6 +1062,11 @@ def process_simulation_output(
             "lat": station.pos[0],
             "long": station.pos[1],
         }
+        if station.id in station_waits:
+            sd["avg_wait"] = sum(station_waits[station.id])/len(station_waits[station.id])
+        else:
+            sd["avg_wait"] = "N/A"
+        print(station.id, sd["avg_wait"])
         sd["PeopleChangesOverTime"] = station.people_over_time
 
     percentage_arrived = (num_arrived)/(num_late + num_arrived) * 100

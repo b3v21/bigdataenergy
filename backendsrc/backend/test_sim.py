@@ -251,3 +251,4 @@ def test_sim_output_serializer():
 
 if __name__ == "__main__":
     test_sim_with_db_models_412()
+    test_basic_sim_with_models()
