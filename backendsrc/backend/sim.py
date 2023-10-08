@@ -972,6 +972,9 @@ def process_simulation_output(
                     route_id: {station_name, ...}
                 }
             }
+        ],
+        "Bottlenecks": [
+            station_ids
         ]
     }
     """
