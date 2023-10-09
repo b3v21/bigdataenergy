@@ -18,17 +18,21 @@ type Payload = {
 	}[];
 };
 
+type Data = {
+	itineraries: Itineraries;
+};
+
 type QueryOptions = Omit<
-	UseQueryOptions<Itineraries, unknown, Itineraries>,
+	UseQueryOptions<Data, unknown, Data>,
 	'queryKey' | 'queryFn'
 >;
 
 export function useGetItineraries(payload: Payload, options?: QueryOptions) {
-	return useQuery<Itineraries>({
+	return useQuery<Data>({
 		// @ts-ignore
 		queryKey: itineraryKeys.all,
 		queryFn: async () => {
-			const { data }: { data: Itineraries } = await axios.post(
+			const { data }: { data: Data } = await axios.post(
 				'http://localhost:8000/itin_check/',
 				payload
 			);
