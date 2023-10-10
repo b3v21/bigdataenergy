@@ -286,7 +286,7 @@ class Transporter(ABC):
         avg_load_time = PERSON_BOARD_TIME * num_people_to_board
         std_dev_load_time = PERSON_BOARD_TIME * 0.25 * station.busy_level()
         load_time = -1
-        while load_time <= 0:
+        while load_time <= avg_load_time:
             load_time = ceil(np.random.normal(avg_load_time, std_dev_load_time)) #Using normal for now so it doesnt blow out of proportion.
         print(avg_load_time, station.busy_level(), load_time)
         self.people += people_to_ride
@@ -327,9 +327,9 @@ class Transporter(ABC):
             return
 
         avg_load_time = PERSON_BOARD_TIME * num_passengers_deloaded
-        std_dev_load_time = PERSON_BOARD_TIME * 0.25 * station.busy_level()
+        std_dev_load_time = (PERSON_BOARD_TIME * num_passengers_deloaded * 0.1) * station.busy_level()
         deload_time = -1
-        while deload_time <= 0:
+        while deload_time <= avg_load_time:
             deload_time = ceil(np.random.normal(avg_load_time, std_dev_load_time)) #Using normal for now so it doesnt blow out of proportion.
         print(avg_load_time, station.busy_level(), deload_time)
         yield self.env.timeout(deload_time)
@@ -1222,7 +1222,12 @@ def get_data(
     print("People in attendance: ", people_in_attendance)
     hotel_suburbs = []
     for sub_name in suburb_names:
-        if sub_name in ["Brisbane City", "South Bank", "South Brisbane", "Fortitude Valley", "Ascot"]:
+        if sub_name in [
+            "Brisbane City", 
+            "South Bank", 
+            "South Brisbane", 
+            "Fortitude Valley", 
+            "Ascot"] and sub_name in active_suburbs:
             hotel_suburbs.append(sub_name)
     num_hotel = len(hotel_suburbs)
     tourist_extra = 0
@@ -1233,7 +1238,8 @@ def get_data(
     for sub_name in suburb_names:
         # Create suburb for each
         if sub_name not in active_suburbs:
-            continue #Don't gen inactives? --- Currently doing this to filter out as pulls all, may change this behaviour.
+            pass
+            #continue #Don't gen inactives? --- Currently doing this to filter out as pulls all, may change this behaviour.
         distribute_frequency = 5
         max_distributes = 0
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
@@ -1258,9 +1264,12 @@ def get_data(
             pop_distribution[station] = (
                 1 / num_stations
             ) * 100  # Currently evenly assign to all stations...
-        suburb_pop = ceil(1/len(suburb_names) * people_in_attendance + (
+        suburb_pop = (
+            ceil(1/len(active_suburbs) * people_in_attendance + (
             0 if sub_name not in hotel_suburbs else (tourist_extra * 1/num_hotel)
         ))
+        if sub_name in active_suburbs else 0
+        )
         print(sub_name, suburb_pop)
         suburb = Suburb(
             env,
