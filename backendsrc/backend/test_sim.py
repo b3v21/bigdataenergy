@@ -20,8 +20,8 @@ from db.models import (
     RouteSim,
     StationSim,
     ItinerarySim,
-    BusOnRouteInfo,
-    BusTimeOut,
+    TransporterOnRouteInfo,
+    TransporterTimeOut,
     PassengerChanges,
 )  # noqa: E402
 from db.serializers import SimulationOutputSerializer
@@ -189,11 +189,14 @@ def test_sim_with_db_models_412():
     run_simulation(
         {
             "env_start": 355,
-            "time_horizon": 30,
+            "time_horizon": 60,
             "itineraries": [
                 {
                     "itinerary_id": 0,
-                    "routes": [{"route_id": "412-3136", "start": "0", "end": "1850"}],
+                    "routes": [
+                        {"route_id": "412-3136", "start": "0", "end": "1850"},
+                        {"route_id": "walk", "start": "1850", "end": "1815"},
+                    ],
                 }
             ],
             "snapshot_date": "2023-08-01",

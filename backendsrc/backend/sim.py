@@ -28,9 +28,9 @@ from db.models import (
     RouteSim,
     ItinerarySim,
     SimulationOutput,
-    BusOnRouteInfo,
+    TransporterOnRouteInfo,
     PassengerChanges,
-    BusTimeOut,
+    TransporterTimeOut,
 )  # noqa: E402
 
 
@@ -898,6 +898,10 @@ def run_simulation(
         user_data["active_stations"],
     )
 
+    import pdb
+
+    pdb.set_trace()
+
     print(f"Models successfully created for simulation #{sim_id}.")
     env.run(user_data["time_horizon"])
     print(f"Simulation #{sim_id} successfully ran.")
@@ -975,13 +979,19 @@ def process_simulation_output(
         if route.get_type() == "BusRoute":
             rd["BusesOnRoute"] = {}
             br = rd["BusesOnRoute"]
-            shape_id = TripM.objects.filter(route_id=route.id).first().shape_id.shape_id  
+            shape_id = TripM.objects.filter(route_id=route.id).first().shape_id.shape_id
             shapes = ShapeM.objects.filter(shape_id=shape_id)
-            
-            shape_out = [(shape.shape_pt_sequence, shape.shape_pt_lat, shape.shape_pt_lon) for shape in shapes]
+
+            shape_out = [
+                (shape.shape_pt_sequence, shape.shape_pt_lat, shape.shape_pt_lon)
+                for shape in shapes
+            ]
             shape_out.sort(key=lambda x: x[0])
-            shape_out = [{"sequence" : i, "lat" : b, "long" : c} for i, (a,b,c) in enumerate(shape_out)]
-            
+            shape_out = [
+                {"sequence": i, "lat": b, "long": c}
+                for i, (a, b, c) in enumerate(shape_out)
+            ]
+
             rd["shape"] = shape_out
             for bus in route.buses:
                 br[bus.id] = {
@@ -1161,7 +1171,7 @@ def get_data(
             ]
             walk = Walk(env, env_start, walk_id, stops, 0, [])
             walks_from_stops[(walks[walk_id][0], walks[walk_id][1])] = walk
-            #  sim_routes[walk_id] = walk  # TODO: Add walks to routes
+            sim_routes[walk_id] = walk
 
     sim_itineraries = []
     for itinerary in itineraries:
@@ -1362,7 +1372,7 @@ def generate_itins(user_data: dict) -> dict:
     endStation = "(-27.4979739, 153.0111389)\"UQ Chancellor's Place, zone D"
     num_itins = 1
 
-    #inititalise variables
+    # inititalise variables
     itin_id = 0
     itins_collected = []
     failed_stations = []
@@ -1380,7 +1390,7 @@ def generate_itins(user_data: dict) -> dict:
         }
         headers = {"X-TripGo-Key": key}
         data = callTripGoAPI(api, parameters, headers)
-    
+
         format_data = formatItins(
             data, num_itins, station["station_id"].zfill(6), itin_id
         )
@@ -1388,14 +1398,10 @@ def generate_itins(user_data: dict) -> dict:
         if format_data:
             itins_collected += format_data
             itin_id += num_itins
-        else: 
+        else:
             failed_stations.append(station["station_id"])
 
-
-    return {
-        "itineraries" : itins_collected,
-        "failed_stations" : failed_stations
-    }
+    return {"itineraries": itins_collected, "failed_stations": failed_stations}
 
 
 def convert_epoch(time: int, date_str: str) -> int:

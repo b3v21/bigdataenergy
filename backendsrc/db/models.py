@@ -16,15 +16,6 @@ class Calendar(models.Model):
 
     class Meta:
         ordering = ["service_id"]
-        
-class Walk(models.Model):
-    walk_id = models.CharField(max_length=255, primary_key=True)
-    from_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="from_station")
-    to_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="to_station")
-    duration = models.FloatField()
-
-    class Meta:
-        ordering = ["walk_id"]
 
 
 class Route(models.Model):
@@ -63,6 +54,20 @@ class Station(models.Model):
 
     class Meta:
         ordering = ["station_id"]
+
+
+class Walk(models.Model):
+    walk_id = models.CharField(max_length=255, primary_key=True)
+    from_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="from_station"
+    )
+    to_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="to_station"
+    )
+    duration = models.FloatField()
+
+    class Meta:
+        ordering = ["walk_id"]
 
 
 class Trip(models.Model):
@@ -127,13 +132,20 @@ class PassengerChanges(models.Model):
 class TransporterOnRouteInfo(models.Model):
     transporter_id = models.CharField(max_length=255)
     sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
-    transporter_timeout = models.ForeignKey(TransporterTimeOut, on_delete=models.CASCADE)
+    transporter_timeout = models.ForeignKey(
+        TransporterTimeOut, on_delete=models.CASCADE
+    )
     transporter_passenger_changes = models.ForeignKey(
         PassengerChanges, on_delete=models.CASCADE
     )
 
     class Meta:
-        unique_together = ("transporter_id", "sim_id", "transporter_timeout", "transporter_passenger_changes")
+        unique_together = (
+            "transporter_id",
+            "sim_id",
+            "transporter_timeout",
+            "transporter_passenger_changes",
+        )
 
 
 class StationSim(models.Model):
@@ -153,7 +165,9 @@ class RouteSim(models.Model):
     route_id = models.CharField(max_length=255)
     sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
     method = models.CharField(max_length=255)
-    transporters_on_route = models.ForeignKey(TransporterOnRouteInfo, on_delete=models.CASCADE)
+    transporters_on_route = models.ForeignKey(
+        TransporterOnRouteInfo, on_delete=models.CASCADE
+    )
     stations = models.ForeignKey(StationSim, on_delete=models.CASCADE)
 
 
@@ -168,21 +182,27 @@ class ItinerarySim(models.Model):
 
 ######################################### Itinerary Cache #########################################
 
+
 class ItineraryCache(models.Model):
     itinerary_id = models.CharField(max_length=255)
-    start_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="start_station")
-    end_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="end_station")
+    start_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="start_station"
+    )
+    end_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="end_station"
+    )
     start_time = models.TimeField(max_length=255)
 
     class Meta:
-        unique_together = ("itinerary_id")
-        
+        unique_together = "itinerary_id"
+
+
 class RouteInItinCache(models.Model):
     route_in_itin_id = models.IntegerField(primary_key=True)
     itinerary = models.ForeignKey(ItineraryCache, on_delete=models.CASCADE)
     route = models.ForeignKey(Route, on_delete=models.CASCADE, null=True)
     walk = models.ForeignKey(Walk, on_delete=models.CASCADE, null=True)
     sequence = models.IntegerField()
-    
+
     class Meta:
         unique_together = ("itinerary", "sequence")

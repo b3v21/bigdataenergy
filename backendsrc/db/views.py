@@ -124,7 +124,7 @@ def itin_check(request: Request) -> Response:
         warning(f"No user data received.")
 
     print(f"Request for itineraries received")
-    
+
     try:
         output = generate_itins(request.data)
         print("the output is", output)
