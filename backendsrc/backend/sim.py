@@ -11,6 +11,7 @@ from datetime import time, date, datetime
 import time as t
 import requests
 import json
+import numpy as np
 
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -149,6 +150,9 @@ class Station:
         self.itin = itin
         self.log_cur_people()
 
+    def busy_level(self) -> int:
+        return ceil(self.num_people() / 100) #May be tweaked
+
     def log_cur_people(self) -> None:
         self.people_over_time[self.env.now + self.env_start] = self.num_people()
 
@@ -278,7 +282,13 @@ class Transporter(ABC):
 
         people_to_ride = station.board(min(people_at_stop, seats_left), self.route)
         num_people_to_board = sum([p.get_num_people() for p in people_to_ride])
-        load_time = int(num_people_to_board * PERSON_BOARD_TIME)
+
+        avg_load_time = PERSON_BOARD_TIME * num_people_to_board
+        std_dev_load_time = PERSON_BOARD_TIME * 0.25 * station.busy_level()
+        load_time = -1
+        while load_time <= 0:
+            load_time = ceil(np.random.normal(avg_load_time, std_dev_load_time)) #Using normal for now so it doesnt blow out of proportion.
+        print(avg_load_time, station.busy_level(), load_time)
         self.people += people_to_ride
 
         yield self.env.timeout(load_time)
@@ -316,7 +326,12 @@ class Transporter(ABC):
                 )
             return
 
-        deload_time = int(num_passengers_deloaded * PERSON_BOARD_TIME)
+        avg_load_time = PERSON_BOARD_TIME * num_passengers_deloaded
+        std_dev_load_time = PERSON_BOARD_TIME * 0.25 * station.busy_level()
+        deload_time = -1
+        while deload_time <= 0:
+            deload_time = ceil(np.random.normal(avg_load_time, std_dev_load_time)) #Using normal for now so it doesnt blow out of proportion.
+        print(avg_load_time, station.busy_level(), deload_time)
         yield self.env.timeout(deload_time)
         if DEBUG:
             print(
@@ -413,23 +428,30 @@ class Bus(Transporter):
                 previous_stop = bus_route.stops[self.location_index]
                 self.move_to_next_stop(len(bus_route.stops))
                 cur_stop = bus_route.get_current_stop(self)
-                travel_time = 0
+                expected_travel_time = 0
                 index = 0
+
                 for stop, time in self.trip.timetable:
                     if cur_stop.name == stop:
-                        travel_time = time - self.trip.timetable[index - 1][1]
+                        expected_travel_time = time - self.trip.timetable[index - 1][1]
                         break
                     index += 1
-                if travel_time == 0:
+                if expected_travel_time == 0:
                     # Some bus stops have very small distances between, to stop teleportation, make min one
                     print("**Had a case where travel time was 0**")
-                    travel_time = 1
+                    expected_travel_time = 1
 
-                if travel_time < 0:
+                if expected_travel_time < 0:
                     if DEBUG:
                         print("***ERROR*** Travel time <= 0!!!")
                         exit()
-                    travel_time = 1
+                    expected_travel_time = 1
+
+                std_dev_travel_time = 4 * previous_stop.busy_level() #May tweak this base number
+                travel_time = -1
+                while travel_time <= 0:
+                    travel_time = ceil(np.random.normal(expected_travel_time, std_dev_travel_time)) #Using normal for now so it doesnt blow out of proportion.
+                print(expected_travel_time, previous_stop.busy_level(), travel_time)
 
             yield self.env.timeout(travel_time)
             if DEBUG:
@@ -1196,9 +1218,22 @@ def get_data(
     list_set = set(suburb_names)
     suburb_names = list(list_set)
     suburbs_out = []
+    people_in_attendance = np.random.normal(350000, 100000)
+    print("People in attendance: ", people_in_attendance)
+    hotel_suburbs = []
+    for sub_name in suburb_names:
+        if sub_name in ["Brisbane City", "South Bank", "South Brisbane", "Fortitude Valley", "Ascot"]:
+            hotel_suburbs.append(sub_name)
+    num_hotel = len(hotel_suburbs)
+    tourist_extra = 0
+    if num_hotel != 0:
+        tourist_extra = 1/3 * people_in_attendance #Will distribute to hotel suburbs 
+    people_in_attendance -= tourist_extra
+
     for sub_name in suburb_names:
         # Create suburb for each
-        average_suburb_pop = 100  # Very rough average
+        if sub_name not in active_suburbs:
+            continue #Don't gen inactives? --- Currently doing this to filter out as pulls all, may change this behaviour.
         distribute_frequency = 5
         max_distributes = 0
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
@@ -1223,12 +1258,16 @@ def get_data(
             pop_distribution[station] = (
                 1 / num_stations
             ) * 100  # Currently evenly assign to all stations...
+        suburb_pop = ceil(1/len(suburb_names) * people_in_attendance + (
+            0 if sub_name not in hotel_suburbs else (tourist_extra * 1/num_hotel)
+        ))
+        print(sub_name, suburb_pop)
         suburb = Suburb(
             env,
             sub_name,
             pop_distribution,  # Distribution across stations
             stations,  # Station ids in suburb
-            average_suburb_pop,  # Population
+            suburb_pop,  # Population
             distribute_frequency,  # Freq
             max_distributes,  # Max distributes
             active,
