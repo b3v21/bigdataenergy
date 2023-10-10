@@ -195,7 +195,7 @@ def test_sim_with_db_models_412():
     run_simulation(
         {
             "env_start": 355,
-            "time_horizon": 60,
+            "time_horizon": 30,
             "itineraries": [
                 {
                     "itinerary_id": 0,

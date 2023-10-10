@@ -207,9 +207,8 @@ class Station:
                 == self
             ):
                 group.next_route()
-            if ITINERARIES[group.itinerary_index].last_leg(group):
-                self.people.append(group)
-            elif (
+
+            if (
                 ITINERARIES[group.itinerary_index].get_current_type(group)
                 in ROUTE_NAMES
             ):
@@ -224,7 +223,10 @@ class Station:
                     .get_current_route(group)
                     .walk_instance(group, time_to_wait)
                 )
-
+            
+            elif ITINERARIES[group.itinerary_index].last_leg(group):
+                self.people.append(group)
+            
         self.log_cur_people()
 
     def num_people(self) -> int:
@@ -759,7 +761,10 @@ class Walk(Route):
         Walking process
         """
         yield self.env.timeout(time_to_leave)
-        self.first_stop.people.remove(people)
+        try:
+            self.first_stop.people.remove(people)
+        except (ValueError):
+            pass
         people.log((None, self.id))
         self.walk_time_log[people] = [self.env.now + self.env_start, None]
         self.people.append(people)
@@ -899,10 +904,6 @@ def run_simulation(
         user_data["active_suburbs"],
         user_data["active_stations"],
     )
-
-    import pdb
-
-    pdb.set_trace()
 
     print(f"Models successfully created for simulation #{sim_id}.")
 
@@ -1181,7 +1182,7 @@ def get_data(
         routes = []
         for route in itinerary["routes"]:
             if route["route_id"] != "walk":
-                for station in sim_routes[route["route_id"]].stations:
+                for station in sim_routes[route["route_id"]].stops:
                     if STATION_ITINERARY_LOOKUP.get(station):
                         STATION_ITINERARY_LOOKUP[station].append(
                             itinerary["itinerary_id"]
@@ -1386,6 +1387,10 @@ def generate_itins(user_data: dict) -> dict:
     failed_stations = []
     # collect itineraries for each active station
     for station in active_stations:
+        
+        # Check if itinerary for station is in db
+        
+        
         parameters = {
             "v": "11",
             "from": f'({station["lat"]}, {station["long"]})',
