@@ -31,6 +31,7 @@ from db.models import (
     TransporterOnRouteInfo,
     PassengerChanges,
     TransporterTimeOut,
+    WalkSim,
 )  # noqa: E402
 
 
@@ -748,6 +749,7 @@ class Walk(Route):
         self.location_index = location_index
         self.people = people
         self.walk_time_log = {}
+        self.duration = 0  # TODO: implement duration
 
     def initiate_route(self) -> None:
         return super().initiate_route()
@@ -1305,8 +1307,18 @@ def load_bus_or_train_route_into_db(route, sim_output):
                     route_sim.save()
 
 
-def load_walk_into_db(route, sim_output):
-    pass
+def load_walk_into_db(walk: Walk, sim_output):
+    walk_sim = WalkSim.objects.create(
+        walk_id=walk.id,
+        from_station=StationSim.objects.filter(
+            sim_id=sim_output, name=walk.first_stop.name, station_id=walk.first_stop.id
+        ).first(),
+        to_station=StationSim.objects.filter(
+            sim_id=sim_output, name=walk.last_stop, station_id=walk.last_stop.id
+        ).first(),
+        duration=0,
+    )
+    walk_sim.save()
 
 
 def load_sim_data_into_db(

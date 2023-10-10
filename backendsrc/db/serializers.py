@@ -16,7 +16,7 @@ from db.models import (
     ItinerarySim,
     RouteInItinCache,
     ItineraryCache,
-    Walk,
+    WalkSim,
 )
 
 
@@ -117,9 +117,9 @@ class ItineraryCacheSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class Walk(serializers.ModelSerializer):
+class WalkSim(serializers.ModelSerializer):
     class Meta:
-        model = Walk
+        model = WalkSim
         fields = "__all__"
 
 

@@ -56,20 +56,6 @@ class Station(models.Model):
         ordering = ["station_id"]
 
 
-class Walk(models.Model):
-    walk_id = models.CharField(max_length=255, primary_key=True)
-    from_station = models.ForeignKey(
-        Station, on_delete=models.CASCADE, related_name="from_station"
-    )
-    to_station = models.ForeignKey(
-        Station, on_delete=models.CASCADE, related_name="to_station"
-    )
-    duration = models.FloatField()
-
-    class Meta:
-        ordering = ["walk_id"]
-
-
 class Trip(models.Model):
     trip_id = models.CharField(max_length=255, primary_key=True)
     route_id = models.ForeignKey(Route, on_delete=models.CASCADE)
@@ -180,6 +166,20 @@ class ItinerarySim(models.Model):
         unique_together = ("sim_id", "itinerary_id")
 
 
+class WalkSim(models.Model):
+    walk_id = models.CharField(max_length=255, primary_key=True)
+    from_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="from_station"
+    )
+    to_station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="to_station"
+    )
+    duration = models.FloatField()
+
+    class Meta:
+        ordering = ["walk_id"]
+
+
 ######################################### Itinerary Cache #########################################
 
 
@@ -201,7 +201,7 @@ class RouteInItinCache(models.Model):
     route_in_itin_id = models.IntegerField(primary_key=True)
     itinerary = models.ForeignKey(ItineraryCache, on_delete=models.CASCADE)
     route = models.ForeignKey(Route, on_delete=models.CASCADE, null=True)
-    walk = models.ForeignKey(Walk, on_delete=models.CASCADE, null=True)
+    walk = models.ForeignKey(WalkSim, on_delete=models.CASCADE, null=True)
     sequence = models.IntegerField()
 
     class Meta:

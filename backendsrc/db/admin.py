@@ -66,7 +66,7 @@ class ItineraryCacheAdmin(admin.ModelAdmin):
     pass
 
 
-class WalkAdmin(admin.ModelAdmin):
+class WalkSimAdmin(admin.ModelAdmin):
     pass
 
 
@@ -86,4 +86,4 @@ admin.site.register(RouteSim, RouteSimAdmin)
 admin.site.register(ItinerarySim, ItinerarySimAdmin)
 admin.site.register(RouteInItinCache, RouteInItinCacheAdmin)
 admin.site.register(ItineraryCache, ItineraryCacheAdmin)
-admin.site.register(Walk, WalkAdmin)
+admin.site.register(WalkSim, WalkSimAdmin)
