@@ -80,10 +80,10 @@ class Timetable(models.Model):
 class TravelTimes(models.Model):
     traveltime_id = models.IntegerField(primary_key=True)
     from_station = models.ForeignKey(
-        Station, on_delete=models.CASCADE, related_name="from_station"
+        Station, on_delete=models.CASCADE, related_name="from_station_tt"
     )
     to_station = models.ForeignKey(
-        Station, on_delete=models.CASCADE, related_name="to_station"
+        Station, on_delete=models.CASCADE, related_name="to_station_tt"
     )
     duration = models.FloatField(default=0)
 
@@ -162,9 +162,6 @@ class ItinerarySim(models.Model):
     sim_id = models.ForeignKey(SimulationOutput, on_delete=models.CASCADE)
     routes = models.ForeignKey(RouteSim, on_delete=models.CASCADE)
 
-    class Meta:
-        unique_together = ("sim_id", "itinerary_id")
-
 
 class WalkSim(models.Model):
     walk_id = models.CharField(max_length=255, primary_key=True)
@@ -192,9 +189,6 @@ class ItineraryCache(models.Model):
         Station, on_delete=models.CASCADE, related_name="end_station"
     )
     start_time = models.TimeField(max_length=255)
-
-    class Meta:
-        unique_together = "itinerary_id"
 
 
 class RouteInItinCache(models.Model):

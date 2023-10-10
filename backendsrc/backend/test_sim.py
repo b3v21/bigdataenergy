@@ -36,6 +36,25 @@ import json
 
 
 def test_basic_sim_with_models():
+    list1 = [
+        StationM,
+        RouteM,
+        TimetableM,
+        TripM,
+        ShapeM,
+        CalendarM,
+        SimulationOutput,
+        RouteSim,
+        StationSim,
+        ItinerarySim,
+        TransporterOnRouteInfo,
+        TransporterTimeOut,
+        PassengerChanges,
+    ]
+
+    for model in list1:
+        model.objects.all().delete()
+
     """Basic test of sim with models"""
 
     test_date = datetime(2023, 9, 15)
@@ -187,7 +206,7 @@ def test_basic_sim_with_models():
             "active_suburbs": ["test suburb"],
             "active_stations": ["0"],
         },
-        2,
+        0,
     )
 
 
@@ -209,7 +228,7 @@ def test_sim_with_db_models_412():
             "active_suburbs": ["St Lucia"],
             "active_stations": ["1815"],
         },
-        1,
+        3,
     )
 
 
@@ -224,4 +243,4 @@ def test_sim_output_serializer():
 
 
 if __name__ == "__main__":
-    test_sim_with_db_models_412()
+    test_basic_sim_with_models()

@@ -224,10 +224,10 @@ class Station:
                     .get_current_route(group)
                     .walk_instance(group, time_to_wait)
                 )
-            
+
             elif ITINERARIES[group.itinerary_index].last_leg(group):
                 self.people.append(group)
-            
+
         self.log_cur_people()
 
     def num_people(self) -> int:
@@ -763,7 +763,7 @@ class Walk(Route):
         yield self.env.timeout(time_to_leave)
         try:
             self.first_stop.people.remove(people)
-        except (ValueError):
+        except ValueError:
             pass
         people.log((None, self.id))
         self.walk_time_log[people] = [self.env.now + self.env_start, None]
@@ -997,7 +997,8 @@ def process_simulation_output(
             ]
 
             rd["shape"] = shape_out
-            for bus in route.buses:
+
+            for bus in route.transporters:
                 br[bus.id] = {
                     "Timeout": bus.time_log,
                     "PassengerChangesOverTime": bus.passenger_changes,
@@ -1265,7 +1266,7 @@ def get_data(
 
 def load_bus_or_train_route_into_db(route, sim_output):
     for station in route.stops:
-        for transporter in route.buses:
+        for transporter in route.transporters:
             for stop_name, time in transporter.time_log.items():
                 for time, passenger_count in transporter.passenger_changes.items():
                     bus_time_out = TransporterTimeOut.objects.create(
@@ -1286,7 +1287,7 @@ def load_bus_or_train_route_into_db(route, sim_output):
                         transporter_id=transporter.id,
                         sim_id=sim_output,
                         transporter_timeout=TransporterTimeOut.objects.order_by(
-                            "-transportertimeout_id"
+                            "-transporter_timeout_id"
                         ).first(),
                         transporter_passenger_changes=PassengerChanges.objects.order_by(
                             "-passenger_changes_id"
@@ -1311,11 +1312,11 @@ def load_bus_or_train_route_into_db(route, sim_output):
 def load_walk_into_db(walk: Walk, sim_output):
     walk_sim = WalkSim.objects.create(
         walk_id=walk.id,
-        from_station=StationSim.objects.filter(
-            sim_id=sim_output, name=walk.first_stop.name, station_id=walk.first_stop.id
+        from_station=StationM.objects.filter(
+            name=walk.first_stop.name, station_id=walk.first_stop.id
         ).first(),
-        to_station=StationSim.objects.filter(
-            sim_id=sim_output, name=walk.last_stop, station_id=walk.last_stop.id
+        to_station=StationM.objects.filter(
+            name=walk.last_stop.name, station_id=walk.last_stop.id
         ).first(),
         duration=0,
     )
@@ -1406,10 +1407,8 @@ def generate_itins(user_data: dict) -> dict:
     failed_stations = []
     # collect itineraries for each active station
     for station in active_stations:
-        
         # Check if itinerary for station is in db
-        
-        
+
         parameters = {
             "v": "11",
             "from": f'({station["lat"]}, {station["long"]})',
