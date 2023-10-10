@@ -1354,19 +1354,18 @@ def generate_itins(user_data: dict) -> dict:
     )
     start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
     active_stations = user_data["active_stations"]
-    print(
-        f"Generating itineraries for {active_stations} at start time {start_time} and end time {end_time}"
-    )
 
     # TODO: move environment variables
     modes = ["pt_pub_bus"]
     api = "https://api.tripgo.com/v1/routing.json"
     key = "2286d1ca160dd724a3da27802c7aba91"
     endStation = "(-27.4979739, 153.0111389)\"UQ Chancellor's Place, zone D"
-    num_itins = 3
+    num_itins = 1
 
+    #inititalise variables
     itin_id = 0
     itins_collected = []
+    failed_stations = []
     # collect itineraries for each active station
     for station in active_stations:
         parameters = {
@@ -1381,14 +1380,22 @@ def generate_itins(user_data: dict) -> dict:
         }
         headers = {"X-TripGo-Key": key}
         data = callTripGoAPI(api, parameters, headers)
-        # print(data)
+    
         format_data = formatItins(
             data, num_itins, station["station_id"].zfill(6), itin_id
         )
-        itins_collected += format_data
-        itin_id += num_itins
-    print("itins ", itins_collected)
-    return itins_collected
+        print("formatted data ", format_data)
+        if format_data:
+            itins_collected += format_data
+            itin_id += num_itins
+        else: 
+            failed_stations.append(station["station_id"])
+
+
+    return {
+        "itineraries" : itins_collected,
+        "failed_stations" : failed_stations
+    }
 
 
 def convert_epoch(time: int, date_str: str) -> int:

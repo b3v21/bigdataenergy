@@ -124,8 +124,11 @@ def itin_check(request: Request) -> Response:
         warning(f"No user data received.")
 
     print(f"Request for itineraries received")
+    
     try:
-        output = {"itinieraries": generate_itins(request.data)}
+        output = generate_itins(request.data)
+        print("the output is", output)
+
     except:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
