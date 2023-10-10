@@ -120,3 +120,12 @@ class Walk(serializers.ModelSerializer):
     class Meta:
         model = Walk
         fields = "__all__"
+
+class SimOutputForFrontendSerializer(serializers.Serializer):
+    routes = RouteSimSerializer(many=True, read_only=True)
+    stations = StationSimSerializer(many=True, read_only=True)
+    itinerary = ItinerarySimSerializer(many=True, read_only=True)
+
+    class Meta:
+        Model = SimulationOutput
+        fields = ("routes", "stations", "itinerary")
