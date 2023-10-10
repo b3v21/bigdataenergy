@@ -23,130 +23,100 @@ from db.models import (
 class CalendarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Calendar
-        fields = [
-            "service_id",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
-            "start_date",
-            "end_date",
-        ]
+        "__all__"
 
 
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
-        fields = ["route_id", "name", "transport_type", "capacity"]
+        "__all__"
 
 
 class ShapeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shape
-        fields = ["shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence"]
+        "__all__"
 
 
 class StationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Station
-        fields = [
-            "station_id",
-            "station_code",
-            "name",
-            "lat",
-            "long",
-            "location_type",
-            "suburb",
-        ]
+        "__all__"
 
 
 class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
-        fields = ["trip_id", "route_id", "service_id", "shape_id"]
+        fields = "__all__"
 
 
 class TimetableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timetable
-        fields = ["trip_id", "station", "arrival_time", "sequence"]
+        fields = "__all__"
 
 
 class TravelTimesSerializer(serializers.ModelSerializer):
     class Meta:
         model = TravelTimes
-        fields = ["traveltime_id", "from_station", "to_station", "duration"]
+        fields = "__all__"
 
 
 class SimulationOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = SimulationOutput
-        fields = ["simulation_id", "route_id", "station_id", "itinerary_id"]
-        depth = 3
+        fields = "__all__"
 
 
 class TransporterTimeOutSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransporterTimeOut
-        fields = ["transporter_timeout_id", "stop_name", "time"]
+        fields = "__all__"
 
 
 class PassengerChangesSerializer(serializers.ModelSerializer):
     class Meta:
         model = PassengerChanges
-        fields = ["passenger_changes_id", "time", "passenger_count"]
+        fields = "__all__"
 
 
 class TransporterOnRouteInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransporterOnRouteInfo
-        fields = [
-            "transporter_id",
-            "transporter_timeout",
-            "transporter_passenger_changes",
-        ]
+        fields = "__all__"
 
 
 class StationSimSerializer(serializers.ModelSerializer):
     class Meta:
         model = StationSim
-        fields = ["station_id", "name", "pos", "passenger_count"]
+        fields = "__all__"
+        depth = 1
 
 
 class RouteSimSerializer(serializers.ModelSerializer):
     class Meta:
         model = RouteSim
-        fields = [
-            "route_sim_id",
-            "route_id",
-            "method",
-            "transporters_on_route",
-            "stations",
-        ]
+        fields = "__all__"
 
 
 class ItinerarySimSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItinerarySim
-        fields = ["itinerary_id", "routes"]
+        fields = "__all__"
 
 
 class RouteInItinCacheSerializer(serializers.ModelSerializer):
     class Meta:
         model = RouteInItinCache
-        fields = ["route_in_itin_id", "itinerary", "route", "walk", "sequence"]
+        fields = "__all__"
 
 
 class ItineraryCacheSerializer(serializers.ModelSerializer):
     class Meta:
         model = RouteInItinCache
-        fields = ["itinerary_id", "start_station", "end_station", "start_time"]
-
+        fields = "__all__"
 
 class Walk(serializers.ModelSerializer):
     class Meta:
         model = Walk
-        fields = ["walk_id", "from_station", "to_station", "duration"]
+        fields = "__all__"
