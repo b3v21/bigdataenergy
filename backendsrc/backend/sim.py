@@ -38,9 +38,11 @@ PERSON_BOARD_TIME = 0.1
 MINUTES_IN_DAY = 1440
 MINUTES_IN_HOUR = 60
 DEBUG = True
+ROUTE_NAMES = ["BusRoute", "TrainRoute"]
 
 # THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
 ITINERARIES = []
+STATION_ITINERARY_LOOKUP = {}
 
 
 def convert_date_to_int(time: time) -> int:
@@ -146,7 +148,6 @@ class Station:
         self.people = []
         self.people_over_time = {}
         self.station = None  # None on init, will be assigned by Suburb init
-        self.itin = itin
         self.log_cur_people()
 
     def log_cur_people(self) -> None:
@@ -209,7 +210,8 @@ class Station:
             if ITINERARIES[group.itinerary_index].last_leg(group):
                 self.people.append(group)
             elif (
-                ITINERARIES[group.itinerary_index].get_current_type(group) == "BusRoute"
+                ITINERARIES[group.itinerary_index].get_current_type(group)
+                in ROUTE_NAMES
             ):
                 self.people.append(group)
 
@@ -802,6 +804,7 @@ class Suburb:
         self.env_start = env_start
         self.name = name
         self.station_distribution = station_distribution
+        self.stations = stations
         for station in self.station_distribution.keys():
             station.suburb = self  # Depending on use case for this, may change to id
         self.population = population
@@ -857,7 +860,7 @@ class Suburb:
                 count=num_for_stop,
                 start_time=self.env.now,
                 start_location=station,
-                itinerary_index=station.itin,
+                itinerary_index=choice(STATION_ITINERARY_LOOKUP[station]),
                 current_route_in_itin_index=0,  # SHOULD always be 0, each active station has unique itin.
                 env_start=self.env_start,
             )
@@ -975,13 +978,19 @@ def process_simulation_output(
         if route.get_type() == "BusRoute":
             rd["BusesOnRoute"] = {}
             br = rd["BusesOnRoute"]
-            shape_id = TripM.objects.filter(route_id=route.id).first().shape_id.shape_id  
+            shape_id = TripM.objects.filter(route_id=route.id).first().shape_id.shape_id
             shapes = ShapeM.objects.filter(shape_id=shape_id)
-            
-            shape_out = [(shape.shape_pt_sequence, shape.shape_pt_lat, shape.shape_pt_lon) for shape in shapes]
+
+            shape_out = [
+                (shape.shape_pt_sequence, shape.shape_pt_lat, shape.shape_pt_lon)
+                for shape in shapes
+            ]
             shape_out.sort(key=lambda x: x[0])
-            shape_out = [{"sequence" : i, "lat" : b, "long" : c} for i, (a,b,c) in enumerate(shape_out)]
-            
+            shape_out = [
+                {"sequence": i, "lat": b, "long": c}
+                for i, (a, b, c) in enumerate(shape_out)
+            ]
+
             rd["shape"] = shape_out
             for bus in route.buses:
                 br[bus.id] = {
@@ -1167,6 +1176,15 @@ def get_data(
     for itinerary in itineraries:
         routes = []
         for route in itinerary["routes"]:
+            if STATION_ITINERARY_LOOKUP.get(sim_routes[route["route_id"]]):
+                STATION_ITINERARY_LOOKUP[sim_routes[route["route_id"]]].append(
+                    itinerary["itinerary_id"]
+                )
+            else:
+                STATION_ITINERARY_LOOKUP[sim_routes[route["route_id"]]] = [
+                    itinerary["itinerary_id"]
+                ]
+
             if route["route_id"] != "walk":
                 routes.append(
                     (
@@ -1186,9 +1204,6 @@ def get_data(
 
         sim_itineraries.append(new_itin)
         ITINERARIES.append(new_itin)
-        new_itin.routes[0][0].first_stop.itin = ITINERARIES.index(
-            new_itin
-        )  # Assign itin index to station
 
     suburbs_db = StationM.objects.order_by().values("suburb").distinct()
 
@@ -1362,7 +1377,7 @@ def generate_itins(user_data: dict) -> dict:
     endStation = "(-27.4979739, 153.0111389)\"UQ Chancellor's Place, zone D"
     num_itins = 1
 
-    #inititalise variables
+    # inititalise variables
     itin_id = 0
     itins_collected = []
     failed_stations = []
@@ -1380,7 +1395,7 @@ def generate_itins(user_data: dict) -> dict:
         }
         headers = {"X-TripGo-Key": key}
         data = callTripGoAPI(api, parameters, headers)
-    
+
         format_data = formatItins(
             data, num_itins, station["station_id"].zfill(6), itin_id
         )
@@ -1388,14 +1403,10 @@ def generate_itins(user_data: dict) -> dict:
         if format_data:
             itins_collected += format_data
             itin_id += num_itins
-        else: 
+        else:
             failed_stations.append(station["station_id"])
 
-
-    return {
-        "itineraries" : itins_collected,
-        "failed_stations" : failed_stations
-    }
+    return {"itineraries": itins_collected, "failed_stations": failed_stations}
 
 
 def convert_epoch(time: int, date_str: str) -> int:
@@ -1479,6 +1490,9 @@ def callTripGoAPI(api, parameters, headers):
         return f"failed to fetch TripGo data: {response.status_code}"
 
 
+
+#### TRAIN RELATED TESTS ####
+
 def test_sim_with_trains_basic():
     """
     Create the sim objects manually and test that train functionality works correctly.
@@ -1532,10 +1546,10 @@ def test_sim_with_trains_basic():
 def test_sim_with_trains_collision():
     """
                        StationA (100 waiting) ---> StationB (0 waiting) ---> StationC (0 waiting)
-    Train_1 (route 1)          5                         25                         45
+    Train0 (routeA)            5                         25                         45
 
                        StationD (0 waiting) ---> StationB (100 waiting) ---> StationC (0 waiting)
-    Train_1 (route 2)          5                         25                         45
+    Train0 (routeB)            5                         25                         45
 
     RouteA: StationA -> StationB -> StationC.
     RouteB: StationD -> StationB -> StationC.
@@ -1563,8 +1577,8 @@ def test_sim_with_trains_collision():
         {StationA: 50, StationB: 50, StationC: 0, StationD: 0},
         [StationA, StationB, StationC, StationD],
         200,
+        3,
         2,
-        1,
         True,
         0,
     )
@@ -1574,10 +1588,16 @@ def test_sim_with_trains_collision():
     RouteB = TrainRoute(env, 0, 0, "RouteB", [StationD, StationB, StationC], [TripB], 1)
 
     # Create Itineraries.
-    ITINERARIES.append(Itinerary(env, 0, [(RouteA, StationC), (RouteB, StationD)]))
+    ITINERARIES.append(Itinerary(env, 0, [(RouteA, StationC)]))
+    ITINERARIES.append(Itinerary(env, 0, [(RouteB, StationD)]))
+
+    STATION_ITINERARY_LOOKUP[StationA] = [0]
+    STATION_ITINERARY_LOOKUP[StationB] = [0, 1]
+    STATION_ITINERARY_LOOKUP[StationC] = [0, 1]
+    STATION_ITINERARY_LOOKUP[StationD] = [0]
 
     env.run(100)
 
-
-if __name__ == "__main__":
-    test_sim_with_trains_collision()
+#### UNCOMMENT IF YOU WOULD LIKE TO DO TESTING
+# if __name__ == "__main__":
+#     test_sim_with_trains_collision()
