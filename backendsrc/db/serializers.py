@@ -116,10 +116,12 @@ class ItineraryCacheSerializer(serializers.ModelSerializer):
         model = RouteInItinCache
         fields = "__all__"
 
+
 class Walk(serializers.ModelSerializer):
     class Meta:
         model = Walk
         fields = "__all__"
+
 
 class SimOutputForFrontendSerializer(serializers.Serializer):
     routes = RouteSimSerializer(many=True, read_only=True)
