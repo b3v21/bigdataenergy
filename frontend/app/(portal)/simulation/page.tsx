@@ -100,6 +100,7 @@ const Simulation = () => {
 				simulationSettings={simulationSettings}
 				setSimulationSettings={setSimulationSettings}
 				fetchSimulationData={fetchSimulationData}
+				simulationResult={simulationResult}
 			/>
 			<HoverCard data={hoverData} />
 			<div className="flex-1 relative">

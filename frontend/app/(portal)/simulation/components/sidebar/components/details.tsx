@@ -30,12 +30,14 @@ export type DetailsProps = {
 		React.SetStateAction<SimulationSettings>
 	>;
 	fetchSimulationData: VoidFunction;
+	simulationResult: any;
 };
 
 const Details = ({
 	simulationSettings,
 	setSimulationSettings,
-	fetchSimulationData
+	fetchSimulationData, 
+	simulationResult
 }: DetailsProps) => {
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);
 	const [stationSelectorOpen, setStationSelectorOpen] = useState(false);
