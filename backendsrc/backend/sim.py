@@ -1180,16 +1180,15 @@ def get_data(
     for itinerary in itineraries:
         routes = []
         for route in itinerary["routes"]:
-            if STATION_ITINERARY_LOOKUP.get(sim_routes[route["route_id"]]):
-                STATION_ITINERARY_LOOKUP[sim_routes[route["route_id"]]].append(
-                    itinerary["itinerary_id"]
-                )
-            else:
-                STATION_ITINERARY_LOOKUP[sim_routes[route["route_id"]]] = [
-                    itinerary["itinerary_id"]
-                ]
-
             if route["route_id"] != "walk":
+                for station in sim_routes[route["route_id"]].stations:
+                    if STATION_ITINERARY_LOOKUP.get(station):
+                        STATION_ITINERARY_LOOKUP[station].append(
+                            itinerary["itinerary_id"]
+                        )
+                    else:
+                        STATION_ITINERARY_LOOKUP[station] = [itinerary["itinerary_id"]]
+
                 routes.append(
                     (
                         sim_routes[route["route_id"]],
@@ -1494,8 +1493,8 @@ def callTripGoAPI(api, parameters, headers):
         return f"failed to fetch TripGo data: {response.status_code}"
 
 
-
 #### TRAIN RELATED TESTS ####
+
 
 def test_sim_with_trains_basic():
     """
@@ -1602,6 +1601,7 @@ def test_sim_with_trains_collision():
 
     env.run(100)
 
+
 #### UNCOMMENT IF YOU WOULD LIKE TO DO TESTING
-# if __name__ == "__main__":
-#     test_sim_with_trains_collision()
+if __name__ == "__main__":
+    test_sim_with_trains_collision()
