@@ -36,7 +36,7 @@ export type DetailsProps = {
 const Details = ({
 	simulationSettings,
 	setSimulationSettings,
-	fetchSimulationData, 
+	fetchSimulationData,
 	simulationResult
 }: DetailsProps) => {
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);

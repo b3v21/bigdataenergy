@@ -29,7 +29,6 @@ type QueryOptions = Omit<
 
 export function useGetItineraries(payload: Payload, options?: QueryOptions) {
 	return useQuery<Data>({
-		// @ts-ignore
 		queryKey: itineraryKeys.all,
 		queryFn: async () => {
 			const { data }: { data: Data } = await axios.post(
