@@ -38,18 +38,7 @@ const Simulation = () => {
 			duration: 30,
 			selectedSuburbs: [],
 			selectedStations: [],
-			selectedItineraries: [
-				{
-					itinerary_id: 0,
-					routes: [
-						{
-							route_id: '412-3136',
-							start: '0',
-							end: '1850'
-						}
-					]
-				}
-			]
+			selectedItineraries: []
 		});
 	const [sidebarTab, setSidebarTab] = useState('details');
 
@@ -60,7 +49,7 @@ const Simulation = () => {
 				env_start: simulationSettings.startTime,
 				time_horizon: simulationSettings.duration,
 				itineraries: simulationSettings.selectedItineraries,
-				snapshot_date: '2023-08-01',
+				snapshot_date: simulationSettings.date,
 				active_suburbs: simulationSettings.selectedSuburbs.map(
 					// default st lucia
 					(suburb) => suburb.suburb

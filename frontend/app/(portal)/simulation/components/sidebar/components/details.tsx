@@ -36,7 +36,7 @@ export type DetailsProps = {
 const Details = ({
 	simulationSettings,
 	setSimulationSettings,
-	fetchSimulationData, 
+	fetchSimulationData,
 	simulationResult
 }: DetailsProps) => {
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);
@@ -253,10 +253,9 @@ const Details = ({
 			>
 				<PopoverTrigger asChild>
 					<Button
-						// disabled={
-						// 	!simulationSettings.selectedStations.length || itinerariesLoading
-						// }
-						disabled //todo: Reenable once itineraries are working
+						disabled={
+							!simulationSettings.selectedStations.length || itinerariesLoading
+						}
 						variant="outline"
 						role="combobox"
 						className="w-full justify-between"

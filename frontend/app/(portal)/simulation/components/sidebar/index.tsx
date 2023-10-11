@@ -25,7 +25,7 @@ const Sidebar = ({
 			>
 				<TabsList className="grid grid-cols-3">
 					<TabsTrigger value="details">Details</TabsTrigger>
-					<TabsTrigger value="routes">Status</TabsTrigger>
+					<TabsTrigger value="itin">Itineraries</TabsTrigger>
 					<TabsTrigger value="stops">Graphs</TabsTrigger>
 				</TabsList>
 				<TabsContent value="details" className="flex-1">
@@ -36,7 +36,7 @@ const Sidebar = ({
 						simulationResult={simulationResult}
 					/>
 				</TabsContent>
-				<TabsContent value="routes" className="flex-1">
+				<TabsContent value="itin" className="flex-1">
 					<Status />
 				</TabsContent>
 				<TabsContent value="stops" className="flex-1">
