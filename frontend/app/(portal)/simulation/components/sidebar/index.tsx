@@ -28,7 +28,7 @@ const Sidebar = ({
 				<TabsList className="grid grid-cols-3">
 					<TabsTrigger value="details">Details</TabsTrigger>
 					<TabsTrigger value="routes">Status</TabsTrigger>
-					<TabsTrigger value="stops">Routes</TabsTrigger>
+					<TabsTrigger value="stops">Graphs</TabsTrigger>
 				</TabsList>
 				<TabsContent value="details" className="flex-1">
 					<Details
