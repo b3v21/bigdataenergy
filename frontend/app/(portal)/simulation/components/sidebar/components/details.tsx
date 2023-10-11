@@ -47,8 +47,8 @@ const Details = ({
 
 	const { data: retData, isLoading: itinerariesLoading } = useGetItineraries(
 		{
-			env_start: 355,
-			time_horizon: 30,
+			env_start: simulationSettings.startTime,
+			time_horizon: simulationSettings.duration,
 			snapshot_date: simulationSettings.date,
 			active_stations: simulationSettings.selectedStations.map(
 				({ lat, long, id }) => ({
