@@ -49,7 +49,7 @@ const Details = ({
 		{
 			env_start: 355,
 			time_horizon: 30,
-			snapshot_date: '2023-10-10',
+			snapshot_date: simulationSettings.date,
 			active_stations: simulationSettings.selectedStations.map(
 				({ lat, long, id }) => ({
 					station_id: id,

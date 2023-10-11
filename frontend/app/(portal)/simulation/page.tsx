@@ -8,6 +8,7 @@ import Sidebar from './components/sidebar';
 import { layout, data as plotData } from './plot';
 import { Itineraries, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
+import { PlotMouseEvent } from 'plotly.js';
 
 export type SimulationSettings = {
 	date: string;
@@ -50,6 +51,7 @@ const Simulation = () => {
 				}
 			]
 		});
+	const [sidebarTab, setSidebarTab] = useState('details');
 
 	// Retrieves the simulation data
 	const { data: simulationResult, refetch: fetchSimulationData } =
@@ -94,9 +96,13 @@ const Simulation = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [simulationData?.Routes]);
 
+	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
+
 	return (
 		<div className="flex flex-row gap-4">
 			<Sidebar
+				currentTab={sidebarTab}
+				setCurrentTab={setSidebarTab}
 				simulationSettings={simulationSettings}
 				setSimulationSettings={setSimulationSettings}
 				fetchSimulationData={fetchSimulationData}
@@ -159,9 +165,7 @@ const Simulation = () => {
 						});
 					}}
 					onUnhover={() => setHoverData(null)}
-					onClick={(event) => {
-						// todo: Focus route tap on sidebar and display more route info
-					}}
+					onClick={focusStop}
 				/>
 			</div>
 		</div>
