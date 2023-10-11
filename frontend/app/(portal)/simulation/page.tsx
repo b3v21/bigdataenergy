@@ -38,16 +38,16 @@ const Simulation = () => {
 			selectedSuburbs: [],
 			selectedStations: [],
 			selectedItineraries: [
-				{
-					itinerary_id: 0,
-					routes: [
-						{
-							route_id: '412-3136',
-							start: '0',
-							end: '1850'
-						}
-					]
-				}
+				// {
+				// 	itinerary_id: 0,
+				// 	routes: [
+				// 		{
+				// 			route_id: '412-3136',
+				// 			start: '0',
+				// 			end: '1850'
+				// 		}
+				// 	]
+				// }
 			]
 		});
 

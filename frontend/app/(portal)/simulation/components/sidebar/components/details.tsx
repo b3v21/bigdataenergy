@@ -49,7 +49,7 @@ const Details = ({
 		{
 			env_start: 355,
 			time_horizon: 30,
-			snapshot_date: '2023-10-10',
+			snapshot_date: simulationSettings.date,
 			active_stations: simulationSettings.selectedStations.map(
 				({ lat, long, id }) => ({
 					station_id: id,
@@ -253,10 +253,9 @@ const Details = ({
 			>
 				<PopoverTrigger asChild>
 					<Button
-						// disabled={
-						// 	!simulationSettings.selectedStations.length || itinerariesLoading
-						// }
-						disabled //todo: Reenable once itineraries are working
+						disabled={
+							!simulationSettings.selectedStations.length || itinerariesLoading
+						}
 						variant="outline"
 						role="combobox"
 						className="w-full justify-between"
