@@ -1086,7 +1086,7 @@ def get_data(
                 # Walk
                 walks[f"Walk_{walk_id}"] = (start, end)
                 walk_id += 1
-    import pdb; pdb.set_trace()
+
     db_routes = RouteM.objects.all().filter(route_id__in=list(route_ids.keys()))
 
     sim_routes = {}
@@ -1170,7 +1170,6 @@ def get_data(
     walks_from_stops = {}
     for walk_id in walks:
         if walk_id not in sim_routes:
-            import pdb; pdb.set_trace()
             stops = [
                 sim_stations[walks[walk_id][0]],
                 sim_stations[walks[walk_id][1]],
