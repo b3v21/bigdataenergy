@@ -3,11 +3,12 @@ from simpy import Environment, Resource
 from abc import ABC, abstractmethod
 from random import randint, randrange, choice
 from pathlib import Path
-from math import ceil, floor
+from math import ceil, floor, log, pow, sqrt
 import django
 import os
 import sys
 from datetime import time, date, datetime
+from queries import ALLOWED_SUBURBS
 import time as t
 import requests
 import json
@@ -286,8 +287,10 @@ class Transporter(ABC):
         avg_load_time = PERSON_BOARD_TIME * num_people_to_board
         std_dev_load_time = PERSON_BOARD_TIME * 0.25 * station.busy_level()
         load_time = -1
-        while load_time <= avg_load_time:
-            load_time = ceil(np.random.normal(avg_load_time, std_dev_load_time)) #Using normal for now so it doesnt blow out of proportion.
+
+        log_mean = abs(log(avg_load_time) - (1/2* log(pow(std_dev_load_time/avg_load_time, 2) + 1)))
+        log_sd = abs(sqrt(log(pow(std_dev_load_time/avg_load_time, 2) + 1)))
+        load_time = ceil(np.random.lognormal(log_mean, log_sd))
         print(avg_load_time, station.busy_level(), load_time)
         self.people += people_to_ride
 
@@ -328,9 +331,9 @@ class Transporter(ABC):
 
         avg_load_time = PERSON_BOARD_TIME * num_passengers_deloaded
         std_dev_load_time = (PERSON_BOARD_TIME * num_passengers_deloaded * 0.1) * station.busy_level()
-        deload_time = -1
-        while deload_time <= avg_load_time:
-            deload_time = ceil(np.random.normal(avg_load_time, std_dev_load_time)) #Using normal for now so it doesnt blow out of proportion.
+        log_mean = abs(log(avg_load_time) - (1/2* log(pow(std_dev_load_time/avg_load_time, 2) + 1)))
+        log_sd = abs(sqrt(log(pow(std_dev_load_time/avg_load_time, 2) + 1)))
+        deload_time = ceil(np.random.lognormal(log_mean, log_sd))
         print(avg_load_time, station.busy_level(), deload_time)
         yield self.env.timeout(deload_time)
         if DEBUG:
@@ -448,9 +451,11 @@ class Bus(Transporter):
                     expected_travel_time = 1
 
                 std_dev_travel_time = 4 * previous_stop.busy_level() #May tweak this base number
-                travel_time = -1
-                while travel_time <= 0:
-                    travel_time = ceil(np.random.normal(expected_travel_time, std_dev_travel_time)) #Using normal for now so it doesnt blow out of proportion.
+                print(expected_travel_time, std_dev_travel_time)
+                log_mean = abs(log(expected_travel_time) - (1/2* log(pow(std_dev_travel_time/expected_travel_time, 2) + 1)))
+                log_sd = abs(sqrt(log(pow(std_dev_travel_time/expected_travel_time, 2) + 1)))
+                print(log_sd, log_mean)
+                travel_time = ceil(np.random.lognormal(log_mean, log_sd))
                 print(expected_travel_time, previous_stop.busy_level(), travel_time)
 
             yield self.env.timeout(travel_time)
@@ -1220,15 +1225,12 @@ def get_data(
     suburbs_out = []
     people_in_attendance = np.random.normal(350000, 100000)
     print("People in attendance: ", people_in_attendance)
-    hotel_suburbs = []
-    for sub_name in suburb_names:
-        if sub_name in [
+    hotel_suburbs = [
             "Brisbane City", 
             "South Bank", 
             "South Brisbane", 
             "Fortitude Valley", 
-            "Ascot"] and sub_name in active_suburbs:
-            hotel_suburbs.append(sub_name)
+            "Ascot"]
     num_hotel = len(hotel_suburbs)
     tourist_extra = 0
     if num_hotel != 0:
@@ -1237,9 +1239,8 @@ def get_data(
 
     for sub_name in suburb_names:
         # Create suburb for each
-        if sub_name not in active_suburbs:
-            pass
-            #continue #Don't gen inactives? --- Currently doing this to filter out as pulls all, may change this behaviour.
+        if sub_name not in ALLOWED_SUBURBS:
+            continue #Don't gen non allowed
         distribute_frequency = 5
         max_distributes = 0
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
@@ -1265,10 +1266,10 @@ def get_data(
                 1 / num_stations
             ) * 100  # Currently evenly assign to all stations...
         suburb_pop = (
-            ceil(1/len(active_suburbs) * people_in_attendance + (
+            ceil(1/len(ALLOWED_SUBURBS) * people_in_attendance + (
             0 if sub_name not in hotel_suburbs else (tourist_extra * 1/num_hotel)
         ))
-        if sub_name in active_suburbs else 0
+        #if sub_name in active_suburbs else 0
         )
         print(sub_name, suburb_pop)
         suburb = Suburb(
