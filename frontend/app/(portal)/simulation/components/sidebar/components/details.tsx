@@ -36,7 +36,7 @@ export type DetailsProps = {
 const Details = ({
 	simulationSettings,
 	setSimulationSettings,
-	fetchSimulationData, 
+	fetchSimulationData,
 	simulationResult
 }: DetailsProps) => {
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);
@@ -47,8 +47,8 @@ const Details = ({
 
 	const { data: retData, isLoading: itinerariesLoading } = useGetItineraries(
 		{
-			env_start: simulationSettings.startTime,
-			time_horizon: simulationSettings.duration,
+			env_start: 355,
+			time_horizon: 30,
 			snapshot_date: simulationSettings.date,
 			active_stations: simulationSettings.selectedStations.map(
 				({ lat, long, id }) => ({

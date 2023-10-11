@@ -8,6 +8,7 @@ import Sidebar from './components/sidebar';
 import { layout, data as plotData } from './plot';
 import { Itineraries, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
+import { PlotMouseEvent } from 'plotly.js';
 
 export type SimulationSettings = {
 	date: string;
@@ -39,6 +40,7 @@ const Simulation = () => {
 			selectedStations: [],
 			selectedItineraries: []
 		});
+	const [sidebarTab, setSidebarTab] = useState('details');
 
 	// Retrieves the simulation data
 	const { data: simulationResult, refetch: fetchSimulationData } =
@@ -47,7 +49,7 @@ const Simulation = () => {
 				env_start: simulationSettings.startTime,
 				time_horizon: simulationSettings.duration,
 				itineraries: simulationSettings.selectedItineraries,
-				snapshot_date: '2023-08-01',
+				snapshot_date: simulationSettings.date,
 				active_suburbs: simulationSettings.selectedSuburbs.map(
 					// default st lucia
 					(suburb) => suburb.suburb
@@ -83,9 +85,13 @@ const Simulation = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [simulationData?.Routes]);
 
+	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
+
 	return (
 		<div className="flex flex-row gap-4">
 			<Sidebar
+				currentTab={sidebarTab}
+				setCurrentTab={setSidebarTab}
 				simulationSettings={simulationSettings}
 				setSimulationSettings={setSimulationSettings}
 				fetchSimulationData={fetchSimulationData}
@@ -148,9 +154,7 @@ const Simulation = () => {
 						});
 					}}
 					onUnhover={() => setHoverData(null)}
-					onClick={(event) => {
-						// todo: Focus route tap on sidebar and display more route info
-					}}
+					onClick={focusStop}
 				/>
 			</div>
 		</div>
