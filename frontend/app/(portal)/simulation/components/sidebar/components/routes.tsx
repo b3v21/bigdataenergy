@@ -52,8 +52,6 @@ const Routes = ({
 
 	const stations = useMemo(() => {
 		if (!simulationSettings.selectedSuburbs || !selectedSuburb) return [];
-
-		console.log(selectedSuburb)
 		{/* @ts-ignore  */}
 		return simulationSettings.selectedSuburbs.filter(x => x.suburb.toLowerCase() == selectedSuburb.toLowerCase())
 			.map((suburb) => suburb.stations)
@@ -64,7 +62,6 @@ const Routes = ({
 	const handleSetSuburb = (suburb) => {
 		setSuburb(suburb);
 		handleSetStation(null);
-		console.log(simulationResult)
 	};
 
 	{/* @ts-ignore  */}
@@ -178,7 +175,7 @@ const layout: PlotParams['layout'] = {
 	width: 215,
 	height: 250,
 	title: {
-	  text: '<b>People Changes Over Time <b>',
+	  text: '<b>Passenger Flow Over Time <b>',
 	  font: {
 		  size: 14
 		},
@@ -196,12 +193,13 @@ const layout: PlotParams['layout'] = {
 	},
 	xaxis:{
 	  showticklabels: false,
-	  title: {text: 'Stops',
+	  title: {text: 'Time (seconds)',
 	  standoff: 240
 	}
 	},
 	yaxis:{
-	  title: {text: 'No. Passengers'}
+	  title: {text: 'No. Passengers',
+		standoff: 200}
 	},
   };
   
