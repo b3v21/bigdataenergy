@@ -1086,7 +1086,7 @@ def get_data(
                 # Walk
                 walks[f"Walk_{walk_id}"] = (start, end)
                 walk_id += 1
-
+    import pdb; pdb.set_trace()
     db_routes = RouteM.objects.all().filter(route_id__in=list(route_ids.keys()))
 
     sim_routes = {}
@@ -1170,6 +1170,7 @@ def get_data(
     walks_from_stops = {}
     for walk_id in walks:
         if walk_id not in sim_routes:
+            import pdb; pdb.set_trace()
             stops = [
                 sim_stations[walks[walk_id][0]],
                 sim_stations[walks[walk_id][1]],
@@ -1393,12 +1394,13 @@ def generate_itins(user_data: dict) -> dict:
     )
     start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
     active_stations = user_data["active_stations"]
+    print(start_time, end_time)
 
     # TODO: move environment variables
-    modes = ["pt_pub_bus"]
+    modes = ["pt_pub_bus", "wa_"]
     api = "https://api.tripgo.com/v1/routing.json"
     key = "2286d1ca160dd724a3da27802c7aba91"
-    endStation = "(-27.4979739, 153.0111389)\"UQ Chancellor's Place, zone D"
+    endStation = '(-27.46638, 153.01835)"Roma Street Stop 125 at Transit Centre"'
     num_itins = 1
 
     # inititalise variables
@@ -1414,6 +1416,7 @@ def generate_itins(user_data: dict) -> dict:
             "from": f'({station["lat"]}, {station["long"]})',
             "to": endStation,
             "modes": modes,
+            "onlyAllowModes" : modes,
             "bestOnly": "true",
             "includeStops": "false",
             "departAfter": start_time,
@@ -1421,11 +1424,11 @@ def generate_itins(user_data: dict) -> dict:
         }
         headers = {"X-TripGo-Key": key}
         data = callTripGoAPI(api, parameters, headers)
-
+        print("Data ", data)
         format_data = formatItins(
             data, num_itins, station["station_id"].zfill(6), itin_id
         )
-        print("formatted data ", format_data)
+        print("Formatted data ", format_data)
         if format_data:
             itins_collected += format_data
             itin_id += num_itins
@@ -1479,15 +1482,18 @@ def formatItins(response, num_itins, start_station_id, start_itin_id):
                 if "WALK" in template["action"].upper():
                     route_id = "walk"
                 elif "TAKE" in template["action"].upper():
-                    route_id = segment["routeID"].lstrip('0')
+                    route_id = segment["routeID"]
+                    
+                    
 
                 # Now want to get from where to where
-                from_station = template["from"]["stopCode"]
-                if count == 0 and from_station != start_station_id:
+                from_station = template["from"]["stopCode"].lstrip('0')
+                if count == 0 and from_station != (str(start_station_id).lstrip("0")):
                     # Coords where too close to another stop and it tried to make that the start
+                    print(from_station, str(start_station_id).lstrip("0"), type(start_itin_id))
                     exit = True  # for double break
                     break
-                to_station = template["to"]["stopCode"]
+                to_station = template["to"]["stopCode"].lstrip('0')
                 route = {"route_id": route_id, "start": from_station, "end": to_station}
                 count += 1
                 routes.append(route)
@@ -1501,6 +1507,7 @@ def formatItins(response, num_itins, start_station_id, start_itin_id):
                 itins.append(itin)
                 if trips_parsed >= num_itins:
                     break
+    print(itins)
     return itins
 
 
