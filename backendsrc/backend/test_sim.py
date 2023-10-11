@@ -36,25 +36,6 @@ import json
 
 
 def test_basic_sim_with_models():
-    list1 = [
-        StationM,
-        RouteM,
-        TimetableM,
-        TripM,
-        ShapeM,
-        CalendarM,
-        SimulationOutput,
-        RouteSim,
-        StationSim,
-        ItinerarySim,
-        TransporterOnRouteInfo,
-        TransporterTimeOut,
-        PassengerChanges,
-    ]
-
-    for model in list1:
-        model.objects.all().delete()
-
     """Basic test of sim with models"""
 
     test_date = datetime(2023, 9, 15)
