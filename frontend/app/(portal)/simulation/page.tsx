@@ -37,18 +37,7 @@ const Simulation = () => {
 			duration: 30,
 			selectedSuburbs: [],
 			selectedStations: [],
-			selectedItineraries: [
-				// {
-				// 	itinerary_id: 0,
-				// 	routes: [
-				// 		{
-				// 			route_id: '412-3136',
-				// 			start: '0',
-				// 			end: '1850'
-				// 		}
-				// 	]
-				// }
-			]
+			selectedItineraries: []
 		});
 
 	// Retrieves the simulation data
@@ -81,7 +70,7 @@ const Simulation = () => {
 		if (!simulationResult) return null;
 
 		return (
-			// Formatting data for plotly
+			// Formatting data for Plotly
 			Object.entries(simulationData?.Routes)
 				.map((route) =>
 					Object.entries((route as any)[1].stations).map(
