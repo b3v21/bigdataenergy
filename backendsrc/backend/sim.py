@@ -60,7 +60,7 @@ INPUT_ITINS['1064'] = [{
     ],
 }]
 
-indooroopilly_shops = StationM.get_or_create(
+indooroopilly_shops = StationM.objects.get_or_create(
     station_id='-2',  
     station_code='-2',
     name="Indooroopilly Shopping Centre",
