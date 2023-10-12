@@ -285,12 +285,9 @@ class Transporter(ABC):
         num_people_to_board = sum([p.get_num_people() for p in people_to_ride])
 
         avg_load_time = PERSON_BOARD_TIME * num_people_to_board
-        std_dev_load_time = PERSON_BOARD_TIME * 0.25 * station.busy_level()
-        load_time = -1
-
-        log_mean = abs(log(avg_load_time) - (1/2* log(pow(std_dev_load_time/avg_load_time, 2) + 1)))
-        log_sd = abs(sqrt(log(pow(std_dev_load_time/avg_load_time, 2) + 1)))
-        load_time = ceil(np.random.lognormal(log_mean, log_sd))
+        std_dev_load_time = PERSON_BOARD_TIME * num_people_to_board * 0.1 * ceil(station.busy_level()/5)
+        print("Load: ", avg_load_time, std_dev_load_time)
+        load_time = ceil(np.random.gumbel(avg_load_time, std_dev_load_time))
         print(avg_load_time, station.busy_level(), load_time)
         self.people += people_to_ride
 
@@ -330,10 +327,8 @@ class Transporter(ABC):
             return
 
         avg_load_time = PERSON_BOARD_TIME * num_passengers_deloaded
-        std_dev_load_time = (PERSON_BOARD_TIME * num_passengers_deloaded * 0.1) * station.busy_level()
-        log_mean = abs(log(avg_load_time) - (1/2* log(pow(std_dev_load_time/avg_load_time, 2) + 1)))
-        log_sd = abs(sqrt(log(pow(std_dev_load_time/avg_load_time, 2) + 1)))
-        deload_time = ceil(np.random.lognormal(log_mean, log_sd))
+        std_dev_load_time = (PERSON_BOARD_TIME * num_passengers_deloaded * 0.1) * station.busy_level()/5
+        deload_time = ceil(np.random.gumbel(avg_load_time, std_dev_load_time))
         print(avg_load_time, station.busy_level(), deload_time)
         yield self.env.timeout(deload_time)
         if DEBUG:
@@ -450,13 +445,10 @@ class Bus(Transporter):
                         exit()
                     expected_travel_time = 1
 
-                std_dev_travel_time = 4 * previous_stop.busy_level() #May tweak this base number
+                std_dev_travel_time = 4 * ceil(previous_stop.busy_level()/10) #May tweak this base number
                 print(expected_travel_time, std_dev_travel_time)
-                log_mean = abs(log(expected_travel_time) - (1/2* log(pow(std_dev_travel_time/expected_travel_time, 2) + 1)))
-                log_sd = abs(sqrt(log(pow(std_dev_travel_time/expected_travel_time, 2) + 1)))
-                print(log_sd, log_mean)
-                travel_time = ceil(np.random.lognormal(log_mean, log_sd))
-                print(expected_travel_time, previous_stop.busy_level(), travel_time)
+                travel_time = ceil(np.random.gumbel(expected_travel_time, std_dev_travel_time))
+                print("Travel: ", expected_travel_time, ceil(previous_stop.busy_level()/10), travel_time)
 
             yield self.env.timeout(travel_time)
             if DEBUG:
@@ -1241,8 +1233,8 @@ def get_data(
         # Create suburb for each
         if sub_name not in ALLOWED_SUBURBS:
             continue #Don't gen non allowed
-        distribute_frequency = 5
-        max_distributes = 0
+        distribute_frequency = 10 #Tweak Me
+        max_distributes = 2 #Tweak Me
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
         active_stations_in_suburb_id = [
             station["station_id"]
