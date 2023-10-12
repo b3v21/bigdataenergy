@@ -248,7 +248,9 @@ class Station:
     def put(self, passengers: list[People], from_suburb=False) -> None:
         for group in passengers:
             group.log((self.name, self.id))
-
+            print(group.itinerary_index, len(ITINERARIES), ITINERARIES)
+            for itin in ITINERARIES:
+                print(itin)
             if not ITINERARIES[group.itinerary_index].last_leg(group) and (
                 ITINERARIES[group.itinerary_index].get_current(group)[1] == self
                 or ITINERARIES[group.itinerary_index].get_current_route(group).last_stop
@@ -474,6 +476,8 @@ class Bus(Transporter):
                     travel_time = 1
 
                 if travel_time < 0:
+                    print("Bad travel time: ", travel_time)
+                    print(self.trip.timetable)
                     if DEBUG:
                         print("***ERROR*** Travel time <= 0!!!")
                         exit()
@@ -1274,10 +1278,10 @@ def get_data(
                 for station in sim_routes[route["route_id"]].stops:
                     if STATION_ITINERARY_LOOKUP.get(station):
                         STATION_ITINERARY_LOOKUP[station].append(
-                            itinerary["itinerary_id"]
+                            len(ITINERARIES)
                         )
                     else:
-                        STATION_ITINERARY_LOOKUP[station] = [itinerary["itinerary_id"]]
+                        STATION_ITINERARY_LOOKUP[station] = [len(ITINERARIES)]
 
                 routes.append(
                     (
@@ -1718,7 +1722,7 @@ def test_sim_with_trains_collision():
 
     # Create Itineraries.
     ITINERARIES.append(Itinerary(env, 0, [(RouteA, StationC)]))
-    ITINERARIES.append(Itinerary(env, 0, [(RouteB, StationD)]))
+    ITINERARIES.append(Itinerary(env, 1, [(RouteB, StationD)]))
 
     STATION_ITINERARY_LOOKUP[StationA] = [0]
     STATION_ITINERARY_LOOKUP[StationB] = [0, 1]
