@@ -127,12 +127,9 @@ def itin_check(request: Request) -> Response:
 
     try:
         output = generate_itins(request.data)
-        print("the output is", output)
 
     except:
         return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    print(output)
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 

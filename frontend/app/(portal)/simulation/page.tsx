@@ -33,7 +33,7 @@ const Simulation = () => {
 	// Stores simulation details
 	const [simulationSettings, setSimulationSettings] =
 		useState<SimulationSettings>({
-			date: new Date().toISOString().split('T')[0],
+			date: new Date('August 8, 2023').toISOString().split('T')[0],
 			startTime: 355,
 			duration: 30,
 			selectedSuburbs: [],
