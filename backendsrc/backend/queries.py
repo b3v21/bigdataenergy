@@ -15,11 +15,11 @@ from db.models import Station, ItineraryCache, RouteInItinCache
 
 ALLOWED_SUBURBS = [
     # "Toowong",
-    # "Indooroopilly",
+    "Indooroopilly",
     # "Taringa",
     "St Lucia",
     # "Chapel Hill",
-    # "West End",
+    "West End",
     # "Bardon",
     # "Paddington",
     # "Ashgrove",
@@ -27,7 +27,7 @@ ALLOWED_SUBURBS = [
     # "Newstead",
     # "Teneriffe",
     # "New Farm",
-    # "Fortitude Valley",
+    "Fortitude Valley",
     # "Brisbane City",
     # "Highgate Hill",
     # "South Brisbane",
@@ -56,6 +56,8 @@ ALLOWED_SUBURBS = [
     # "Red Hill",
 ]
 
+ALLOW_STATIONS = ["1850", "1064", "-2", "600010"]
+
 
 def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     """
@@ -68,7 +70,7 @@ def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     suburbs = {}
 
     for station in stations:
-        if station.suburb in ALLOWED_SUBURBS:
+        if station.suburb in ALLOWED_SUBURBS and station in ALLOWED_STATIONS:
             if station.suburb not in suburbs:
                 suburbs[station.suburb] = [
                     {

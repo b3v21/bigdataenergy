@@ -51,6 +51,43 @@ INPUT_ITINS['1850'] = [{
     ],
 }]
 
+INPUT_ITINS['1064'] = [{
+    "itinerary_id": 1,
+    "routes": [
+        {"route_id": "199-3136", "start": "1064", "end": "10802"},
+        {"route_id": "385-3136", "start": "10802", "end": "817"},
+        {"route_id": "walk", "start": "817", "end": "-1"},
+    ],
+}]
+
+indooroopilly_shops = StationM.get_or_create(
+    station_id='-2',  
+    station_code='-2',
+    name="Indooroopilly Shopping Centre",
+    lat=-27.499442328279276,
+    long=152.9723006735715,
+    location_type='-1',
+    
+)
+
+INPUT_ITINS['-2'] = [{
+    "itinerary_id": 2,
+    "routes": [
+        {"route_id": "walk", "start": "-2", "end": "2200"},
+        {"route_id": "444-3136", "start": "2200", "end": "271"},
+        {"route_id": "walk", "start": "271", "end": "-1"},
+    ],
+}]
+
+INPUT_ITINS['600010'] = [{
+    "itinerary_id": 3,
+    "routes": [
+        {"route_id": "RPSP-3109", "start": "600010", "end": "600279"},
+        {"route_id": "walk", "start": "600279", "end": "-1"},
+    ],
+}]
+
+
 # THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
 ITINERARIES = []
 STATION_ITINERARY_LOOKUP = {}
@@ -922,6 +959,7 @@ def run_simulation(
     output = process_simulation_output(stations, routes, itineraries, sim_id, trips)
     print(f"Simulation #{sim_id} output processed.")
     load_sim_data_into_db(stations, routes, itineraries, sim_id)
+    print(f"Simulation #{sim_id} loaded into db.")
 
     return output
 
@@ -1102,6 +1140,10 @@ def get_data(
     sim_routes = {}
     sim_trips = []
     sim_stations = {}
+    
+    # Add Suncorp Stadium to sim_stations
+    suncorp = Station(env, '-1', "Suncorp Stadium", (-27.464711701302356, 153.00957411105185), 1, env_start)
+    sim_stations.update({'-1': suncorp})
 
     for route in db_routes:
         # Get trip_ids that run on this day for this particular route
@@ -1180,6 +1222,19 @@ def get_data(
     walks_from_stops = {}
     for walk_id in walks:
         if walk_id not in sim_routes:
+            # Create stations used in walk if they dont already exist
+
+            if walks[walk_id][0] not in sim_stations:
+                # Get station from db
+                station = StationM.objects.filter(station_id=walks[walk_id][0]).first()
+                sim_stations[walks[walk_id][0]] = Station(env, walks[walk_id][0], walks[walk_id][0], (station.lat, station.long), 1, env_start)
+                
+            if walks[walk_id][1] not in sim_stations:
+                # Get station from db
+                station = StationM.objects.filter(station_id=walks[walk_id][1]).first()
+                sim_stations[walks[walk_id][1]] = Station(env, walks[walk_id][1], walks[walk_id][1], (station.lat, station.long), 1, env_start)
+                
+            
             stops = [
                 sim_stations[walks[walk_id][0]],
                 sim_stations[walks[walk_id][1]],
