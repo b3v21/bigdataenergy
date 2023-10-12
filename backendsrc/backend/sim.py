@@ -60,30 +60,22 @@ INPUT_ITINS['1064'] = [{
     ],
 }]
 
-indooroopilly_shops = StationM.objects.get_or_create(
-    station_id='-2',  
-    station_code='-2',
-    name="Indooroopilly Shopping Centre",
-    lat=-27.499442328279276,
-    long=152.9723006735715,
-    location_type='-1',
-    
-)
 
-INPUT_ITINS['-2'] = [{
+INPUT_ITINS['2200'] = [{
     "itinerary_id": 2,
     "routes": [
-        {"route_id": "walk", "start": "-2", "end": "2200"},
         {"route_id": "444-3136", "start": "2200", "end": "271"},
         {"route_id": "walk", "start": "271", "end": "-1"},
     ],
 }]
 
-INPUT_ITINS['600010'] = [{
+INPUT_ITINS['600014'] = [{
     "itinerary_id": 3,
     "routes": [
-        {"route_id": "RPSP-3109", "start": "600010", "end": "600279"},
-        {"route_id": "walk", "start": "600279", "end": "-1"},
+        {"route_id": "BDVL-3124", "start": "600014", "end": "600036"},
+        {"route_id": "walk", "start": "600036", "end": "10793"},
+        {"route_id": "385-3136", "start": "10793", "end": "816"},
+        {"route_id": "walk", "start": "816", "end": "-1"},
     ],
 }]
 
@@ -1225,11 +1217,14 @@ def get_data(
             # Create stations used in walk if they dont already exist
 
             if walks[walk_id][0] not in sim_stations:
+                print(walks[walk_id][0])
                 # Get station from db
                 station = StationM.objects.filter(station_id=walks[walk_id][0]).first()
                 sim_stations[walks[walk_id][0]] = Station(env, walks[walk_id][0], walks[walk_id][0], (station.lat, station.long), 1, env_start)
                 
             if walks[walk_id][1] not in sim_stations:
+                print(sim_stations)
+                print(walks[walk_id][1])
                 # Get station from db
                 station = StationM.objects.filter(station_id=walks[walk_id][1]).first()
                 sim_stations[walks[walk_id][1]] = Station(env, walks[walk_id][1], walks[walk_id][1], (station.lat, station.long), 1, env_start)
