@@ -56,7 +56,7 @@ ALLOWED_SUBURBS = [
     # "Red Hill",
 ]
 
-ALLOWED_STATIONS = ["1850", "1064", "2200", '600014']
+ALLOWED_STATIONS = ["1850", "1064", "2200", "600014"]
 
 
 def get_station_suburbs() -> dict[str : list[list[str, str]]]:
@@ -93,4 +93,3 @@ def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     for suburb, station_data in suburbs.items():
         result.append({"suburb": suburb, "stations": station_data})
     return result
-

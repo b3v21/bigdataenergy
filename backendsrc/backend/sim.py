@@ -43,41 +43,49 @@ ROUTE_NAMES = ["BusRoute", "TrainRoute"]
 
 # These are the hardcoded itineraries that will appear on the frontend
 INPUT_ITINS = {}
-INPUT_ITINS['1850'] = [{
-    "itinerary_id": 0,
-    "routes": [
-        {"route_id": "412-3136", "start": "1850", "end": "273"},
-        {"route_id": "walk", "start": "273", "end": "-1"},
-    ],
-}]
+INPUT_ITINS["1850"] = [
+    {
+        "itinerary_id": 0,
+        "routes": [
+            {"route_id": "412-3136", "start": "1850", "end": "273"},
+            {"route_id": "walk", "start": "273", "end": "-1"},
+        ],
+    }
+]
 
-INPUT_ITINS['1064'] = [{
-    "itinerary_id": 1,
-    "routes": [
-        {"route_id": "199-3136", "start": "1064", "end": "10802"},
-        {"route_id": "385-3136", "start": "10802", "end": "817"},
-        {"route_id": "walk", "start": "817", "end": "-1"},
-    ],
-}]
+INPUT_ITINS["1064"] = [
+    {
+        "itinerary_id": 1,
+        "routes": [
+            {"route_id": "199-3136", "start": "1064", "end": "10802"},
+            {"route_id": "385-3136", "start": "10802", "end": "817"},
+            {"route_id": "walk", "start": "817", "end": "-1"},
+        ],
+    }
+]
 
 
-INPUT_ITINS['2200'] = [{
-    "itinerary_id": 2,
-    "routes": [
-        {"route_id": "444-3136", "start": "2200", "end": "271"},
-        {"route_id": "walk", "start": "271", "end": "-1"},
-    ],
-}]
+INPUT_ITINS["2200"] = [
+    {
+        "itinerary_id": 2,
+        "routes": [
+            {"route_id": "444-3136", "start": "2200", "end": "271"},
+            {"route_id": "walk", "start": "271", "end": "-1"},
+        ],
+    }
+]
 
-INPUT_ITINS['600014'] = [{
-    "itinerary_id": 3,
-    "routes": [
-        {"route_id": "BDVL-3124", "start": "600014", "end": "600036"},
-        {"route_id": "walk", "start": "600036", "end": "10793"},
-        {"route_id": "385-3136", "start": "10793", "end": "816"},
-        {"route_id": "walk", "start": "816", "end": "-1"},
-    ],
-}]
+INPUT_ITINS["600014"] = [
+    {
+        "itinerary_id": 3,
+        "routes": [
+            {"route_id": "BDVL-3124", "start": "600014", "end": "600036"},
+            {"route_id": "walk", "start": "600036", "end": "10793"},
+            {"route_id": "385-3136", "start": "10793", "end": "816"},
+            {"route_id": "walk", "start": "816", "end": "-1"},
+        ],
+    }
+]
 
 
 # THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
@@ -1132,10 +1140,17 @@ def get_data(
     sim_routes = {}
     sim_trips = []
     sim_stations = {}
-    
+
     # Add Suncorp Stadium to sim_stations
-    suncorp = Station(env, '-1', "Suncorp Stadium", (-27.464711701302356, 153.00957411105185), 1, env_start)
-    sim_stations.update({'-1': suncorp})
+    suncorp = Station(
+        env,
+        "-1",
+        "Suncorp Stadium",
+        (-27.464711701302356, 153.00957411105185),
+        1,
+        env_start,
+    )
+    sim_stations.update({"-1": suncorp})
 
     for route in db_routes:
         # Get trip_ids that run on this day for this particular route
@@ -1220,16 +1235,29 @@ def get_data(
                 print(walks[walk_id][0])
                 # Get station from db
                 station = StationM.objects.filter(station_id=walks[walk_id][0]).first()
-                sim_stations[walks[walk_id][0]] = Station(env, walks[walk_id][0], walks[walk_id][0], (station.lat, station.long), 1, env_start)
-                
+                sim_stations[walks[walk_id][0]] = Station(
+                    env,
+                    walks[walk_id][0],
+                    walks[walk_id][0],
+                    (station.lat, station.long),
+                    1,
+                    env_start,
+                )
+
             if walks[walk_id][1] not in sim_stations:
                 print(sim_stations)
                 print(walks[walk_id][1])
                 # Get station from db
                 station = StationM.objects.filter(station_id=walks[walk_id][1]).first()
-                sim_stations[walks[walk_id][1]] = Station(env, walks[walk_id][1], walks[walk_id][1], (station.lat, station.long), 1, env_start)
-                
-            
+                sim_stations[walks[walk_id][1]] = Station(
+                    env,
+                    walks[walk_id][1],
+                    walks[walk_id][1],
+                    (station.lat, station.long),
+                    1,
+                    env_start,
+                )
+
             stops = [
                 sim_stations[walks[walk_id][0]],
                 sim_stations[walks[walk_id][1]],
@@ -1238,7 +1266,6 @@ def get_data(
             walks_from_stops[(walks[walk_id][0], walks[walk_id][1])] = walk
             sim_routes[walk_id] = walk
 
-    
     sim_itineraries = []
     for itinerary in itineraries:
         routes = []
@@ -1445,13 +1472,15 @@ def load_sim_data_into_db(
 
 def generate_itins(user_data: dict) -> dict:
     itins_collected = []
-    
+
     for station in user_data["active_stations"]:
         itins = INPUT_ITINS.get(station["station_id"], None)
         for itin in itins:
             itins_collected.append(itin)
-    
+
     return {"itineraries": itins_collected}
+
+
 #     """
 #     Collects itineraries for given user input data and returns them in the required format for running simulations
 #     Warning: This will call the TripGo API in bulk
@@ -1551,8 +1580,7 @@ def generate_itins(user_data: dict) -> dict:
 #                     route_id = "walk"
 #                 elif "TAKE" in template["action"].upper():
 #                     route_id = segment["routeID"]
-                    
-                    
+
 
 #                 # Now want to get from where to where
 #                 from_station = template["from"]["stopCode"].lstrip('0')
