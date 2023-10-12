@@ -92,6 +92,8 @@ INPUT_ITINS["600014"] = [
 ITINERARIES = []
 STATION_ITINERARY_LOOKUP = {}
 
+STATION_NAMES = {}
+
 
 def convert_date_to_int(time: time) -> int:
     return time.hour * MINUTES_IN_HOUR + time.minute
@@ -417,28 +419,34 @@ class Bus(Transporter):
 
     def __str__(self) -> str:
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
+    
+    def current_stop(self) -> Station:
+        print(len(self.trip.timetable), self.location_index)
+        return STATION_NAMES[self.trip.timetable[self.location_index][0]]
 
     def bus_instance(self, bus_route: BusRoute) -> None:
         self.passenger_changes[self.env.now + self.env_start] = self.passenger_count()
         while True:
-            with bus_route.get_current_stop(self).bays.request() as req:
+            with self.current_stop().bays.request() as req:
                 yield req
                 if DEBUG:
                     print(
-                        f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
+                        f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {self.current_stop().name}"
                     )
                 self.time_log[
-                    f"{bus_route.get_current_stop(self).name} ({bus_route.get_current_stop(self).id})"
+                    f"{self.current_stop().name} ({self.current_stop().id})"
                 ] = (self.env.now + self.env_start)
-                if bus_route.get_current_stop(self) != bus_route.last_stop:
+
+                print("Should end at: ", bus_route.get_current_stop(self).name, bus_route.last_stop.name)
+                if self.current_stop() != bus_route.last_stop:
                     prev_passenger_count = self.passenger_count()
 
                     yield self.env.process(
-                        self.load_passengers(bus_route.get_current_stop(self))
+                        self.load_passengers(self.current_stop())
                     )
 
                     yield self.env.process(
-                        self.deload_passengers(bus_route.get_current_stop(self))
+                        self.deload_passengers(self.current_stop())
                     )
 
                     if prev_passenger_count != self.passenger_count():
@@ -448,7 +456,7 @@ class Bus(Transporter):
 
                 else:
                     yield self.env.process(
-                        self.deload_passengers(bus_route.get_current_stop(self))
+                        self.deload_passengers(self.current_stop())
                     )
                     self.passenger_changes[
                         self.env.now + self.env_start
@@ -460,9 +468,11 @@ class Bus(Transporter):
                         )
                     break
 
-                previous_stop = bus_route.stops[self.location_index]
-                self.move_to_next_stop(len(bus_route.stops))
-                cur_stop = bus_route.get_current_stop(self)
+                print(self.trip.timetable, len(self.trip.timetable), self.location_index)
+                previous_stop = STATION_NAMES[self.trip.timetable[self.location_index][0]]
+                self.move_to_next_stop(len(self.trip.timetable))
+                
+                cur_stop = self.current_stop()
                 travel_time = 0
                 index = 0
                 for stop, time in self.trip.timetable:
@@ -476,8 +486,13 @@ class Bus(Transporter):
                     travel_time = 1
 
                 if travel_time < 0:
+                    print(previous_stop.name, cur_stop.name)
                     print("Bad travel time: ", travel_time)
+                    print(self.name)
                     print(self.trip.timetable)
+                    for stop in bus_route.stops:
+                        print(stop.name)
+                    print(self.trip.timetable[index], self.trip.timetable[index - 1])
                     if DEBUG:
                         print("***ERROR*** Travel time <= 0!!!")
                         exit()
@@ -486,7 +501,7 @@ class Bus(Transporter):
             yield self.env.timeout(travel_time)
             if DEBUG:
                 print(
-                    f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {bus_route.get_current_stop(self).name} ({travel_time} mins)"
+                    f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {self.current_stop().name} ({travel_time} mins)"
                 )
 
 
@@ -1200,6 +1215,11 @@ def get_data(
                         1,
                         env_start,
                     )
+                    if new_station.name in STATION_NAMES:
+                        print("Duplicated station ", new_station.name, " found. Likely ok as stops on mult routes or mult route versions")
+                    else:
+                        STATION_NAMES[new_station.name] = new_station
+
                     sim_stations[timetable_station.station_id] = new_station
                     if new_station.id not in route_stations.keys():
                         route_stations[timetable_station.station_id] = new_station
