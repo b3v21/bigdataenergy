@@ -361,7 +361,7 @@ class Transporter(ABC):
             people.log((self.name, self.id))
         if DEBUG:
             print(
-                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} loaded {num_people_to_board} people from {station.name} (30 secs)"
+                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} loaded {num_people_to_board} people from {station.name} ({load_time})"
             )
 
     def get_people_deloading(self, station: Station) -> list[People]:
@@ -405,7 +405,7 @@ class Transporter(ABC):
 
         if DEBUG:
             print(
-                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {num_passengers_deloaded} people at {station.name} (30 secs)"
+                f"({self.env.now+self.env_start}): {self.get_type()} {self.get_name()} has dropped off {num_passengers_deloaded} people at {station.name} ({deload_time})"
             )
 
         station.put(people_deloading)
