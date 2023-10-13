@@ -42,6 +42,7 @@ MINUTES_IN_DAY = 1440
 MINUTES_IN_HOUR = 60
 DEBUG = True
 ROUTE_NAMES = ["BusRoute", "TrainRoute"]
+LOAD_TIMES = {"Train":0.015, "Bus":0.1}
 
 # These are the hardcoded itineraries that will appear on the frontend
 INPUT_ITINS = {}
@@ -348,7 +349,7 @@ class Transporter(ABC):
         while load_time < avg_load_time or load_time > avg_load_time + std_dev_load_time:
             load_time = ceil(np.random.gumbel(avg_load_time, std_dev_load_time))
         #print("Load time: ", avg_load_time, std_dev_load_time, load_time)
-
+        yield self.env.timeout(load_time)
         self.people += people_to_ride
 
         station.log_cur_people()
