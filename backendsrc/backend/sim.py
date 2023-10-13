@@ -226,8 +226,6 @@ class Station:
                 
                 time_to_wait = 0.5
                 self.people.append(group)
-                print(self.people)
-                print(self.name)
                 self.env.process(
                     ITINERARIES[group.itinerary_index]
                     .get_current_route(group)
@@ -292,11 +290,10 @@ class Transporter(ABC):
 
         avg_load_time = PERSON_BOARD_TIME * num_people_to_board
         std_dev_load_time = PERSON_BOARD_TIME * num_people_to_board * 0.1 * ceil(station.busy_level()/5)
-        print("Load: ", avg_load_time, std_dev_load_time)
         load_time = 0
         while load_time < avg_load_time or load_time > avg_load_time + std_dev_load_time:
             load_time = ceil(np.random.gumbel(avg_load_time, std_dev_load_time))
-        print(avg_load_time, station.busy_level(), load_time)
+        #print("Load time: ", avg_load_time, std_dev_load_time, load_time)
         self.people += people_to_ride
 
         yield self.env.timeout(load_time)
@@ -339,7 +336,7 @@ class Transporter(ABC):
         deload_time = 0
         while deload_time < avg_load_time or deload_time > avg_load_time + std_dev_load_time:
             deload_time = ceil(np.random.gumbel(avg_load_time, std_dev_load_time))
-        print(avg_load_time, station.busy_level(), deload_time)
+        #print("Deload Time: ", avg_load_time, station.busy_level(), deload_time)
         yield self.env.timeout(deload_time)
         if DEBUG:
             print(
@@ -456,11 +453,10 @@ class Bus(Transporter):
                     expected_travel_time = 1
 
                 std_dev_travel_time = 4 * ceil(previous_stop.busy_level()/10) #May tweak this base number
-                print(expected_travel_time, std_dev_travel_time)
                 travel_time = 0
                 while travel_time < expected_travel_time or travel_time > expected_travel_time + std_dev_travel_time:
                     travel_time = ceil(np.random.gumbel(expected_travel_time, std_dev_travel_time))
-                print("Travel: ", expected_travel_time, ceil(previous_stop.busy_level()/10), travel_time)
+                #print("Travel: ", expected_travel_time, std_dev_travel_time, travel_time)
 
             yield self.env.timeout(travel_time)
             if DEBUG:
@@ -550,10 +546,10 @@ class Train(Transporter):
                     expected_travel_time = 1
 
             std_dev_travel_time = 4 * ceil(previous_stop.busy_level()/10) #May tweak this base number
-            print(expected_travel_time, std_dev_travel_time)
             travel_time = 0
             while travel_time < expected_travel_time or travel_time > expected_travel_time + std_dev_travel_time:
                 travel_time = ceil(np.random.gumbel(expected_travel_time, std_dev_travel_time))
+            #print("Train: ", expected_travel_time, std_dev_travel_time, travel_time)
             yield self.env.timeout(travel_time)
             self.bus_time_log[train_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
@@ -793,9 +789,6 @@ class Walk(Route):
         Walking process
         """
         yield self.env.timeout(time_to_leave)
-        print(people)
-        print(self.first_stop.name)
-        print(self.first_stop.people)
         self.first_stop.people.remove(people)
         people.log((None, self.id))
         self.walk_time_log[people] = [self.env.now + self.env_start, None]
@@ -803,11 +796,10 @@ class Walk(Route):
         self.stops[0].log_cur_people()
         expected_walk_time = self.walk_time() * self.walking_congestion #Change this to lookup ---
         std_dev_walk_time = expected_walk_time * 1/3 * self.get_num_people()/100
-        print(expected_walk_time, std_dev_walk_time)
         walk_time = 0
         while walk_time < expected_walk_time or walk_time > expected_walk_time + std_dev_walk_time:
             walk_time = ceil(np.random.gumbel(expected_walk_time, std_dev_walk_time))
-        print("Will walk for: ", walk_time)
+        #print("Will walk for: ",expected_walk_time, std_dev_walk_time, walk_time)
         yield self.env.timeout(walk_time)
         self.people.remove(people)
         self.walk_time_log[people][1] = self.env.now + self.env_start
