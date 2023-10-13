@@ -42,7 +42,7 @@ MINUTES_IN_DAY = 1440
 MINUTES_IN_HOUR = 60
 DEBUG = True
 ROUTE_NAMES = ["BusRoute", "TrainRoute"]
-LOAD_TIMES = {"Train":0.015, "Bus":0.1}
+LOAD_TIMES = {"Train":0.0025, "Bus":0.1}
 
 # These are the hardcoded itineraries that will appear on the frontend
 INPUT_ITINS = {}
@@ -343,11 +343,15 @@ class Transporter(ABC):
         people_to_ride = station.board(min(people_at_stop, seats_left), self.route)
         num_people_to_board = sum([p.get_num_people() for p in people_to_ride])
 
-        avg_load_time = PERSON_BOARD_TIME * num_people_to_board
-        std_dev_load_time = PERSON_BOARD_TIME * num_people_to_board * 0.1 * ceil(station.busy_level()/5)
+        avg_load_time = LOAD_TIMES[self.get_type()] * num_people_to_board
+        std_dev_load_time = LOAD_TIMES[self.get_type()] * num_people_to_board * 0.1 * ceil(station.busy_level()/5)
         load_time = 0
-        while load_time < avg_load_time or load_time > avg_load_time + std_dev_load_time:
-            load_time = ceil(np.random.gumbel(avg_load_time, std_dev_load_time))
+        #print("Load time: ", avg_load_time, std_dev_load_time)
+        while load_time <= avg_load_time or load_time > avg_load_time + std_dev_load_time:
+            if std_dev_load_time < 1:
+                load_time = avg_load_time
+                break
+            load_time = round(np.random.gumbel(avg_load_time, std_dev_load_time), 1)
         #print("Load time: ", avg_load_time, std_dev_load_time, load_time)
         yield self.env.timeout(load_time)
         self.people += people_to_ride
@@ -387,11 +391,15 @@ class Transporter(ABC):
             return
 
 
-        avg_load_time = PERSON_BOARD_TIME * num_passengers_deloaded
-        std_dev_load_time = (PERSON_BOARD_TIME * num_passengers_deloaded * 0.1) * station.busy_level()/5
+        avg_load_time = LOAD_TIMES[self.get_type()] * num_passengers_deloaded
+        std_dev_load_time = (LOAD_TIMES[self.get_type()] * num_passengers_deloaded * 0.1) * station.busy_level()/5
         deload_time = 0
-        while deload_time < avg_load_time or deload_time > avg_load_time + std_dev_load_time:
-            deload_time = ceil(np.random.gumbel(avg_load_time, std_dev_load_time))
+        #print("Deload Time: ", avg_load_time, station.busy_level())
+        while deload_time <= avg_load_time or deload_time > avg_load_time + std_dev_load_time:
+            if std_dev_load_time < 1:
+                deload_time = avg_load_time
+                break
+            deload_time = round(np.random.gumbel(avg_load_time, std_dev_load_time), 1)
         #print("Deload Time: ", avg_load_time, station.busy_level(), deload_time)
         yield self.env.timeout(deload_time)
 
@@ -515,7 +523,11 @@ class Bus(Transporter):
 
                 std_dev_travel_time = 4 * ceil(previous_stop.busy_level()/10) #May tweak this base number
                 travel_time = 0
-                while travel_time < expected_travel_time or travel_time > expected_travel_time + std_dev_travel_time:
+                #print("Travel: ", expected_travel_time, std_dev_travel_time)
+                while travel_time <= expected_travel_time or travel_time > expected_travel_time + std_dev_travel_time:
+                    if std_dev_travel_time < 1:
+                        travel_time = expected_travel_time
+                        break
                     travel_time = ceil(np.random.gumbel(expected_travel_time, std_dev_travel_time))
                 #print("Travel: ", expected_travel_time, std_dev_travel_time, travel_time)
 
@@ -612,7 +624,11 @@ class Train(Transporter):
 
             std_dev_travel_time = 4 * ceil(previous_stop.busy_level()/10) #May tweak this base number
             travel_time = 0
-            while travel_time < expected_travel_time or travel_time > expected_travel_time + std_dev_travel_time:
+            #print("Train: ", expected_travel_time, std_dev_travel_time)
+            while travel_time <= expected_travel_time or travel_time > expected_travel_time + std_dev_travel_time:
+                if std_dev_travel_time < 1:
+                        travel_time = expected_travel_time
+                        break
                 travel_time = ceil(np.random.gumbel(expected_travel_time, std_dev_travel_time))
             #print("Train: ", expected_travel_time, std_dev_travel_time, travel_time)
             yield self.env.timeout(travel_time)
@@ -871,7 +887,7 @@ class Walk(Route):
         walk_time = 0
         while walk_time < expected_walk_time or walk_time > expected_walk_time + std_dev_walk_time:
             walk_time = ceil(np.random.gumbel(expected_walk_time, std_dev_walk_time))
-        #print("Will walk for: ",expected_walk_time, std_dev_walk_time, walk_time)
+        print("Will walk for: ",expected_walk_time, std_dev_walk_time, walk_time)
         yield self.env.timeout(walk_time)
         self.people.remove(people)
         self.walk_time_log[people][1] = self.env.now + self.env_start
