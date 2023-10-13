@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Plus, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
+import { SimulationsTable } from './components/simulations-table';
 
 export const metadata: Metadata = {
 	title: 'Dashboard | Big Data Energy'
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function DashboardPage() {
 	return (
-		<>
+		<div className="flex flex-col gap-8">
 			<div className="flex items-center justify-between space-y-2">
 				<h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
 			</div>
@@ -50,6 +51,9 @@ export default function DashboardPage() {
 					</Card>
 				</Button>
 			</div>
-		</>
+			<div className="flex-1">
+				<SimulationsTable />
+			</div>
+		</div>
 	);
 }
