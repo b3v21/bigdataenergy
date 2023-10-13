@@ -211,17 +211,23 @@ class Station:
                 == self
             ):
                 group.next_route()
-            if ITINERARIES[group.itinerary_index].last_leg(group):
+
+            #If last leg and not a walk or at last stop 
+            if (ITINERARIES[group.itinerary_index].last_leg(group) 
+                and ITINERARIES[group.itinerary_index].get_current_type(group) != "Walk"
+                or ITINERARIES[group.itinerary_index].get_current_route(group).last_stop == self):
                 self.people.append(group)
             elif (
                 ITINERARIES[group.itinerary_index].get_current_type(group) == "BusRoute"
             ):
                 self.people.append(group)
-
             elif ITINERARIES[group.itinerary_index].get_current_type(group) == "Walk":
                 # Queue people all up to walk
+                
                 time_to_wait = 0.5
                 self.people.append(group)
+                print(self.people)
+                print(self.name)
                 self.env.process(
                     ITINERARIES[group.itinerary_index]
                     .get_current_route(group)
@@ -787,12 +793,21 @@ class Walk(Route):
         Walking process
         """
         yield self.env.timeout(time_to_leave)
+        print(people)
+        print(self.first_stop.name)
+        print(self.first_stop.people)
         self.first_stop.people.remove(people)
         people.log((None, self.id))
         self.walk_time_log[people] = [self.env.now + self.env_start, None]
         self.people.append(people)
         self.stops[0].log_cur_people()
-        walk_time = self.walk_time() * self.walking_congestion #Change this to lookup ---
+        expected_walk_time = self.walk_time() * self.walking_congestion #Change this to lookup ---
+        std_dev_walk_time = expected_walk_time * 1/3 * self.get_num_people()/100
+        print(expected_walk_time, std_dev_walk_time)
+        walk_time = 0
+        while walk_time < expected_walk_time or walk_time > expected_walk_time + std_dev_walk_time:
+            walk_time = ceil(np.random.gumbel(expected_walk_time, std_dev_walk_time))
+        print("Will walk for: ", walk_time)
         yield self.env.timeout(walk_time)
         self.people.remove(people)
         self.walk_time_log[people][1] = self.env.now + self.env_start
