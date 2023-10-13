@@ -50,3 +50,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+
+# Local Testing
+In order to test locally with the frontend and backend communicating simply launch both commands to run the backend and frontend local servers, and navigate to the frontend at [http://localhost:3000](http://localhost:3000) with your browser to see the result. Since the backend server is also running it will communicate with the frontend locally.
+

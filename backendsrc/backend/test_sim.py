@@ -20,11 +20,17 @@ from db.models import (
     RouteSim,
     StationSim,
     ItinerarySim,
-    BusOnRouteInfo,
-    BusTimeOut,
+    TransporterOnRouteInfo,
+    TransporterTimeOut,
     PassengerChanges,
 )  # noqa: E402
-from db.serializers import SimulationOutputSerializer
+from db.serializers import (
+    SimulationOutputSerializer,
+    StationSimSerializer,
+    RouteSimSerializer,
+    ItinerarySimSerializer,
+    SimOutputForFrontendSerializer,
+)  # noqa: E402
 from datetime import time, date, datetime
 import json
 
@@ -181,7 +187,7 @@ def test_basic_sim_with_models():
             "active_suburbs": ["test suburb"],
             "active_stations": ["0"],
         },
-        2,
+        0,
     )
 
 
@@ -193,61 +199,28 @@ def test_sim_with_db_models_412():
             "itineraries": [
                 {
                     "itinerary_id": 0,
-                    "routes": [{"route_id": "412-3136", "start": "0", "end": "1850"},
-                               {"route_id":"walk", "start":"1850", "end": "1846"}],
+                    "routes": [
+                        {"route_id": "412-3136", "start": "0", "end": "1850"},
+                        {"route_id": "walk", "start": "1850", "end": "1815"},
+                    ],
                 }
             ],
             "snapshot_date": "2023-08-01",
             "active_suburbs": ["St Lucia"],
             "active_stations": ["1815"],
         },
-        1,
+        3,
     )
 
 
 def test_sim_output_serializer():
-    station = StationSim(
-        station_id="0",
-        name="test_station",
-        lat=0,
-        long=0,
-        passenger_count=PassengerChanges(
-            passenger_changes_id=0,
-            time=0,
-            passenger_count=0,
-        ),
-    )
+    output_itins = ItinerarySim.objects.filter(sim_id=2)
+    output_routes = RouteSim.objects.filter(sim_id=2)
+    output_stations = StationSim.objects.filter(sim_id=2)
+    output_sim = SimulationOutput.objects.get(simulation_id=2)
 
-    route = RouteSim(
-        route_id="0",
-        method="test_route",
-        buses_on_route=BusOnRouteInfo(
-            bus_id="0",
-            bus_timeout=BusTimeOut(
-                bustimeout_id=0,
-                stop_name="0",
-                time=0,
-            ),
-            bus_passenger_changes=PassengerChanges(
-                passenger_changes_id=1,
-                time=0,
-                passenger_count=50,
-            ),
-        ),
-        stations=station,
-    )
-
-    output = SimulationOutput(
-        simulation_id=0,
-        route_id=route,
-        station_id=station,
-        itinerary_id=ItinerarySim(
-            itinerary_id="0",
-            routes=route,
-        ),
-    )
-    serializer = SimulationOutputSerializer(output)
-    print(json.dumps(serializer.data))
+    serializer_sim_output = SimOutputForFrontendSerializer()
+    print(json.dumps(serializer_sim_output.data))
 
 
 if __name__ == "__main__":

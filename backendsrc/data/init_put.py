@@ -71,7 +71,6 @@ def parse_data(path: str, model: str) -> None:
                     shape_pt_sequence=row[3],
                 )
             elif model == "Timetable":
-                # import pdb; pdb.set_trace()
                 time_format = row[1].strip("'").split(":")
                 if int(time_format[0]) >= 24:
                     time_object = time(
