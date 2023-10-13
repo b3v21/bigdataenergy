@@ -28,9 +28,10 @@ from db.models import (
     RouteSim,
     ItinerarySim,
     SimulationOutput,
-    BusOnRouteInfo,
+    TransporterOnRouteInfo,
     PassengerChanges,
-    BusTimeOut,
+    TransporterTimeOut,
+    WalkSim,
 )  # noqa: E402
 
 
@@ -40,9 +41,58 @@ MINUTES_IN_HOUR = 60
 DEBUG = True
 ROUTE_NAMES = ["BusRoute", "TrainRoute"]
 
+# These are the hardcoded itineraries that will appear on the frontend
+INPUT_ITINS = {}
+INPUT_ITINS["1850"] = [
+    {
+        "itinerary_id": 0,
+        "routes": [
+            {"route_id": "412-3136", "start": "1850", "end": "273"},
+            {"route_id": "walk", "start": "273", "end": "-1"},
+        ],
+    }
+]
+
+INPUT_ITINS["1064"] = [
+    {
+        "itinerary_id": 1,
+        "routes": [
+            {"route_id": "199-3136", "start": "1064", "end": "10802"},
+            {"route_id": "385-3136", "start": "10802", "end": "817"},
+            {"route_id": "walk", "start": "817", "end": "-1"},
+        ],
+    }
+]
+
+
+INPUT_ITINS["2200"] = [
+    {
+        "itinerary_id": 2,
+        "routes": [
+            {"route_id": "444-3136", "start": "2200", "end": "271"},
+            {"route_id": "walk", "start": "271", "end": "-1"},
+        ],
+    }
+]
+
+INPUT_ITINS["600014"] = [
+    {
+        "itinerary_id": 3,
+        "routes": [
+            {"route_id": "BDVL-3124", "start": "600014", "end": "600036"},
+            {"route_id": "walk", "start": "600036", "end": "10793"},
+            {"route_id": "385-3136", "start": "10793", "end": "816"},
+            {"route_id": "walk", "start": "816", "end": "-1"},
+        ],
+    }
+]
+
+
 # THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
 ITINERARIES = []
 STATION_ITINERARY_LOOKUP = {}
+
+STATION_NAMES = {}
 
 
 def convert_date_to_int(time: time) -> int:
@@ -200,16 +250,17 @@ class Station:
     def put(self, passengers: list[People], from_suburb=False) -> None:
         for group in passengers:
             group.log((self.name, self.id))
-
+            print(group.itinerary_index, len(ITINERARIES), ITINERARIES)
+            for itin in ITINERARIES:
+                print(itin)
             if not ITINERARIES[group.itinerary_index].last_leg(group) and (
                 ITINERARIES[group.itinerary_index].get_current(group)[1] == self
                 or ITINERARIES[group.itinerary_index].get_current_route(group).last_stop
                 == self
             ):
                 group.next_route()
-            if ITINERARIES[group.itinerary_index].last_leg(group):
-                self.people.append(group)
-            elif (
+
+            if (
                 ITINERARIES[group.itinerary_index].get_current_type(group)
                 in ROUTE_NAMES
             ):
@@ -224,6 +275,9 @@ class Station:
                     .get_current_route(group)
                     .walk_instance(group, time_to_wait)
                 )
+
+            elif ITINERARIES[group.itinerary_index].last_leg(group):
+                self.people.append(group)
 
         self.log_cur_people()
 
@@ -357,50 +411,54 @@ class Bus(Transporter):
         super().__init__(
             env, env_start, id, name, trip, route, location_index, people, capacity
         )
-        self.bus_time_log = {}
-        self.bus_passenger_changes = {}
+        self.time_log = {}
+        self.passenger_changes = {}
 
     def get_type(self) -> str:
         return "Bus"
 
     def __str__(self) -> str:
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
+    
+    def current_stop(self) -> Station:
+        print(len(self.trip.timetable), self.location_index)
+        return STATION_NAMES[self.trip.timetable[self.location_index][0]]
 
     def bus_instance(self, bus_route: BusRoute) -> None:
-        self.bus_passenger_changes[
-            self.env.now + self.env_start
-        ] = self.passenger_count()
+        self.passenger_changes[self.env.now + self.env_start] = self.passenger_count()
         while True:
-            with bus_route.get_current_stop(self).bays.request() as req:
+            with self.current_stop().bays.request() as req:
                 yield req
                 if DEBUG:
                     print(
-                        f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {bus_route.get_current_stop(self).name}"
+                        f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} arrived at {self.current_stop().name}"
                     )
-                self.bus_time_log[
-                    f"{bus_route.get_current_stop(self).name} ({bus_route.get_current_stop(self).id})"
+                self.time_log[
+                    f"{self.current_stop().name} ({self.current_stop().id})"
                 ] = (self.env.now + self.env_start)
-                if bus_route.get_current_stop(self) != bus_route.last_stop:
+
+                print("Should end at: ", bus_route.get_current_stop(self).name, bus_route.last_stop.name)
+                if self.current_stop() != bus_route.last_stop:
                     prev_passenger_count = self.passenger_count()
 
                     yield self.env.process(
-                        self.load_passengers(bus_route.get_current_stop(self))
+                        self.load_passengers(self.current_stop())
                     )
 
                     yield self.env.process(
-                        self.deload_passengers(bus_route.get_current_stop(self))
+                        self.deload_passengers(self.current_stop())
                     )
 
                     if prev_passenger_count != self.passenger_count():
-                        self.bus_passenger_changes[
+                        self.passenger_changes[
                             self.env.now + self.env_start
                         ] = self.passenger_count()
 
                 else:
                     yield self.env.process(
-                        self.deload_passengers(bus_route.get_current_stop(self))
+                        self.deload_passengers(self.current_stop())
                     )
-                    self.bus_passenger_changes[
+                    self.passenger_changes[
                         self.env.now + self.env_start
                     ] = self.passenger_count()
                     # Despawn
@@ -410,9 +468,11 @@ class Bus(Transporter):
                         )
                     break
 
-                previous_stop = bus_route.stops[self.location_index]
-                self.move_to_next_stop(len(bus_route.stops))
-                cur_stop = bus_route.get_current_stop(self)
+                print(self.trip.timetable, len(self.trip.timetable), self.location_index)
+                previous_stop = STATION_NAMES[self.trip.timetable[self.location_index][0]]
+                self.move_to_next_stop(len(self.trip.timetable))
+                
+                cur_stop = self.current_stop()
                 travel_time = 0
                 index = 0
                 for stop, time in self.trip.timetable:
@@ -426,6 +486,13 @@ class Bus(Transporter):
                     travel_time = 1
 
                 if travel_time < 0:
+                    print(previous_stop.name, cur_stop.name)
+                    print("Bad travel time: ", travel_time)
+                    print(self.name)
+                    print(self.trip.timetable)
+                    for stop in bus_route.stops:
+                        print(stop.name)
+                    print(self.trip.timetable[index], self.trip.timetable[index - 1])
                     if DEBUG:
                         print("***ERROR*** Travel time <= 0!!!")
                         exit()
@@ -434,7 +501,7 @@ class Bus(Transporter):
             yield self.env.timeout(travel_time)
             if DEBUG:
                 print(
-                    f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {bus_route.get_current_stop(self).name} ({travel_time} mins)"
+                    f"({self.env.now+bus_route.env_start}): Bus {self.get_name()} travelled from {previous_stop.name} to {self.current_stop().name} ({travel_time} mins)"
                 )
 
 
@@ -590,7 +657,7 @@ class BusRoute(Route):
             env, env_start, id, name, stops, trip_timing_data, transporter_spawn_max
         )
         self.running = self.env.process(self.initiate_route())
-        self.buses: list[Bus] = []
+        self.transporters: list[Bus] = []
 
     def initiate_route(self) -> None:
         """
@@ -643,7 +710,7 @@ class BusRoute(Route):
         return "BusRoute"
 
     def add_bus(self, new_bus: Bus) -> None:
-        self.buses.append(new_bus)
+        self.transporters.append(new_bus)
 
     def get_current_stop(self, bus: Bus) -> Station:
         return self.stops[bus.location_index]
@@ -673,7 +740,7 @@ class TrainRoute(Route):
             env, env_start, id, name, stops, trip_timing_data, transporter_spawn_max
         )
         self.running = self.env.process(self.initiate_route())
-        self.trains: list[Train] = []
+        self.transporters: list[Train] = []
 
     def initiate_route(self) -> None:
         """
@@ -724,7 +791,7 @@ class TrainRoute(Route):
         return "TrainRoute"
 
     def add_train(self, new_train: Train) -> None:
-        self.trains.append(new_train)
+        self.transporters.append(new_train)
 
     def get_current_stop(self, train: Train) -> Station:
         return self.stops[train.location_index]
@@ -750,6 +817,7 @@ class Walk(Route):
         self.location_index = location_index
         self.people = people
         self.walk_time_log = {}
+        self.duration = 0  # TODO: implement duration
 
     def initiate_route(self) -> None:
         return super().initiate_route()
@@ -759,7 +827,10 @@ class Walk(Route):
         Walking process
         """
         yield self.env.timeout(time_to_leave)
-        self.first_stop.people.remove(people)
+        try:
+            self.first_stop.people.remove(people)
+        except ValueError:
+            pass
         people.log((None, self.id))
         self.walk_time_log[people] = [self.env.now + self.env_start, None]
         self.people.append(people)
@@ -907,6 +978,7 @@ def run_simulation(
     output = process_simulation_output(stations, routes, itineraries, sim_id, trips)
     print(f"Simulation #{sim_id} output processed.")
     load_sim_data_into_db(stations, routes, itineraries, sim_id)
+    print(f"Simulation #{sim_id} loaded into db.")
 
     return output
 
@@ -992,10 +1064,11 @@ def process_simulation_output(
             ]
 
             rd["shape"] = shape_out
-            for bus in route.buses:
+
+            for bus in route.transporters:
                 br[bus.id] = {
-                    "Timeout": bus.bus_time_log,
-                    "PassengerChangesOverTime": bus.bus_passenger_changes,
+                    "Timeout": bus.time_log,
+                    "PassengerChangesOverTime": bus.passenger_changes,
                 }
         elif route.get_type() == "Walk":
             rd["Walkout"] = route.walk_time_log
@@ -1087,6 +1160,17 @@ def get_data(
     sim_trips = []
     sim_stations = {}
 
+    # Add Suncorp Stadium to sim_stations
+    suncorp = Station(
+        env,
+        "-1",
+        "Suncorp Stadium",
+        (-27.464711701302356, 153.00957411105185),
+        1,
+        env_start,
+    )
+    sim_stations.update({"-1": suncorp})
+
     for route in db_routes:
         # Get trip_ids that run on this day for this particular route
         db_trips = TripM.objects.all().filter(service_id__in=calendars, route_id=route)
@@ -1131,6 +1215,11 @@ def get_data(
                         1,
                         env_start,
                     )
+                    if new_station.name in STATION_NAMES:
+                        print("Duplicated station ", new_station.name, " found. Likely ok as stops on mult routes or mult route versions")
+                    else:
+                        STATION_NAMES[new_station.name] = new_station
+
                     sim_stations[timetable_station.station_id] = new_station
                     if new_station.id not in route_stations.keys():
                         route_stations[timetable_station.station_id] = new_station
@@ -1164,28 +1253,56 @@ def get_data(
     walks_from_stops = {}
     for walk_id in walks:
         if walk_id not in sim_routes:
+            # Create stations used in walk if they dont already exist
+
+            if walks[walk_id][0] not in sim_stations:
+                print(walks[walk_id][0])
+                # Get station from db
+                station = StationM.objects.filter(station_id=walks[walk_id][0]).first()
+                sim_stations[walks[walk_id][0]] = Station(
+                    env,
+                    walks[walk_id][0],
+                    walks[walk_id][0],
+                    (station.lat, station.long),
+                    1,
+                    env_start,
+                )
+
+            if walks[walk_id][1] not in sim_stations:
+                print(sim_stations)
+                print(walks[walk_id][1])
+                # Get station from db
+                station = StationM.objects.filter(station_id=walks[walk_id][1]).first()
+                sim_stations[walks[walk_id][1]] = Station(
+                    env,
+                    walks[walk_id][1],
+                    walks[walk_id][1],
+                    (station.lat, station.long),
+                    1,
+                    env_start,
+                )
+
             stops = [
                 sim_stations[walks[walk_id][0]],
                 sim_stations[walks[walk_id][1]],
             ]
             walk = Walk(env, env_start, walk_id, stops, 0, [])
             walks_from_stops[(walks[walk_id][0], walks[walk_id][1])] = walk
-            #  sim_routes[walk_id] = walk  # TODO: Add walks to routes
+            sim_routes[walk_id] = walk
 
     sim_itineraries = []
     for itinerary in itineraries:
         routes = []
         for route in itinerary["routes"]:
-            if STATION_ITINERARY_LOOKUP.get(sim_routes[route["route_id"]]):
-                STATION_ITINERARY_LOOKUP[sim_routes[route["route_id"]]].append(
-                    itinerary["itinerary_id"]
-                )
-            else:
-                STATION_ITINERARY_LOOKUP[sim_routes[route["route_id"]]] = [
-                    itinerary["itinerary_id"]
-                ]
-
             if route["route_id"] != "walk":
+                for station in sim_routes[route["route_id"]].stops:
+                    if STATION_ITINERARY_LOOKUP.get(station):
+                        STATION_ITINERARY_LOOKUP[station].append(
+                            len(ITINERARIES)
+                        )
+                    else:
+                        STATION_ITINERARY_LOOKUP[station] = [len(ITINERARIES)]
+
                 routes.append(
                     (
                         sim_routes[route["route_id"]],
@@ -1259,6 +1376,65 @@ def get_data(
     return stations_out, trips_out, routes_out, itineraries_out, suburbs_out
 
 
+def load_bus_or_train_route_into_db(route, sim_output):
+    for station in route.stops:
+        for transporter in route.transporters:
+            for stop_name, time in transporter.time_log.items():
+                for time, passenger_count in transporter.passenger_changes.items():
+                    bus_time_out = TransporterTimeOut.objects.create(
+                        sim_id=sim_output,
+                        stop_name=stop_name,
+                        time=time,
+                    )
+                    bus_time_out.save()
+
+                    passenger_changes = PassengerChanges.objects.create(
+                        sim_id=sim_output,
+                        time=time,
+                        passenger_count=passenger_count,
+                    )
+                    passenger_changes.save()
+
+                    transporter_on_route = TransporterOnRouteInfo.objects.create(
+                        transporter_id=transporter.id,
+                        sim_id=sim_output,
+                        transporter_timeout=TransporterTimeOut.objects.order_by(
+                            "-transporter_timeout_id"
+                        ).first(),
+                        transporter_passenger_changes=PassengerChanges.objects.order_by(
+                            "-passenger_changes_id"
+                        ).first(),
+                    )
+                    transporter_on_route.save()
+
+                    route_sim = RouteSim.objects.create(
+                        route_id=route.id,
+                        sim_id=sim_output,
+                        method=route.get_type(),
+                        transporters_on_route=TransporterOnRouteInfo.objects.order_by(
+                            "-transporter_id"
+                        ).first(),
+                        stations=StationSim.objects.filter(
+                            sim_id=sim_output, name=station.name
+                        ).first(),
+                    )
+                    route_sim.save()
+
+
+def load_walk_into_db(walk: Walk, sim_output):
+    walk_sim = WalkSim.objects.create(
+        walk_id=walk.id,
+        from_station=StationM.objects.filter(
+            name=walk.first_stop.name, station_id=walk.first_stop.id
+        ).first(),
+        to_station=StationM.objects.filter(
+            name=walk.last_stop.name, station_id=walk.last_stop.id
+        ).first(),
+        duration=0,
+    )
+    walk_sim.save()
+
+
 def load_sim_data_into_db(
     stations: list[Station],
     routes: list[Route],
@@ -1302,51 +1478,12 @@ def load_sim_data_into_db(
 
     # Create Routes
     for route in routes:
-        for station in route.stops:
-            for bus in route.buses:
-                for stop_name, time in bus.bus_time_log.items():
-                    for time, passenger_count in bus.bus_passenger_changes.items():
-                        bus_time_out = BusTimeOut.objects.create(
-                            sim_id=sim_output,
-                            stop_name=stop_name,
-                            time=time,
-                        )
-                        bus_time_out.save()
-
-                        passenger_changes = PassengerChanges.objects.create(
-                            sim_id=sim_output,
-                            time=time,
-                            passenger_count=passenger_count,
-                        )
-                        passenger_changes.save()
-
-                        bus_on_route = BusOnRouteInfo.objects.create(
-                            bus_id=bus.id,
-                            sim_id=sim_output,
-                            bus_timeout=BusTimeOut.objects.order_by(
-                                "-bustimeout_id"
-                            ).first(),
-                            bus_passenger_changes=PassengerChanges.objects.order_by(
-                                "-passenger_changes_id"
-                            ).first(),
-                        )
-                        bus_on_route.save()
-
-                        route_sim = RouteSim.objects.create(
-                            route_id=route.id,
-                            sim_id=sim_output,
-                            method=route.get_type(),
-                            buses_on_route=BusOnRouteInfo.objects.order_by(
-                                "-bus_id"
-                            ).first(),
-                            stations=StationSim.objects.filter(
-                                sim_id=sim_output, name=station.name
-                            ).first(),
-                        )
-                        route_sim.save()
+        if route.get_type() == "BusRoute" or route.get_type() == "TrainRoute":
+            load_bus_or_train_route_into_db(route, sim_output)
+        elif route.get_type() == "Walk":
+            load_walk_into_db(route, sim_output)
 
     # Create Itineraries
-
     for itinerary in itineraries:
         for route in itinerary.routes:
             itin = ItinerarySim.objects.create(
@@ -1354,144 +1491,160 @@ def load_sim_data_into_db(
                 sim_id=sim_output,
                 routes=RouteSim.objects.order_by("-route_sim_id").first(),
             )
-
             itin.save()
 
 
 def generate_itins(user_data: dict) -> dict:
-    """
-    Collects itineraries for given user input data and returns them in the required format for running simulations
-    Warning: This will call the TripGo API in bulk
-    """
-    # format user data how we need it
-    end_time = convert_epoch(
-        user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"]
-    )
-    start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
-    active_stations = user_data["active_stations"]
-
-    # TODO: move environment variables
-    modes = ["pt_pub_bus"]
-    api = "https://api.tripgo.com/v1/routing.json"
-    key = "2286d1ca160dd724a3da27802c7aba91"
-    endStation = "(-27.4979739, 153.0111389)\"UQ Chancellor's Place, zone D"
-    num_itins = 1
-
-    # inititalise variables
-    itin_id = 0
     itins_collected = []
-    failed_stations = []
-    # collect itineraries for each active station
-    for station in active_stations:
-        parameters = {
-            "v": "11",
-            "from": f'({station["lat"]}, {station["long"]})',
-            "to": endStation,
-            "modes": modes,
-            "bestOnly": "true",
-            "includeStops": "false",
-            "departAfter": start_time,
-            "arriveBefore": end_time,
-        }
-        headers = {"X-TripGo-Key": key}
-        data = callTripGoAPI(api, parameters, headers)
 
-        format_data = formatItins(
-            data, num_itins, station["station_id"].zfill(6), itin_id
-        )
-        print("formatted data ", format_data)
-        if format_data:
-            itins_collected += format_data
-            itin_id += num_itins
-        else:
-            failed_stations.append(station["station_id"])
+    for station in user_data["active_stations"]:
+        itins = INPUT_ITINS.get(station["station_id"], None)
+        for itin in itins:
+            itins_collected.append(itin)
 
-    return {"itineraries": itins_collected, "failed_stations": failed_stations}
+    return {"itineraries": itins_collected}
 
 
-def convert_epoch(time: int, date_str: str) -> int:
-    """
-    converts a given time in seconds from midnight and a date string of format "yyyy--mm-dd"
-    to seconds since 1970
-    """
-    epoch_date = int(datetime.strptime(date_str, "%Y-%m-%d").timestamp())
-    epoch_time = epoch_date + time
-    return epoch_time
+#     """
+#     Collects itineraries for given user input data and returns them in the required format for running simulations
+#     Warning: This will call the TripGo API in bulk
+#     """
+#     # format user data how we need it
+#     end_time = convert_epoch(
+#         user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"]
+#     )
+#     start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
+#     active_stations = user_data["active_stations"]
+#     print(start_time, end_time)
+
+#     # TODO: move environment variables
+#     modes = ["pt_pub_bus", "wa_"]
+#     api = "https://api.tripgo.com/v1/routing.json"
+#     key = "2286d1ca160dd724a3da27802c7aba91"
+#     endStation = '(-27.46638, 153.01835)"Roma Street Stop 125 at Transit Centre"'
+#     num_itins = 1
+
+#     # inititalise variables
+#     itin_id = 0
+#     itins_collected = []
+#     failed_stations = []
+#     # collect itineraries for each active station
+#     for station in active_stations:
+#         # Check if itinerary for station is in db
+
+#         parameters = {
+#             "v": "11",
+#             "from": f'({station["lat"]}, {station["long"]})',
+#             "to": endStation,
+#             "modes": modes,
+#             "onlyAllowModes" : modes,
+#             "bestOnly": "true",
+#             "includeStops": "false",
+#             "departAfter": start_time,
+#             "arriveBefore": end_time,
+#         }
+#         headers = {"X-TripGo-Key": key}
+#         data = callTripGoAPI(api, parameters, headers)
+#         print("Data ", data)
+#         format_data = formatItins(
+#             data, num_itins, station["station_id"].zfill(6), itin_id
+#         )
+#         print("Formatted data ", format_data)
+#         if format_data:
+#             itins_collected += format_data
+#             itin_id += num_itins
+#         else:
+#             failed_stations.append(station["station_id"])
+
+#     return {"itineraries": itins_collected, "failed_stations": failed_stations}
 
 
-def does_contain(itin, itins):
-    for i in itins:
-        if i["routes"] == itin["routes"]:
-            return True
-    return False
+# def convert_epoch(time: int, date_str: str) -> int:
+#     """
+#     converts a given time in seconds from midnight and a date string of format "yyyy--mm-dd"
+#     to seconds since 1970
+#     """
+#     epoch_date = int(datetime.strptime(date_str, "%Y-%m-%d").timestamp())
+#     epoch_time = epoch_date + time
+#     return epoch_time
 
 
-def formatItins(response, num_itins, start_station_id, start_itin_id):
-    """
-    Formats itineraries from response of a single api call
-    """
-    itins = []
-    itin_id = start_itin_id
-    for group in response["groups"]:
-        options = group["trips"]
-        options = sorted(options, key=lambda k: k["weightedScore"])
-        trips_parsed = 0
-        for trip in options:
-            exit = False
-            routes = []
-            count = 0
-            for segment in trip["segments"]:
-                # Want to find bus/walk route
-                hash = segment["segmentTemplateHashCode"]
-                # Now find associated segmentTemplate
-                template = None
-                for segTemp in response["segmentTemplates"]:
-                    if segTemp["hashCode"] == hash:
-                        template = segTemp
-                        break
-                route_id = ""
-                if "WALK" in template["action"].upper():
-                    route_id = "walk"
-                elif "TAKE" in template["action"].upper():
-                    route_id = segment["routeID"]
-
-                # Now want to get from where to where
-                from_station = template["from"]["stopCode"]
-                if count == 0 and from_station != start_station_id:
-                    # Coords where too close to another stop and it tried to make that the start
-                    exit = True  # for double break
-                    break
-                to_station = template["to"]["stopCode"]
-                route = {"route_id": route_id, "start": from_station, "end": to_station}
-                count += 1
-                routes.append(route)
-            if exit:
-                exit = False
-                continue
-            itin = {"itinerary_id": itin_id, "routes": routes}
-            if not does_contain(itin, itins):
-                itin_id += 1
-                trips_parsed += 1
-                itins.append(itin)
-                if trips_parsed >= num_itins:
-                    break
-    return itins
+# def does_contain(itin, itins):
+#     for i in itins:
+#         if i["routes"] == itin["routes"]:
+#             return True
+#     return False
 
 
-def callTripGoAPI(api, parameters, headers):
-    """
-    Calls the TripGoAPI and returns the response
-    """
-    response = requests.get(api, params=parameters, headers=headers)
-    if response.status_code == 200:
-        print("sucessfully fetched TripGo data")
-        return response.json()
-    else:
-        return f"failed to fetch TripGo data: {response.status_code}"
+# def formatItins(response, num_itins, start_station_id, start_itin_id):
+#     """
+#     Formats itineraries from response of a single api call
+#     """
+#     itins = []
+#     itin_id = start_itin_id
+#     for group in response["groups"]:
+#         options = group["trips"]
+#         options = sorted(options, key=lambda k: k["weightedScore"])
+#         trips_parsed = 0
+#         for trip in options:
+#             exit = False
+#             routes = []
+#             count = 0
+#             for segment in trip["segments"]:
+#                 # Want to find bus/walk route
+#                 hash = segment["segmentTemplateHashCode"]
+#                 # Now find associated segmentTemplate
+#                 template = None
+#                 for segTemp in response["segmentTemplates"]:
+#                     if segTemp["hashCode"] == hash:
+#                         template = segTemp
+#                         break
+#                 route_id = ""
+#                 if "WALK" in template["action"].upper():
+#                     route_id = "walk"
+#                 elif "TAKE" in template["action"].upper():
+#                     route_id = segment["routeID"]
 
+
+#                 # Now want to get from where to where
+#                 from_station = template["from"]["stopCode"].lstrip('0')
+#                 if count == 0 and from_station != (str(start_station_id).lstrip("0")):
+#                     # Coords where too close to another stop and it tried to make that the start
+#                     print(from_station, str(start_station_id).lstrip("0"), type(start_itin_id))
+#                     exit = True  # for double break
+#                     break
+#                 to_station = template["to"]["stopCode"].lstrip('0')
+#                 route = {"route_id": route_id, "start": from_station, "end": to_station}
+#                 count += 1
+#                 routes.append(route)
+#             if exit:
+#                 exit = False
+#                 continue
+#             itin = {"itinerary_id": itin_id, "routes": routes}
+#             if not does_contain(itin, itins):
+#                 itin_id += 1
+#                 trips_parsed += 1
+#                 itins.append(itin)
+#                 if trips_parsed >= num_itins:
+#                     break
+#     print(itins)
+#     return itins
+
+
+# def callTripGoAPI(api, parameters, headers):
+#     """
+#     Calls the TripGoAPI and returns the response
+#     """
+#     response = requests.get(api, params=parameters, headers=headers)
+#     if response.status_code == 200:
+#         print("sucessfully fetched TripGo data")
+#         return response.json()
+#     else:
+#         return f"failed to fetch TripGo data: {response.status_code}"
 
 
 #### TRAIN RELATED TESTS ####
+
 
 def test_sim_with_trains_basic():
     """
@@ -1589,7 +1742,7 @@ def test_sim_with_trains_collision():
 
     # Create Itineraries.
     ITINERARIES.append(Itinerary(env, 0, [(RouteA, StationC)]))
-    ITINERARIES.append(Itinerary(env, 0, [(RouteB, StationD)]))
+    ITINERARIES.append(Itinerary(env, 1, [(RouteB, StationD)]))
 
     STATION_ITINERARY_LOOKUP[StationA] = [0]
     STATION_ITINERARY_LOOKUP[StationB] = [0, 1]
@@ -1598,6 +1751,7 @@ def test_sim_with_trains_collision():
 
     env.run(100)
 
+
 #### UNCOMMENT IF YOU WOULD LIKE TO DO TESTING
-# if __name__ == "__main__":
-#     test_sim_with_trains_collision()
+if __name__ == "__main__":
+    test_sim_with_trains_collision()

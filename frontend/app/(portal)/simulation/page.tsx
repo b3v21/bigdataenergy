@@ -33,7 +33,7 @@ const Simulation = () => {
 	// Stores simulation details
 	const [simulationSettings, setSimulationSettings] =
 		useState<SimulationSettings>({
-			date: new Date().toISOString().split('T')[0],
+			date: new Date('July 12, 2023').toISOString().split('T')[0],
 			startTime: 355,
 			duration: 30,
 			selectedSuburbs: [],
@@ -72,7 +72,7 @@ const Simulation = () => {
 		if (!simulationResult) return null;
 
 		return (
-			// Formatting data for plotly
+			// Formatting data for Plotly
 			Object.entries(simulationData?.Routes)
 				.map((route) =>
 					Object.entries((route as any)[1].stations).map(

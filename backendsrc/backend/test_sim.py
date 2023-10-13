@@ -20,8 +20,8 @@ from db.models import (
     RouteSim,
     StationSim,
     ItinerarySim,
-    BusOnRouteInfo,
-    BusTimeOut,
+    TransporterOnRouteInfo,
+    TransporterTimeOut,
     PassengerChanges,
 )  # noqa: E402
 from db.serializers import (
@@ -187,7 +187,7 @@ def test_basic_sim_with_models():
             "active_suburbs": ["test suburb"],
             "active_stations": ["0"],
         },
-        2,
+        0,
     )
 
 
@@ -199,14 +199,17 @@ def test_sim_with_db_models_412():
             "itineraries": [
                 {
                     "itinerary_id": 0,
-                    "routes": [{"route_id": "412-3136", "start": "0", "end": "1850"}],
+                    "routes": [
+                        {"route_id": "412-3136", "start": "0", "end": "1850"},
+                        {"route_id": "walk", "start": "1850", "end": "1815"},
+                    ],
                 }
             ],
             "snapshot_date": "2023-08-01",
             "active_suburbs": ["St Lucia"],
             "active_stations": ["1815"],
         },
-        1,
+        3,
     )
 
 
@@ -221,4 +224,4 @@ def test_sim_output_serializer():
 
 
 if __name__ == "__main__":
-    test_sim_output_serializer()
+    test_sim_with_db_models_412()

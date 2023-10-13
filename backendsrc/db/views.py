@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from backend.sim import run_simulation, generate_itins
-from backend.queries import get_station_suburbs, get_cached_itineraries
+from backend.queries import get_station_suburbs
 from logging import warning
 
 
@@ -124,55 +124,12 @@ def itin_check(request: Request) -> Response:
         warning(f"No user data received.")
 
     print(f"Request for itineraries received")
-    
+
     try:
         output = generate_itins(request.data)
-        print("the output is", output)
 
     except:
         return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    print(output)
-
-    return Response(data=output, status=status.HTTP_201_CREATED)
-
-
-@api_view(["GET"])
-def cached_itineraries(request: Request) -> Response:
-    """
-    This is the request responsible for returning the cached itineraries
-    to be presented to the user in the frontend.
-
-    request.data is currently expected to be of the following form:
-    [
-        {
-            "start" : "station_id",
-            "end" : "station_id",
-        }, ...
-    ]
-
-    return json of the form:
-    [
-        {
-            "itinerary_id" : 0,
-            "routes" : [
-                {
-                    "route_id": "412-3136",
-                    "start": "0",
-                    "end": "1850"
-                }
-            ]
-        }
-    ]
-    """
-    if not request.data:
-        warning(
-            "No station data was given to check cached itineraries, see views.py for correct request format"
-        )
-
-    print(f"Collecting cached itineraries from backend")
-
-    output = get_cached_itineraries(request.data)
 
     return Response(data=output, status=status.HTTP_201_CREATED)
 
