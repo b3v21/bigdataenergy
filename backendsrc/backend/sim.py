@@ -421,7 +421,6 @@ class Bus(Transporter):
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
     
     def current_stop(self) -> Station:
-        print(len(self.trip.timetable), self.location_index)
         return STATION_NAMES[self.trip.timetable[self.location_index][0]]
 
     def bus_instance(self, bus_route: BusRoute) -> None:
@@ -437,8 +436,7 @@ class Bus(Transporter):
                     f"{self.current_stop().name} ({self.current_stop().id})"
                 ] = (self.env.now + self.env_start)
 
-                print("Should end at: ", bus_route.get_current_stop(self).name, bus_route.last_stop.name)
-                if self.current_stop() != bus_route.last_stop:
+                if self.current_stop().name != self.trip.timetable[-1][0]:
                     prev_passenger_count = self.passenger_count()
 
                     yield self.env.process(
@@ -468,7 +466,6 @@ class Bus(Transporter):
                         )
                     break
 
-                print(self.trip.timetable, len(self.trip.timetable), self.location_index)
                 previous_stop = STATION_NAMES[self.trip.timetable[self.location_index][0]]
                 self.move_to_next_stop(len(self.trip.timetable))
                 
@@ -486,13 +483,6 @@ class Bus(Transporter):
                     travel_time = 1
 
                 if travel_time < 0:
-                    print(previous_stop.name, cur_stop.name)
-                    print("Bad travel time: ", travel_time)
-                    print(self.name)
-                    print(self.trip.timetable)
-                    for stop in bus_route.stops:
-                        print(stop.name)
-                    print(self.trip.timetable[index], self.trip.timetable[index - 1])
                     if DEBUG:
                         print("***ERROR*** Travel time <= 0!!!")
                         exit()
@@ -686,7 +676,7 @@ class BusRoute(Route):
                             name=f"B{self.transporters_spawned}_{self.name}",
                             trip=trip_info,
                             route=self,
-                            location_index=self.get_stop_with_name(station_info[0]),
+                            location_index=trip_info.timetable.index(station_info),
                             people=[],
                         )
                         self.transporters_spawned += 1
@@ -715,6 +705,9 @@ class BusRoute(Route):
     def get_current_stop(self, bus: Bus) -> Station:
         return self.stops[bus.location_index]
 
+    """
+    Returns index of that stop in self.stop
+    """
     def get_stop_with_name(self, name: str) -> Station:
         return [stop.name for stop in self.stops].index(name)
 
@@ -1216,7 +1209,7 @@ def get_data(
                         env_start,
                     )
                     if new_station.name in STATION_NAMES:
-                        print("Duplicated station ", new_station.name, " found. Likely ok as stops on mult routes or mult route versions")
+                        pass #Likely OK as stations may appear on multiple iterations of same route, etc, etc
                     else:
                         STATION_NAMES[new_station.name] = new_station
 
