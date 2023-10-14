@@ -1025,7 +1025,6 @@ def process_simulation_output(
     station_groups = {}
     for group in people:
         log = group.people_log
-        print(log)
         index = 0
         for time, entry in log.items():
             try:
@@ -1037,7 +1036,6 @@ def process_simulation_output(
                 else:
                     #Is the last entry in log
                     end_sim = station.env_start + station.env.now
-                    print("end sim", end_sim)
                     if entry[1] not in station_waits:
                         station_waits[entry[1]] = [end_sim - time]
                     else:
@@ -1050,11 +1048,10 @@ def process_simulation_output(
                 #Format error
                 pass
             index += 1
-    print(station_groups)
-    print(station_waits)
+
 
     destination = itineraries[0].routes[-1][1]
-    print(destination)
+
     num_arrived = destination.num_people()
     num_late = People.num_in_simulation - num_arrived
 
@@ -1078,10 +1075,9 @@ def process_simulation_output(
             avg_wait_times[station.id] = sum(station_waits[station.id])/len(station_waits[station.id])
         else:
             sd["avg_wait"] = "N/A"
-        print(station.id, sd["avg_wait"])
         sd["PeopleChangesOverTime"] = station.people_over_time
     data = np.array(list(avg_wait_times.values()))
-    print(data)
+
     mean = np.mean(data)
     std = np.std(data)
     
@@ -1091,7 +1087,7 @@ def process_simulation_output(
         z = (x - mean) / std
         if abs(z) > threshold and x > mean:
             outliers.append(x)
-    print("Outliers  : ", outliers)
+
     for station in stations:
         sd = output["Stations"][station.id]
         if sd["avg_wait"] in outliers:
@@ -1099,10 +1095,10 @@ def process_simulation_output(
             bottles[station.id] = True
         else:
             sd["bottleneck"] = False
-    print(bottles)
+
 
     percentage_arrived = (num_arrived)/(num_late + num_arrived) * 100
-    print(percentage_arrived, num_arrived, num_late) #---
+
 
     for itinerary in itineraries:
         output["Itineraries"][itinerary.id] = {}
