@@ -8,7 +8,7 @@ import django
 import os
 import sys
 from datetime import time, date, datetime
-from queries import ALLOWED_SUBURBS
+from backend.queries import ALLOWED_SUBURBS
 import time as t
 import requests
 import json
