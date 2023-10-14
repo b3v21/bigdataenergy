@@ -42,7 +42,7 @@ MINUTES_IN_DAY = 1440
 MINUTES_IN_HOUR = 60
 DEBUG = True
 ROUTE_NAMES = ["BusRoute", "TrainRoute"]
-LOAD_TIMES = {"Train":0.0025, "Bus":0.1}
+LOAD_TIMES = {"Train": 0.0025, "Bus": 0.1}
 
 # These are the hardcoded itineraries that will appear on the frontend
 INPUT_ITINS = {}
@@ -158,8 +158,6 @@ class People:
         self.current_route_in_itin_index = current_route_in_itin_index
         self.people_log = {}
         People.all_people.append(self)
-    
-    
 
     def log(self, where: tuple[str, int]) -> None:
         self.people_log[self.env.now + self.env_start] = where
@@ -210,7 +208,7 @@ class Station:
         self.log_cur_people()
 
     def busy_level(self) -> int:
-        return ceil(self.num_people() / 100) #May be tweaked
+        return ceil(self.num_people() / 100)  # May be tweaked
 
     def log_cur_people(self) -> None:
         self.people_over_time[self.env.now + self.env_start] = self.num_people()
@@ -272,8 +270,6 @@ class Station:
             ):
                 group.next_route()
 
-
-
             if (
                 ITINERARIES[group.itinerary_index].get_current_type(group)
                 in ROUTE_NAMES
@@ -281,7 +277,7 @@ class Station:
                 self.people.append(group)
             elif ITINERARIES[group.itinerary_index].get_current_type(group) == "Walk":
                 # Queue people all up to walk
-                
+
                 time_to_wait = 0.5
                 self.people.append(group)
                 self.env.process(
@@ -350,15 +346,22 @@ class Transporter(ABC):
         num_people_to_board = sum([p.get_num_people() for p in people_to_ride])
 
         avg_load_time = LOAD_TIMES[self.get_type()] * num_people_to_board
-        std_dev_load_time = LOAD_TIMES[self.get_type()] * num_people_to_board * 0.1 * ceil(station.busy_level()/5)
+        std_dev_load_time = (
+            LOAD_TIMES[self.get_type()]
+            * num_people_to_board
+            * 0.1
+            * ceil(station.busy_level() / 5)
+        )
         load_time = 0
-        #print("Load time: ", avg_load_time, std_dev_load_time)
-        while load_time <= avg_load_time or load_time > avg_load_time + std_dev_load_time:
+        # print("Load time: ", avg_load_time, std_dev_load_time)
+        while (
+            load_time <= avg_load_time or load_time > avg_load_time + std_dev_load_time
+        ):
             if std_dev_load_time < 1:
                 load_time = avg_load_time
                 break
             load_time = round(np.random.gumbel(avg_load_time, std_dev_load_time), 1)
-        #print("Load time: ", avg_load_time, std_dev_load_time, load_time)
+        # print("Load time: ", avg_load_time, std_dev_load_time, load_time)
         yield self.env.timeout(load_time)
         self.people += people_to_ride
 
@@ -396,17 +399,23 @@ class Transporter(ABC):
                 )
             return
 
-
         avg_load_time = LOAD_TIMES[self.get_type()] * num_passengers_deloaded
-        std_dev_load_time = (LOAD_TIMES[self.get_type()] * num_passengers_deloaded * 0.1) * station.busy_level()/5
+        std_dev_load_time = (
+            (LOAD_TIMES[self.get_type()] * num_passengers_deloaded * 0.1)
+            * station.busy_level()
+            / 5
+        )
         deload_time = 0
-        #print("Deload Time: ", avg_load_time, station.busy_level())
-        while deload_time <= avg_load_time or deload_time > avg_load_time + std_dev_load_time:
+        # print("Deload Time: ", avg_load_time, station.busy_level())
+        while (
+            deload_time <= avg_load_time
+            or deload_time > avg_load_time + std_dev_load_time
+        ):
             if std_dev_load_time < 1:
                 deload_time = avg_load_time
                 break
             deload_time = round(np.random.gumbel(avg_load_time, std_dev_load_time), 1)
-        #print("Deload Time: ", avg_load_time, station.busy_level(), deload_time)
+        # print("Deload Time: ", avg_load_time, station.busy_level(), deload_time)
         yield self.env.timeout(deload_time)
 
         if DEBUG:
@@ -456,7 +465,7 @@ class Bus(Transporter):
 
     def __str__(self) -> str:
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
-    
+
     def current_stop(self) -> Station:
         return STATION_NAMES[self.trip.timetable[self.location_index][0]]
 
@@ -476,13 +485,9 @@ class Bus(Transporter):
                 if self.current_stop().name != self.trip.timetable[-1][0]:
                     prev_passenger_count = self.passenger_count()
 
-                    yield self.env.process(
-                        self.load_passengers(self.current_stop())
-                    )
+                    yield self.env.process(self.load_passengers(self.current_stop()))
 
-                    yield self.env.process(
-                        self.deload_passengers(self.current_stop())
-                    )
+                    yield self.env.process(self.deload_passengers(self.current_stop()))
 
                     if prev_passenger_count != self.passenger_count():
                         self.passenger_changes[
@@ -490,9 +495,7 @@ class Bus(Transporter):
                         ] = self.passenger_count()
 
                 else:
-                    yield self.env.process(
-                        self.deload_passengers(self.current_stop())
-                    )
+                    yield self.env.process(self.deload_passengers(self.current_stop()))
                     self.passenger_changes[
                         self.env.now + self.env_start
                     ] = self.passenger_count()
@@ -503,10 +506,11 @@ class Bus(Transporter):
                         )
                     break
 
-
-                previous_stop = STATION_NAMES[self.trip.timetable[self.location_index][0]]
+                previous_stop = STATION_NAMES[
+                    self.trip.timetable[self.location_index][0]
+                ]
                 self.move_to_next_stop(len(self.trip.timetable))
-                
+
                 cur_stop = self.current_stop()
 
                 index = 0
@@ -527,15 +531,22 @@ class Bus(Transporter):
                         exit()
                     expected_travel_time = 1
 
-                std_dev_travel_time = 4 * ceil(previous_stop.busy_level()/10) #May tweak this base number
+                std_dev_travel_time = 4 * ceil(
+                    previous_stop.busy_level() / 10
+                )  # May tweak this base number
                 travel_time = 0
-                #print("Travel: ", expected_travel_time, std_dev_travel_time)
-                while travel_time <= expected_travel_time or travel_time > expected_travel_time + std_dev_travel_time:
+                # print("Travel: ", expected_travel_time, std_dev_travel_time)
+                while (
+                    travel_time <= expected_travel_time
+                    or travel_time > expected_travel_time + std_dev_travel_time
+                ):
                     if std_dev_travel_time < 1:
                         travel_time = expected_travel_time
                         break
-                    travel_time = ceil(np.random.gumbel(expected_travel_time, std_dev_travel_time))
-                #print("Travel: ", expected_travel_time, std_dev_travel_time, travel_time)
+                    travel_time = ceil(
+                        np.random.gumbel(expected_travel_time, std_dev_travel_time)
+                    )
+                # print("Travel: ", expected_travel_time, std_dev_travel_time, travel_time)
 
             yield self.env.timeout(travel_time)
             if DEBUG:
@@ -628,15 +639,22 @@ class Train(Transporter):
                         exit()
                     expected_travel_time = 1
 
-            std_dev_travel_time = 4 * ceil(previous_stop.busy_level()/10) #May tweak this base number
+            std_dev_travel_time = 4 * ceil(
+                previous_stop.busy_level() / 10
+            )  # May tweak this base number
             travel_time = 0
-            #print("Train: ", expected_travel_time, std_dev_travel_time)
-            while travel_time <= expected_travel_time or travel_time > expected_travel_time + std_dev_travel_time:
+            # print("Train: ", expected_travel_time, std_dev_travel_time)
+            while (
+                travel_time <= expected_travel_time
+                or travel_time > expected_travel_time + std_dev_travel_time
+            ):
                 if std_dev_travel_time < 1:
-                        travel_time = expected_travel_time
-                        break
-                travel_time = ceil(np.random.gumbel(expected_travel_time, std_dev_travel_time))
-            #print("Train: ", expected_travel_time, std_dev_travel_time, travel_time)
+                    travel_time = expected_travel_time
+                    break
+                travel_time = ceil(
+                    np.random.gumbel(expected_travel_time, std_dev_travel_time)
+                )
+            # print("Train: ", expected_travel_time, std_dev_travel_time, travel_time)
             yield self.env.timeout(travel_time)
             self.time_log[train_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
@@ -768,6 +786,7 @@ class BusRoute(Route):
     """
     Returns index of that stop in self.stop
     """
+
     def get_stop_with_name(self, name: str) -> Station:
         return [stop.name for stop in self.stops].index(name)
 
@@ -888,12 +907,17 @@ class Walk(Route):
         self.walk_time_log[people] = [self.env.now + self.env_start, None]
         self.people.append(people)
         self.stops[0].log_cur_people()
-        expected_walk_time = self.walk_time() * self.walking_congestion #Change this to lookup ---
-        std_dev_walk_time = expected_walk_time * 1/3 * self.get_num_people()/100
+        expected_walk_time = (
+            self.walk_time() * self.walking_congestion
+        )  # Change this to lookup ---
+        std_dev_walk_time = expected_walk_time * 1 / 3 * self.get_num_people() / 100
         walk_time = 0
-        while walk_time < expected_walk_time or walk_time > expected_walk_time + std_dev_walk_time:
+        while (
+            walk_time < expected_walk_time
+            or walk_time > expected_walk_time + std_dev_walk_time
+        ):
             walk_time = ceil(np.random.gumbel(expected_walk_time, std_dev_walk_time))
-        print("Will walk for: ",expected_walk_time, std_dev_walk_time, walk_time)
+        print("Will walk for: ", expected_walk_time, std_dev_walk_time, walk_time)
         yield self.env.timeout(walk_time)
         self.people.remove(people)
         self.walk_time_log[people][1] = self.env.now + self.env_start
@@ -1165,9 +1189,11 @@ def process_simulation_output(
                     if entry[1] not in station_waits:
                         station_waits[entry[1]] = [list(log.keys())[index + 1] - time]
                     else:
-                        station_waits[entry[1]].append(list(log.keys())[index + 1] - time)
+                        station_waits[entry[1]].append(
+                            list(log.keys())[index + 1] - time
+                        )
                 else:
-                    #Is the last entry in log
+                    # Is the last entry in log
                     end_sim = station.env_start + station.env.now
                     if entry[1] not in station_waits:
                         station_waits[entry[1]] = [end_sim - time]
@@ -1178,17 +1204,15 @@ def process_simulation_output(
                 else:
                     station_groups[entry[1]] += 1
             except:
-                #Format error
+                # Format error
                 pass
             index += 1
-
 
     destination = itineraries[0].routes[-1][1]
 
     num_arrived = destination.num_people()
     num_late = People.num_in_simulation - num_arrived
 
-    
     """
     Calculating outliers only looks at stations who HAVE an average waiting time.
     Stations without one have N/A and would polute data set with impossible to beat times.
@@ -1204,8 +1228,12 @@ def process_simulation_output(
             "long": station.pos[1],
         }
         if station.id in station_waits:
-            sd["avg_wait"] = sum(station_waits[station.id])/len(station_waits[station.id])
-            avg_wait_times[station.id] = sum(station_waits[station.id])/len(station_waits[station.id])
+            sd["avg_wait"] = sum(station_waits[station.id]) / len(
+                station_waits[station.id]
+            )
+            avg_wait_times[station.id] = sum(station_waits[station.id]) / len(
+                station_waits[station.id]
+            )
         else:
             sd["avg_wait"] = "N/A"
         sd["PeopleChangesOverTime"] = station.people_over_time
@@ -1213,8 +1241,8 @@ def process_simulation_output(
 
     mean = np.mean(data)
     std = np.std(data)
-    
-    threshold = 1 # May need tweaking ---
+
+    threshold = 1  # May need tweaking ---
     outliers = []
     for x in data:
         z = (x - mean) / std
@@ -1229,9 +1257,7 @@ def process_simulation_output(
         else:
             sd["bottleneck"] = False
 
-
-    percentage_arrived = (num_arrived)/(num_late + num_arrived) * 100
-
+    percentage_arrived = (num_arrived) / (num_late + num_arrived) * 100
 
     for itinerary in itineraries:
         output["Itineraries"][itinerary.id] = {}
@@ -1355,7 +1381,7 @@ def get_data(
                         env_start,
                     )
                     if new_station.name in STATION_NAMES:
-                        pass #Likely OK as stations may appear on multiple iterations of same route, etc, etc
+                        pass  # Likely OK as stations may appear on multiple iterations of same route, etc, etc
                     else:
                         STATION_NAMES[new_station.name] = new_station
 
@@ -1436,9 +1462,7 @@ def get_data(
             if route["route_id"] != "walk":
                 for station in sim_routes[route["route_id"]].stops:
                     if STATION_ITINERARY_LOOKUP.get(station):
-                        STATION_ITINERARY_LOOKUP[station].append(
-                            len(ITINERARIES)
-                        )
+                        STATION_ITINERARY_LOOKUP[station].append(len(ITINERARIES))
                     else:
                         STATION_ITINERARY_LOOKUP[station] = [len(ITINERARIES)]
 
@@ -1470,23 +1494,24 @@ def get_data(
     people_in_attendance = np.random.normal(350000, 100000)
     print("People in attendance: ", people_in_attendance)
     hotel_suburbs = [
-            "Brisbane City", 
-            "South Bank", 
-            "South Brisbane", 
-            "Fortitude Valley", 
-            "Ascot"]
+        "Brisbane City",
+        "South Bank",
+        "South Brisbane",
+        "Fortitude Valley",
+        "Ascot",
+    ]
     num_hotel = len(hotel_suburbs)
     tourist_extra = 0
     if num_hotel != 0:
-        tourist_extra = 1/3 * people_in_attendance #Will distribute to hotel suburbs 
+        tourist_extra = 1 / 3 * people_in_attendance  # Will distribute to hotel suburbs
     people_in_attendance -= tourist_extra
 
     for sub_name in suburb_names:
         # Create suburb for each
         if sub_name not in ALLOWED_SUBURBS:
-            continue #Don't gen non allowed
-        distribute_frequency = 10 #Tweak Me
-        max_distributes = 2 #Tweak Me
+            continue  # Don't gen non allowed
+        distribute_frequency = 10  # Tweak Me
+        max_distributes = 2  # Tweak Me
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
         active_stations_in_suburb_id = [
             station["station_id"]
@@ -1510,10 +1535,15 @@ def get_data(
                 1 / num_stations
             ) * 100  # Currently evenly assign to all stations...
         suburb_pop = (
-            ceil(1/len(ALLOWED_SUBURBS) * people_in_attendance + (
-            0 if sub_name not in hotel_suburbs else (tourist_extra * 1/num_hotel)
-        ))
-        #if sub_name in active_suburbs else 0
+            ceil(
+                1 / len(ALLOWED_SUBURBS) * people_in_attendance
+                + (
+                    0
+                    if sub_name not in hotel_suburbs
+                    else (tourist_extra * 1 / num_hotel)
+                )
+            )
+            # if sub_name in active_suburbs else 0
         )
         print(sub_name, suburb_pop)
         suburb = Suburb(
