@@ -1,11 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import * as React from 'react';
 import Plot, { PlotParams } from 'react-plotly.js';
-import { config, data1, layout1 } from '../../../reports';
-
+import { config} from '../../../reports';
 import { Button } from '@/components/ui/button';
-import { useGetSuburbs } from '@/hooks/useGetSuburbs';
-
 import { useMemo, useState } from 'react';
 import {ChevronsUpDown } from 'lucide-react';
 import {
@@ -15,14 +12,17 @@ import {
 	CommandInput,
 	CommandItem
 } from '@/components/ui/command';
-
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger
 } from '@/components/ui/popover';
-
 import { DetailsProps } from './details';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 
 const Routes = ({
@@ -31,21 +31,13 @@ const Routes = ({
 	fetchSimulationData,
 	simulationResult
 }: DetailsProps) => {
-	// const { data: suburbs, isLoading } = useGetSuburbs();
-
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);
 	const [stationSelectorOpen, setStationSelectorOpen] = useState(false);
-
 	const [routeSelectorOpen, setRouteSelectorOpen] = useState(false);
-
 	const [selectedSuburb, setSuburb] = useState();
 	const [selectedStation, setStation] = useState();
 	const [selectedRoute, setRoute] = useState();
-
-	//stubbed data to update
-	const resultRoutes = ["412", "66-12"];
-	//const resultRoutes = Object.keys(simulationResult["Routes"]);
-
+	const resultRoutes = simulationResult  ? simulationResult["Routes"] : [];
 	const [graphOneStopNames, setGraphOneStopNames] = useState([]);
 	const [graphOneStopValues, setGraphOneStopValues] = useState([]);
 	const graphOneData = {
@@ -54,8 +46,9 @@ const Routes = ({
 		type: 'scatter',
 		mode: 'lines+markers',
 		marker: {color: '#ef4444'},
+		hovertemplate: '<b>Number of Passengers</b>: %{y}' +
+                        '<br><b>Time</b>: %{x}<br>',
 	};
-
 	const [graphTwoStopNames, setGraphTwoStopNames] = useState([]);
 	const [graphTwoStopValues, setGraphTwoStopValues] = useState([]);
 
@@ -65,45 +58,30 @@ const Routes = ({
 		type: 'scatter',
 		mode: 'lines+markers',
 		marker: {color: '#ef4444'},
+		hovertemplate: '<i>Station ID</i>: %{x}' +
+                        '<br><b>Average Passengers at Stop</b>: %{y}<br>',
 	};
 
-	//stubbed data update with list of routes etc
-	var values = [
-		['Chancellors Place Stop D', 'Roma St Staion', 'Coronation Drive Stop 5', 'Coronation Drive Stop 17', 'Chancellors Place Stop D', 'Roma St Staion', 'Coronation Drive Stop 5', 'Coronation Drive Stop 17'],
-		[1200000, 20000, 80000, 2000, 1200000, 20000, 80000, 2000],
-		[1300000, 20000, 70000, 2000, 1300000, 20000, 70000, 2000]
-	]
+	{/* @ts-ignore  */}
+	var bottleneckValues = simulationResult  ?  [Object.values(simulationResult["Stations"]).map(station => station["stationName"]),Object.values(simulationResult["Stations"]).map(station => station["avg_wait"]),
+	] : [];
 	const graphThreeData = {
 		type: 'table',
 		header: {
-			values: [["<b>Station</b>"], ["<b>Factor</b>"],
-						["<b>Factor</b>"]],
+			values: [["<b>Station</b>"], ["<b>Average Wait Time</b>"]],
 			align: "center",
 			line: {width: 1, color: '#c1c1c1'},
 			fill: {color: "#f1f1f1"},
 			font: {family: "Arial", size: 12, color: "black"}
 		},
 		cells: {
-			values: values,
+			values: bottleneckValues,
 			align: "center",
 			line: {color: "#c1c1c1", width: 1},
 			font: {family: "Arial", size: 11, color: ["black"]}
 		}
 	};
 
-	const stations = useMemo(() => {
-		if (!simulationSettings.selectedSuburbs || !selectedSuburb) return [];
-		{/* @ts-ignore  */}
-		return simulationSettings.selectedSuburbs.filter(x => x.suburb.toLowerCase() == selectedSuburb.toLowerCase())
-			.map((suburb) => suburb.stations)
-			.flat();
-	}, [simulationSettings.selectedSuburbs, selectedSuburb]);
-
-	{/* @ts-ignore  */}
-	const handleSetSuburb = (suburb) => {
-		setSuburb(suburb);
-		handleSetStation(null);
-	};
 
 	{/* @ts-ignore  */}
 	const handleSetStation = (station) => {
@@ -123,56 +101,42 @@ const Routes = ({
 	{/* @ts-ignore  */}
 	const handleSetRoute = (route) => {
 		setRoute(route);
-		// stubbed data to update, here we would update the data by reading the simulation result 
+		if (route){
+			const stationsArray = Object.values(resultRoutes[route]["stations"]);
 			{/* @ts-ignore  */}
-		setGraphTwoStopNames([1, 2]);
+			stationsArray.sort((a, b) => a.sequence - b.sequence);
 			{/* @ts-ignore  */}
-		setGraphTwoStopValues([30, 10, 5]);
-	}	;
+			const stationNames = stationsArray.map(station => station.stationName + ` seq: ` +  station.sequence);
+			const stations = [];
+						{/* @ts-ignore  */}
+			setGraphTwoStopNames(stationNames);
+			for (let i = 0; i < Object.values(resultRoutes[route]["stations"]).length; i++){
+				stations.push(simulationResult["Stations"][Object.keys(resultRoutes[route]["stations"])[i]]);
+			}
+			{/* @ts-ignore  */}
+
+			const average_people = stations.map(stations => Object.values(stations["PeopleChangesOverTime"])).map(people => people.reduce((partialSum, a) => partialSum + a, 0) / people.length )
+			console.log(average_people);
+			console.log(stationNames);
+			{/* @ts-ignore  */}
+			setGraphTwoStopValues(average_people);
+		}
+		else {
+			setGraphTwoStopNames([]);
+			setGraphTwoStopValues([]);
+		}
+		};
 
 	return (
-
 		<div className="h-full flex flex-col gap-4 max-h-[725px] overflow-y-scroll">
 			<ActionCard title ="Station Analysis">
-				<Popover open={suburbSelectorOpen} onOpenChange={setSuburbSelectorOpen}>
-					<PopoverTrigger asChild>
-						<Button
-							disabled={!simulationSettings.selectedSuburbs}
-							variant="outline"
-							role="combobox"
-							className="w-full justify-between"
-						>{selectedSuburb? selectedSuburb: 'Select Suburb...'}
-							<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-						</Button>
-					</PopoverTrigger>
-					<PopoverContent className="w-full p-0">
-						<Command>
-						<CommandInput placeholder="Search suburbs..." />
-						<CommandEmpty>No suburbs found.</CommandEmpty>
-						<CommandGroup className="max-h-[200px] overflow-y-scroll">
-						{(simulationSettings.selectedSuburbs ?? []).map((suburb) => (
-							<CommandItem
-							key = {suburb.suburb}
-							onSelect={(currentValue) => {
-								handleSetSuburb(currentValue);
-								setSuburbSelectorOpen(false);
-							}}>
-								{suburb.suburb}
-
-					
-							</CommandItem>
-						))}
-						</CommandGroup>
-						</Command>
-					</PopoverContent>
-				</Popover>
 				<Popover
 					open={stationSelectorOpen}
 					onOpenChange={setStationSelectorOpen}
 				>
 					<PopoverTrigger asChild>
 						<Button
-							disabled={!selectedSuburb}
+							disabled={!simulationResult}
 							variant="outline"
 							role="combobox"
 							className="w-full justify-between"
@@ -186,17 +150,16 @@ const Routes = ({
 						<CommandInput placeholder="Search suburbs..." />
 						<CommandEmpty>No stations found.</CommandEmpty>
 						<CommandGroup className="max-h-[200px] overflow-y-scroll">
-						{(simulationSettings.selectedSuburbs ?? []).map((suburb) => (
-							<CommandItem
-							key = {suburb.suburb}
-							onSelect={(currentValue) => {
-								handleSetSuburb(currentValue);
-								setSuburbSelectorOpen(false);
-							}}>
-								{suburb.suburb}
-
-					
-							</CommandItem>
+						{(simulationSettings.selectedStations ?? []).map((station) => (
+								<CommandItem
+								key = {station.id}
+								onSelect={(currentValue) => {
+									handleSetStation(currentValue);
+									setStationSelectorOpen(false);
+								}}
+								>
+									{station.id}
+								</CommandItem>
 						))}
 						</CommandGroup>
 						</Command>
@@ -213,12 +176,34 @@ const Routes = ({
 							layout={layout}
 							config={config}
 						/>
-			</ActionCard>
+				<Dialog>
+				<DialogTrigger asChild>
+					<Button variant="outline">Expand</Button>
+				</DialogTrigger>
+				<DialogContent className="sm:max-w-[800px] h-[800px]">
+				<Plot
+							data={
+								[
+									{
+										...graphOneData
+									}
+								] as PlotParams['data']
+							}
+							layout={layoutFull}
+							config={config}
+						/>
+				</DialogContent>
+				</Dialog>
+				<div className="font-mono text-sm">
+
+				<b> Average Passenger Waiting Time: </b> {selectedStation ? (simulationResult["Stations"][selectedStation]?.avg_wait || "N/A").toFixed(2) + " mins": "N/A"}
+				</div>
+						</ActionCard>
 			<ActionCard title ="Route Analysis">
 				<Popover open={routeSelectorOpen} onOpenChange={setRouteSelectorOpen}>
 					<PopoverTrigger asChild>
 						<Button
-							//disabled={!simulationResult}
+							disabled={!simulationResult}
 							variant="outline"
 							role="combobox"
 							className="w-full justify-between"
@@ -231,7 +216,7 @@ const Routes = ({
 						<CommandInput placeholder="Search routes..." />
 						<CommandEmpty>No routes found.</CommandEmpty>
 						<CommandGroup className="max-h-[200px] overflow-y-scroll">
-						{(resultRoutes ?? []).map((route) => (
+						{(Object.keys(resultRoutes).filter(route => !route.includes("Walk") ) ?? []).map((route) => (
 							<CommandItem
 							key = {route}
 							onSelect={(currentValue) => {
@@ -239,8 +224,6 @@ const Routes = ({
 								setRouteSelectorOpen(false);
 							}}>
 								{route}
-
-					
 							</CommandItem>
 						))}
 						</CommandGroup>
@@ -258,6 +241,24 @@ const Routes = ({
 							layout={layoutGraphTwo}
 							config={config}
 						/>
+				<Dialog>
+				<DialogTrigger asChild>
+					<Button variant="outline">Expand</Button>
+				</DialogTrigger>
+				<DialogContent className="sm:max-w-[800px] h-[800px]">
+				<Plot
+							data={
+								[
+									{
+										...graphTwoData
+									}
+								] as PlotParams['data']
+							}
+							layout={layoutGraphTwoFull}
+							config={config}
+						/>
+				</DialogContent>
+				</Dialog>
 			</ActionCard>
 
 			<ActionCard title ="Top Bottle-Necks">
@@ -278,10 +279,10 @@ const Routes = ({
 };
 
 const layoutGraphTwo: PlotParams['layout'] = {
-	width: 250,
+	width: 200,
 	height: 250,
 	title: {
-	  text: '<b>Average Passenger Load Factor<b>',
+	  text: '<b>Average Passengers Waiting<b>',
 	  font: {
 		  size: 14
 		},
@@ -300,13 +301,40 @@ const layoutGraphTwo: PlotParams['layout'] = {
 	xaxis:{
 	  showticklabels: false,
 	  title: {text: 'Stations',
-	  standoff: 240
-	}
+	  standoff: 240 
 	},
-	yaxis:{
-	  title: {text: 'Capacity (%)',
+	  type: 'category'
+	}
+
+  };
+
+  const layoutGraphTwoFull: PlotParams['layout'] = {
+	width: 700,
+	height: 700,
+	title: {
+	  text: '<b>Average Passengers Waiting<b>',
+	  font: {
+		  size: 14
 		},
 	},
+	font: {
+	  family: 'Arial',
+	  color: 'black',
+	},
+	 margin: {
+	  l: 25,
+	  r: 0,
+	  b: 20,
+	  t: 40,
+	  pad: 0
+	},
+	xaxis:{
+	  showticklabels: false,
+	  title: {text: 'Stations',
+	  standoff: 700 
+	},
+	  type: 'category'
+	}
   };
 
   const layoutGraphThree: PlotParams['layout'] = {
@@ -351,13 +379,37 @@ const layoutGraphTwo: PlotParams['layout'] = {
 	  title: {text: 'Time (seconds)',
 	  standoff: 240
 	}
-	},
-	yaxis:{
-	  title: {text: 'No. Passengers'}
-	},
+	}
   };
   
-
+  const layoutFull: PlotParams['layout'] = {
+	width: 700,
+	height: 700,
+	title: {
+	  text: '<b>Passenger Flow Over Time <b>',
+	  font: {
+		  size: 14
+		},
+	},
+	font: {
+	  family: 'Arial',
+	  color: 'black',
+	},
+	 margin: {
+	  l: 25,
+	  r: 0,
+	  b: 20,
+	  t: 40,
+	  pad: 0
+	},
+	xaxis:{
+	  showticklabels: false,
+	  title: {text: 'Time (seconds)',
+	  standoff: 700
+	}
+	}
+  };
+  
 const ActionCard = ({
 	title,
 	children
@@ -372,6 +424,5 @@ const ActionCard = ({
 		<CardContent className="flex flex-col gap-2">{children}</CardContent>
 	</Card>
 );
-
 
 export default Routes
