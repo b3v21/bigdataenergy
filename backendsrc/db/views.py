@@ -154,10 +154,10 @@ def get_sim_data(request: Request) -> Response:
     """
     Given a sim_id, this will return the data for that sim in the same
     format as the sim_request response.
-    
+
     request o.t.f:
-    {  
-        sim_id: int 
+    {
+        sim_id: int
     }
     """
 
@@ -168,18 +168,15 @@ def get_sim_data(request: Request) -> Response:
 
     try:
         if request.data["sim_id"] == 1:
-            user_data =  {
+            user_data = {
                 "env_start": 0,
                 "time_horizon": 355,
-                "itineraries": 
-                [
-                    INPUT_ITINS["1850"][0]
-                ],
+                "itineraries": [INPUT_ITINS["1850"][0]],
                 "snapshot_date": "2023-07-12",
                 "active_suburbs": "St Lucia",
                 "active_stations": "1850",
             }
-            
+
             output = run_simulation(user_data, 1)
 
     except:
