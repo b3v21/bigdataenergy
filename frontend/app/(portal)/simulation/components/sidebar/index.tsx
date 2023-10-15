@@ -1,11 +1,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Details, { DetailsProps } from './components/details';
 import Routes from './components/routes';
-import Status from './components/status';
+import Status, { ItinProps } from './components/status';
 
 type Props = {
 	currentTab: string;
 	setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
+	simLoading: boolean;
 };
 
 const Sidebar = ({
@@ -14,8 +15,10 @@ const Sidebar = ({
 	simulationSettings,
 	setSimulationSettings,
 	fetchSimulationData,
-	simulationResult
-}: DetailsProps & Props) => {
+	simulationResult,
+	simLoading,
+	itineraries
+}: DetailsProps & Props & ItinProps) => {
 	return (
 		<div className="w-[300px]">
 			<Tabs
@@ -34,10 +37,11 @@ const Sidebar = ({
 						setSimulationSettings={setSimulationSettings}
 						fetchSimulationData={fetchSimulationData}
 						simulationResult={simulationResult}
+						simLoading={simLoading}
 					/>
 				</TabsContent>
 				<TabsContent value="itineraries" className="flex-1">
-					<Status />
+					<Status itineraries={itineraries} />
 				</TabsContent>
 				<TabsContent value="stops" className="flex-1">
 					<Routes

@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import Plot, { PlotParams } from 'react-plotly.js';
 import HoverCard from './components/hover-card';
 import Sidebar from './components/sidebar';
-import { layout, data as plotData } from './plot';
+import { layout, stationSettings, routeSettings } from './plot';
 import { Itineraries, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
 import { PlotMouseEvent } from 'plotly.js';
@@ -43,45 +43,50 @@ const Simulation = () => {
 	const [sidebarTab, setSidebarTab] = useState('details');
 
 	// Retrieves the simulation data
-	const { data: simulationResult, refetch: fetchSimulationData } =
-		useGetSimulationData(
-			{
-				env_start: simulationSettings.startTime,
-				time_horizon: simulationSettings.duration,
-				itineraries: simulationSettings.selectedItineraries,
-				snapshot_date: simulationSettings.date,
-				active_suburbs: simulationSettings.selectedSuburbs.map(
-					// default st lucia
-					(suburb) => suburb.suburb
-				),
-				active_stations: simulationSettings.selectedStations.map(
-					// default 1815
-					(station) => station.id
-				)
-			},
-			{
-				enabled: false
-			}
-		);
+	const {
+		data: simulationResult,
+		refetch: fetchSimulationData,
+		isFetching: simulationDataLoading
+	} = useGetSimulationData(
+		{
+			env_start: simulationSettings.startTime,
+			time_horizon: simulationSettings.duration,
+			itineraries: simulationSettings.selectedItineraries,
+			snapshot_date: simulationSettings.date,
+			active_suburbs: simulationSettings.selectedSuburbs.map(
+				(suburb) => suburb.suburb
+			),
+			active_stations: simulationSettings.selectedStations.map(
+				(station) => station.id
+			)
+		},
+		{
+			enabled: false
+		}
+	);
 
 	// todo: remove any types once data typed correctly
 	const simulationData = simulationResult as any;
 
 	// Recomputes the stations into a readable format every time simulation data changes
-	const routeStations = useMemo(() => {
+	const itins = useMemo(() => {
 		if (!simulationResult) return null;
 
-		return (
-			// Formatting data for Plotly
-			Object.entries(simulationData?.Routes)
-				.map((route) =>
-					Object.entries((route as any)[1].stations).map(
-						(station) => station[1]
-					)
-				)[0]
-				// todo: remove any types once data typed correctly
-				.sort((a, b) => (a as any).sequence - (b as any).sequence)
-		);
+		return Object.entries(simulationData?.Routes).map((route) => {
+			const routeData = (route as any)[1];
+
+			return {
+				routeName: (route as any)[0],
+				stations: Object.entries(routeData.stations)
+					.map((station) => ({
+						...(station[1] as any),
+						stationName: station[0],
+						routeName: (route as any)[0]
+					}))
+					.sort((a, b) => (a as any).sequence - (b as any).sequence),
+				shape: routeData.shape
+			};
+		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [simulationData?.Routes]);
 
@@ -91,11 +96,13 @@ const Simulation = () => {
 		<div className="flex flex-row gap-4">
 			<Sidebar
 				currentTab={sidebarTab}
+				simLoading={simulationDataLoading}
 				setCurrentTab={setSidebarTab}
 				simulationSettings={simulationSettings}
 				setSimulationSettings={setSimulationSettings}
 				fetchSimulationData={fetchSimulationData}
 				simulationResult={simulationResult}
+				itineraries={itins as any}
 			/>
 			<HoverCard data={hoverData} />
 			<div className="flex-1 relative">
@@ -111,13 +118,29 @@ const Simulation = () => {
 				{/* @ts-ignore  */}
 				<Plot
 					data={
-						[
-							{
-								...plotData,
-								lat: routeStations?.map((station) => (station as any).pos.lat),
-								lon: routeStations?.map((station) => (station as any).pos.long)
-							}
-						] as PlotParams['data']
+						!!itins
+							? ([
+									// routes
+									...(itins
+										?.filter((itin) => !!itin.shape)
+										.map((itin) => ({
+											...routeSettings,
+											lat: itin.shape.map((coord: any) => coord.lat),
+											lon: itin.shape.map((coord: any) => coord.long)
+										})) ?? []),
+
+									// stations
+									...(itins?.map((itin) => ({
+										...stationSettings,
+										lat: itin.stations.map(
+											(station) => (station as any).pos.lat
+										),
+										lon: itin.stations.map(
+											(station) => (station as any).pos.long
+										)
+									})) ?? [])
+							  ] as PlotParams['data'])
+							: ([{ ...routeSettings, lat: [], lon: [] }] as PlotParams['data'])
 					}
 					layout={layout}
 					config={{
@@ -131,9 +154,10 @@ const Simulation = () => {
 						minHeight: '800px'
 					}}
 					onHover={(event) => {
-						if (!routeStations) return;
+						if (!itins) return;
 
-						console.log('hover', routeStations);
+						// Excluding routes
+						if (event.points[0].curveNumber === 0) return;
 
 						const {
 							lat,
@@ -141,11 +165,14 @@ const Simulation = () => {
 							bbox: { x0, y0 }
 						} = event.points[0] as any;
 
-						const stop = routeStations.find(
-							(station) =>
-								(station as any).pos.lat === lat &&
-								(station as any).pos.long === lon
-						)!;
+						const stop = itins
+							.map((itin) => itin.stations)
+							.flat()
+							.find(
+								(stop) =>
+									(stop as any).pos.lat === lat &&
+									(stop as any).pos.long === lon
+							);
 
 						setHoverData({
 							x: x0 + HOVER_OFFSET.x,

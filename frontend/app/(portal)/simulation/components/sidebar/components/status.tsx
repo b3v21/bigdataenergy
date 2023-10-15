@@ -3,62 +3,70 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ArrowRight } from 'lucide-react';
 
-const Status = () => {
+export type ItinProps = {
+	itineraries: any[];
+};
+
+const Status = ({ itineraries }: ItinProps) => {
 	return (
-		<Card className="h-full">
+		<Card className="h-full relative">
 			<CardHeader>
-				<CardTitle>Status</CardTitle>
+				<CardTitle>Itineraries</CardTitle>
 			</CardHeader>
 			<CardContent>
+				{!itineraries && (
+					<div className="inset-0">
+						<div className="absolute inset-0 grid place-content-center">
+							<p className="font-mono font-bold text-muted-foreground">
+								No itineraries 😢
+							</p>
+						</div>
+					</div>
+				)}
 				<div className="flex flex-col gap-4">
-					<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
-						<p className="font-bold cols-span-1">Bus 1</p>
-						<div className="col-span-1 text-right">
-							<Badge
-								variant="outline"
-								className="max-w-fit border-green-500 bg-green-500/30 text-green-500 hover:none"
+					{itineraries?.map((itin) => {
+						const endStation =
+							itin.stations[itin.stations.length - 1].stationName;
+						return (
+							<Card
+								key={itin.routeName}
+								className="p-2 gap-4 grid grid-cols-2 justify-between"
 							>
-								<span className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-								Nominal
-							</Badge>
-						</div>
-						<div className="col-span-2 flex flex-row font-mono gap-2 items-center text-muted-foreground text-sm">
-							<p>St Lucia</p>
-							<ArrowRight size={16} />
-							<p>Suncorp</p>
-						</div>
+								<p className="font-bold cols-span-1">{itin.routeName}</p>
+								<div className="col-span-1 text-right">
+									{itin.routeName.toLowerCase().includes('walk') ? (
+										<Badge
+											variant="outline"
+											className="max-w-fit border-blue-500 bg-blue-500/30 text-blue-500 hover:none w-120"
+										>
+											<span className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
+											Walk
+										</Badge>
+									) : (
+										<Badge
+											variant="outline"
+											className="max-w-fit border-green-500 bg-green-500/30 text-green-500 hover:none w-120"
+										>
+											<span className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+											Bus
+										</Badge>
+									)}
+								</div>
+								<div className="col-span-2 flex flex-row font-mono gap-2 items-center text-muted-foreground text-sm">
+									<p>{itin.stations[0].stationName}</p>
+									<ArrowRight size={16} />
+									<p>{endStation == -1 ? 'Destination 🎯' : endStation}</p>
+								</div>
 
-						<div className="col-span-2 ">
-							<Progress value={71} />
-						</div>
-						<div className="col-span-2 text-right text-xs text-muted-foreground">
-							245/345
-						</div>
-					</Card>
-					<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
-						<p className="font-bold cols-span-1">Bus 2</p>
-						<div className="col-span-1 text-right">
-							<Badge
-								variant="outline"
-								className="max-w-fit border-red-500 bg-red-500/30 text-red-500 hover:none"
-							>
-								<span className="w-2 h-2 rounded-full bg-red-500 mr-2" />
-								At Capacity
-							</Badge>
-						</div>
-						<div className="col-span-2 flex flex-row font-mono gap-2 items-center text-muted-foreground text-sm">
-							<p>F&apos; Val</p>
-							<ArrowRight size={16} />
-							<p>Suncorp</p>
-						</div>
-
-						<div className="col-span-2 ">
-							<Progress value={100} className="text-red-500" />
-						</div>
-						<div className="col-span-2 text-right text-xs text-muted-foreground">
-							461/450
-						</div>
-					</Card>
+								<div className="col-span-2 ">
+									<Progress value={71} />
+								</div>
+								<div className="col-span-2 text-right text-xs text-muted-foreground">
+									245/345
+								</div>
+							</Card>
+						);
+					})}
 				</div>
 			</CardContent>
 		</Card>

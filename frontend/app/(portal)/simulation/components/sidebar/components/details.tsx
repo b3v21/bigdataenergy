@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,10 @@ import { useGetItineraries } from '@/hooks/useGetItineraries';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+type Props = {
+	simLoading: boolean;
+};
+
 export type DetailsProps = {
 	simulationSettings: SimulationSettings;
 	setSimulationSettings: React.Dispatch<
@@ -37,8 +41,9 @@ const Details = ({
 	simulationSettings,
 	setSimulationSettings,
 	fetchSimulationData,
-	simulationResult
-}: DetailsProps) => {
+	simulationResult,
+	simLoading
+}: DetailsProps & Props) => {
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);
 	const [stationSelectorOpen, setStationSelectorOpen] = useState(false);
 	const [itinerarySelectorOpen, setItinerarySelectorOpen] = useState(false);
@@ -316,11 +321,15 @@ const Details = ({
 				</PopoverContent>
 			</Popover>
 			<Button
-				className="w-full"
-				disabled={!simulationSettings.selectedStations.length}
+				className="w-full capitalize"
+				disabled={!simulationSettings.selectedStations.length || simLoading}
 				onClick={handleRunSimulation}
 			>
-				run simulation
+				{simLoading ? (
+					<Loader2 size={16} className="animate-spin" />
+				) : (
+					'run simulation'
+				)}
 			</Button>
 		</div>
 	);
