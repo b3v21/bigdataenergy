@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import * as React from 'react';
 import Plot, { PlotParams } from 'react-plotly.js';
@@ -23,6 +24,7 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { object } from 'zod';
 
 
 const Routes = ({
@@ -46,7 +48,7 @@ const Routes = ({
 		type: 'scatter',
 		mode: 'lines+markers',
 		marker: {color: '#ef4444'},
-		hovertemplate: '<b>Number of Passengers</b>: %{y}' +
+		hovertemplate: '<b>No. Passengers Through Station</b>: %{y}' +
                         '<br><b>Time</b>: %{x}<br>',
 	};
 	const [graphTwoStopNames, setGraphTwoStopNames] = useState([]);
@@ -63,8 +65,28 @@ const Routes = ({
 	};
 
 	{/* @ts-ignore  */}
-	var bottleneckValues = simulationResult  ?  [Object.values(simulationResult["Stations"]).map(station => station["stationName"]),Object.values(simulationResult["Stations"]).map(station => station["avg_wait"]),
-	] : [];
+	const stationWaitTimes = simulationResult ? Object.values(simulationResult["Stations"]).sort((a, b) => {
+		// Assuming "avg_wait" values are numbers, if not, convert as needed
+		const avgWaitA = parseFloat(a.avg_wait) || 0;
+		const avgWaitB = parseFloat(b.avg_wait) || 0;
+		return avgWaitB - avgWaitA;
+	  }) : [];
+	  
+	  
+	  const bottleneckValues = stationWaitTimes
+	  ? [
+		  stationWaitTimes.map(station => station.stationName),
+		  stationWaitTimes.map(station => {
+			// Check if "avg_wait" is a valid number before using toFixed
+			const avgWait = parseFloat(station.avg_wait);
+			return isNaN(avgWait) ? "N/A" : avgWait.toFixed(2);
+		  }),
+		]
+	  : [];
+	//var bottleneckValues = simulationResult  ?  [Object.values(simulationResult["Stations"]).filter(station => station["bottleneck"] == true).map(station => station["stationName"]),Object.values(simulationResult["Stations"]).filter(station => station["bottleneck"] == true).map(station => station["avg_wait"]),
+	//] : [];
+
+
 	const graphThreeData = {
 		type: 'table',
 		header: {
@@ -75,7 +97,7 @@ const Routes = ({
 			font: {family: "Arial", size: 12, color: "black"}
 		},
 		cells: {
-			values: bottleneckValues,
+			values: simulationResult? bottleneckValues : [["No Data Loaded"], ["No Data Loaded"]],
 			align: "center",
 			line: {color: "#c1c1c1", width: 1},
 			font: {family: "Arial", size: 11, color: ["black"]}
@@ -99,10 +121,11 @@ const Routes = ({
 		}
 	};
 	{/* @ts-ignore  */}
-	const handleSetRoute = (route) => {
+	const handleSetRoute = (newroute) => {
+		const route = newroute.toUpperCase();
 		setRoute(route);
 		if (route){
-			const stationsArray = Object.values(resultRoutes[route]["stations"]);
+			const stationsArray = Object.values(resultRoutes[route.toUpperCase()]["stations"]);
 			{/* @ts-ignore  */}
 			stationsArray.sort((a, b) => a.sequence - b.sequence);
 			{/* @ts-ignore  */}
@@ -196,7 +219,7 @@ const Routes = ({
 				</Dialog>
 				<div className="font-mono text-sm">
 
-				<b> Average Passenger Waiting Time: </b> {selectedStation ? (simulationResult["Stations"][selectedStation]?.avg_wait || "N/A").toFixed(2) + " mins": "N/A"}
+				<b> Average Passenger Waiting Time: </b> {selectedStation ? (simulationResult["Stations"][selectedStation]?.avg_wait || "N/A")+ " mins": "N/A"}
 				</div>
 						</ActionCard>
 			<ActionCard title ="Route Analysis">
@@ -259,10 +282,15 @@ const Routes = ({
 						/>
 				</DialogContent>
 				</Dialog>
+
+				<div className="font-mono text-sm">
+
+				<b> Number of Vehicles Deployed: </b> {selectedRoute ? (Object.keys(simulationResult["Routes"][selectedRoute]?.BusesOnRoute || {}).length) : "N/A"}
+				</div>
 			</ActionCard>
 
 			<ActionCard title ="Top Bottle-Necks">
-			<Plot
+			<Plot className='border-radius-15px'
 							data={
 								[
 									{
@@ -279,7 +307,7 @@ const Routes = ({
 };
 
 const layoutGraphTwo: PlotParams['layout'] = {
-	width: 200,
+	width: 250,
 	height: 250,
 	title: {
 	  text: '<b>Average Passengers Waiting<b>',
@@ -351,7 +379,8 @@ const layoutGraphTwo: PlotParams['layout'] = {
 		b: 0,
 		t: 0,
 		pad: 0
-	  }
+	  },
+
   }
 
   const layout: PlotParams['layout'] = {
@@ -378,6 +407,7 @@ const layoutGraphTwo: PlotParams['layout'] = {
 	  showticklabels: false,
 	  title: {text: 'Time (seconds)',
 	  standoff: 240
+	  
 	}
 	}
   };

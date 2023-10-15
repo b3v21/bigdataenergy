@@ -22,6 +22,7 @@ export function MainNav({
 				>
 					<NavOption href="/dashboard">Dashboard</NavOption>
 					<NavOption href="/simulation">Simulation</NavOption>
+					<NavOption href="/report">Report</NavOption>
 				</nav>
 				<div className=" flex items-center space-x-4">
 					<ThemeToggle />
