@@ -10,6 +10,7 @@ import { Itineraries, Station, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
 import { PlotMouseEvent } from 'plotly.js';
 import { StationStatusColour, getStationColourFromWaitTime } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 
 export type SimulationSettings = {
 	date: string;
@@ -69,7 +70,8 @@ const Simulation = () => {
 		}
 	);
 
-	// todo: remove any types once data typed correctly
+	const theme = useTheme();
+
 	const simulationData = simulationResult as any;
 
 	// Recomputes the stations into a readable format every time simulation data changes
@@ -176,7 +178,13 @@ const Simulation = () => {
 							  ] as PlotParams['data'])
 							: ([{ ...routeSettings, lat: [], lon: [] }] as PlotParams['data'])
 					}
-					layout={layout}
+					layout={{
+						...layout,
+						mapbox: {
+							...layout.mapbox,
+							style: theme.resolvedTheme === 'dark' ? 'dark' : 'light'
+						}
+					}}
 					config={{
 						mapboxAccessToken:
 							'pk.eyJ1IjoiamVycnlyeXl5IiwiYSI6ImNsbHAyc3lwNzAxd3ozbHMybmN5MzZwbXcifQ.02Kwsipj1B1BJmk0MYumGA',
