@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { PlotMouseEvent } from 'plotly.js';
 import { StationStatusColour, getStationColourFromWaitTime } from '@/lib/utils';
 import { useTheme } from 'next-themes';
+import { useToast } from '@/components/ui/use-toast';
 
 export type SimulationSettings = {
 	date: string;
@@ -47,6 +48,8 @@ const Simulation = () => {
 		});
 	const [sidebarTab, setSidebarTab] = useState('details');
 
+	const { toast } = useToast();
+
 	// Retrieves the simulation data
 	const {
 		data: simulationResult,
@@ -66,7 +69,22 @@ const Simulation = () => {
 			)
 		},
 		{
-			enabled: false
+			enabled: false,
+			onSuccess: (data) => {
+				if (
+					Object.values(data.Stations).some((station) => {
+						if (typeof (station as any).avg_wait !== 'number') return false;
+						return (station as any).avg_wait > 10;
+					})
+				) {
+					toast({
+						variant: 'default',
+						title: '⚠️ High Wait Times',
+						description:
+							'Some stations have high wait times. Consider adding more services.'
+					});
+				}
+			}
 		}
 	);
 
