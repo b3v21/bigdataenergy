@@ -90,6 +90,17 @@ const Simulation = () => {
 
 	const theme = useTheme();
 
+	const plotLayot = useMemo(
+		() => ({
+			...layout,
+			mapbox: {
+				...layout.mapbox,
+				style: theme.resolvedTheme === 'dark' ? 'dark' : 'light'
+			}
+		}),
+		[theme.resolvedTheme]
+	);
+
 	const simulationData = simulationResult as any;
 
 	// Recomputes the stations into a readable format every time simulation data changes
@@ -196,13 +207,7 @@ const Simulation = () => {
 							  ] as PlotParams['data'])
 							: ([{ ...routeSettings, lat: [], lon: [] }] as PlotParams['data'])
 					}
-					layout={{
-						...layout,
-						mapbox: {
-							...layout.mapbox,
-							style: theme.resolvedTheme === 'dark' ? 'dark' : 'light'
-						}
-					}}
+					layout={plotLayot}
 					config={{
 						mapboxAccessToken:
 							'pk.eyJ1IjoiamVycnlyeXl5IiwiYSI6ImNsbHAyc3lwNzAxd3ozbHMybmN5MzZwbXcifQ.02Kwsipj1B1BJmk0MYumGA',
@@ -234,13 +239,13 @@ const Simulation = () => {
 						setHoverData({
 							x: x0 + HOVER_OFFSET.x,
 							y: y0 + HOVER_OFFSET.y,
-							stationName: (station as any).stationName,
+							stationName: (station as any)?.stationName ?? '',
 							avg_wait:
 								typeof (station as any).avg_wait === 'number'
 									? (station as any).avg_wait
 									: null,
-							bottleNeck: (station as any).bottleNeck,
-							patronage: (station as any).PeopleChangeOverTime
+							bottleNeck: (station as any)?.bottleNeck,
+							patronage: (station as any)?.PeopleChangeOverTime
 						});
 					}}
 					onUnhover={() => setHoverData(null)}
