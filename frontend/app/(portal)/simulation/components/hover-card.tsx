@@ -23,7 +23,9 @@ const HoverCard = ({ data }: Props) => {
 				left: x
 			}}
 		>
-			<p className="font-bold cols-span-1">{stopName}</p>
+			<p className="font-bold cols-span-1">
+				{stopName === '-1' ? 'Destination' : stopName}
+			</p>
 			<div className="col-span-1 text-right">
 				<Badge
 					variant="outline"

@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import Plot, { PlotParams } from 'react-plotly.js';
 import HoverCard from './components/hover-card';
 import Sidebar from './components/sidebar';
-import { layout, stationSettings, routeSettings } from './plot';
+import { layout, stationSettings, routeSettings, walkSettings } from './plot';
 import { Itineraries, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
 import { PlotMouseEvent } from 'plotly.js';
@@ -90,6 +90,8 @@ const Simulation = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [simulationData?.Routes]);
 
+	console.log(itins);
+
 	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
 
 	return (
@@ -127,6 +129,21 @@ const Simulation = () => {
 											...routeSettings,
 											lat: itin.shape.map((coord: any) => coord.lat),
 											lon: itin.shape.map((coord: any) => coord.long)
+										})) ?? []),
+
+									// adding walk path if it exists
+									...(itins
+										?.filter((itin) =>
+											(itin.routeName as string).toLowerCase().includes('walk')
+										)
+										.map((itin) => ({
+											...walkSettings,
+											lat: itin.stations.map(
+												(station) => (station as any).pos.lat
+											),
+											lon: itin.stations.map(
+												(station) => (station as any).pos.long
+											)
 										})) ?? []),
 
 									// stations

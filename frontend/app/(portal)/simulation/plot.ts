@@ -34,4 +34,17 @@ const routeSettings = {
 	}
 };
 
-export { stationSettings, routeSettings, layout };
+const walkSettings = {
+	name: 'Walks',
+	type: 'scattermapbox',
+	showlegend: false,
+	hoverinfo: 'none',
+	mode: 'markers+lines',
+	line: {
+		width: 4,
+		color: '#FFA500',
+		dash: 'dot'
+	}
+};
+
+export { stationSettings, routeSettings, walkSettings, layout };
