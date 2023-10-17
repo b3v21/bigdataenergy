@@ -12,7 +12,7 @@ Our goal is to build a website with an interactive map and other visualisations 
 
 # Initial Setup
 1. setup & activate a python venv if you haven't already
-2. Begin by running `pip install -r requirements.txt` in the root directory to install all dependencies. Note that this should mean you don't need to run any of the pip installations in the db / frontend setup below.
+2. Begin by running `pip install -r requirements.txt` in the root directory to install all dependencies. 
 
 # Database Setup
 1. enter backendsrc directory and run <code>python manage.py migrate</code>
