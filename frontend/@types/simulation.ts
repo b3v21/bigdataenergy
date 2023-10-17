@@ -29,6 +29,7 @@ type Station = {
 		PeopleChangeOverTime: { [timestamp: number]: number };
 		Pos: { lat: number; lon: number };
 		stationName: string;
+		avg_wait: number | string;
 	}[];
 };
 

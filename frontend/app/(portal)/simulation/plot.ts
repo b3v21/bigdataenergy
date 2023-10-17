@@ -18,7 +18,7 @@ const stationSettings = {
 	showlegend: false,
 	marker: {
 		size: 12,
-		color: '#22c55e'
+		color: '#22c55e' // default colour, will be updated once simulation data is loaded
 	}
 };
 

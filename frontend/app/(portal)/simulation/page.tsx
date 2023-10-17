@@ -9,6 +9,7 @@ import { layout, stationSettings, routeSettings, walkSettings } from './plot';
 import { Itineraries, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
 import { PlotMouseEvent } from 'plotly.js';
+import { StationStatusColour, getStationColourFromWaitTime } from '@/lib/utils';
 
 export type SimulationSettings = {
 	date: string;
@@ -91,7 +92,7 @@ const Simulation = () => {
 	}, [simulationData?.Routes]);
 
 	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
-
+	console.log(itins);
 	return (
 		<div className="flex flex-row gap-4">
 			<Sidebar
@@ -144,7 +145,7 @@ const Simulation = () => {
 											)
 										})) ?? []),
 
-									// stations
+									// Stations. Rendered last so their z-index is above other plots.
 									...(itins?.map((itin) => ({
 										...stationSettings,
 										lat: itin.stations.map(
@@ -152,7 +153,22 @@ const Simulation = () => {
 										),
 										lon: itin.stations.map(
 											(station) => (station as any).pos.long
-										)
+										),
+										marker: {
+											...stationSettings.marker,
+											color: itin.stations.map((station) => {
+												const aw =
+													/* @ts-ignore */
+													(
+														simulationResult?.Stations[
+															station.stationName
+														] as any
+													).avg_wait;
+												return typeof aw !== 'number'
+													? StationStatusColour.Green
+													: getStationColourFromWaitTime(aw as number);
+											})
+										}
 									})) ?? [])
 							  ] as PlotParams['data'])
 							: ([{ ...routeSettings, lat: [], lon: [] }] as PlotParams['data'])
