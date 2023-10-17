@@ -11,17 +11,13 @@ Our goal is to build a website with an interactive map and other visualisations 
 - Back end server to process and simulate the flow of traffic along different routes. Django REST framework + Some Database that Django supports (Either MySQL, PostgreSql or SQLLite)
 
 # Initial Setup
-Begin by running `pip install -r requirements.txt` in the root directory to install all dependencies. Note that this should mean you don't need to run any of the pip installations in the db / frontend setup below.
+1. setup & activate a python venv if you haven't already
+2. Begin by running `pip install -r requirements.txt` in the root directory to install all dependencies. Note that this should mean you don't need to run any of the pip installations in the db / frontend setup below.
 
 # Database Setup
-1. setup & activate a python venv if you haven't already
-2. <code>pip install django</code>
-   <code>pip install djangorestframework</code>
-   <code>pip install django-cors-headers</code>
-3. Go to the Big Data Energy Discord and grab the `db.sqlite3.zip` file, unzip it and put it in the `backendsrc` folder
-4. enter backendsrc directory and run <code>python manage.py migrate</code>
-5. run <code>python manage.py runserver</code>
-6. good to go! (username and password are 'root')
+1. enter backendsrc directory and run <code>python manage.py migrate</code>
+2. run <code>python manage.py runserver</code>
+3. good to go! (username and password are 'root' if you wish to access the admin panel)
 
 # How to update the structure of the database
 1. <code>python manage.py showmigrations</code>. This lists the current migrations.
@@ -43,7 +39,7 @@ node -v
 npm i
 ```
 
-1. Run dev server
+3. Navigate to the frontend directory and use:
 ```bash
 npm run dev
 ```
