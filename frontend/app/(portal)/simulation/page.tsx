@@ -126,7 +126,7 @@ const Simulation = () => {
 	}, [simulationData?.Routes]);
 
 	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
-	console.log(itins);
+
 	return (
 		<div className="flex flex-row gap-4">
 			<Sidebar
@@ -219,7 +219,7 @@ const Simulation = () => {
 						minHeight: '800px'
 					}}
 					onHover={(event) => {
-						if (!itins) return;
+						if (!itins || !simulationResult) return;
 
 						// Excluding routes
 						if (event.points[0].curveNumber === 0) return;
@@ -230,11 +230,13 @@ const Simulation = () => {
 							bbox: { x0, y0 }
 						} = event.points[0] as any;
 
-						const station = Object.values(simulationResult?.Stations!).find(
+						const station = Object.values(simulationResult.Stations).find(
 							(station) =>
 								(station as any).pos.lat === lat &&
 								(station as any).pos.long === lon
 						);
+
+						if (!station) return;
 
 						setHoverData({
 							x: x0 + HOVER_OFFSET.x,

@@ -41,11 +41,7 @@ export function useGetItineraries(payload: Payload, options?: QueryOptions) {
 			...data,
 			itineraries: data.itineraries.map((itinerary) => ({
 				...itinerary,
-				name: data.itineraries
-					.map((itinerary) =>
-						itinerary.routes.map((route) => route.route_id).join(' -> ')
-					)
-					.join(',')
+				name: itinerary.routes.map((route) => route.route_id).join(' -> ')
 			}))
 		}),
 		...options
