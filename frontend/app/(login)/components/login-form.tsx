@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowUp, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -73,7 +73,9 @@ const LoginForm = () => {
 					) : (
 						<span className="flex flex-row gap-2 items-center">
 							continue
-							<ArrowRight size={16} />
+							<div className="rotate-90">
+								<ArrowUp size={16} className="animate-bounce " />
+							</div>
 						</span>
 					)}
 				</Button>

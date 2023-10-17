@@ -90,8 +90,6 @@ const Simulation = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [simulationData?.Routes]);
 
-	console.log(itins);
-
 	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
 
 	return (
