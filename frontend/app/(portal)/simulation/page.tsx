@@ -6,7 +6,7 @@ import Plot, { PlotParams } from 'react-plotly.js';
 import HoverCard from './components/hover-card';
 import Sidebar from './components/sidebar';
 import { layout, stationSettings, routeSettings, walkSettings } from './plot';
-import { Itineraries, Stations, Suburbs } from '@/@types';
+import { Itineraries, Station, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
 import { PlotMouseEvent } from 'plotly.js';
 import { StationStatusColour, getStationColourFromWaitTime } from '@/lib/utils';
@@ -20,10 +20,13 @@ export type SimulationSettings = {
 	selectedItineraries: Itineraries;
 };
 
-type HoverData = {
+export type HoverData = {
 	x: number;
 	y: number;
-	stopName: string;
+	stationName: string;
+	avg_wait: number | null;
+	bottleNeck: boolean;
+	patronage: { [t: number]: number }[];
 };
 
 const HOVER_OFFSET = { x: 10, y: 10 };
@@ -196,19 +199,22 @@ const Simulation = () => {
 							bbox: { x0, y0 }
 						} = event.points[0] as any;
 
-						const stop = itins
-							.map((itin) => itin.stations)
-							.flat()
-							.find(
-								(stop) =>
-									(stop as any).pos.lat === lat &&
-									(stop as any).pos.long === lon
-							);
+						const station = Object.values(simulationResult?.Stations!).find(
+							(station) =>
+								(station as any).pos.lat === lat &&
+								(station as any).pos.long === lon
+						);
 
 						setHoverData({
 							x: x0 + HOVER_OFFSET.x,
 							y: y0 + HOVER_OFFSET.y,
-							stopName: (stop as any).stationName
+							stationName: (station as any).stationName,
+							avg_wait:
+								typeof (station as any).avg_wait === 'number'
+									? (station as any).avg_wait
+									: null,
+							bottleNeck: (station as any).bottleNeck,
+							patronage: (station as any).PeopleChangeOverTime
 						});
 					}}
 					onUnhover={() => setHoverData(null)}
