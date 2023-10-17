@@ -24,7 +24,7 @@ type Data = {
 
 type QueryOptions = Omit<
 	UseQueryOptions<Data, unknown, Data>,
-	'queryKey' | 'queryFn'
+	'queryKey' | 'queryFn' | 'select'
 >;
 
 export function useGetItineraries(payload: Payload, options?: QueryOptions) {
@@ -37,6 +37,17 @@ export function useGetItineraries(payload: Payload, options?: QueryOptions) {
 			);
 			return data;
 		},
+		select: (data) => ({
+			...data,
+			itineraries: data.itineraries.map((itinerary) => ({
+				...itinerary,
+				name: data.itineraries
+					.map((itinerary) =>
+						itinerary.routes.map((route) => route.route_id).join(' -> ')
+					)
+					.join(',')
+			}))
+		}),
 		...options
 	});
 }

@@ -267,7 +267,7 @@ const Details = ({
 					>
 						{simulationSettings.selectedItineraries.length
 							? simulationSettings.selectedItineraries
-									.map((itinerary) => itinerary.itinerary_id)
+									.map((itinerary) => itinerary.name)
 									.join(', ')
 							: 'Select itineraries...'}
 						<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -278,27 +278,27 @@ const Details = ({
 						<CommandInput placeholder="Search suburbs..." />
 						<CommandEmpty>No itineraries found.</CommandEmpty>
 						<CommandGroup className="max-h-[200px] overflow-y-scroll">
-							{(retData?.itineraries ?? []).map((itinerary) => (
+							{(retData?.itineraries ?? []).map((currentItin) => (
 								<CommandItem
-									key={itinerary.itinerary_id}
+									key={currentItin.itinerary_id}
 									onSelect={(currentValue) => {
 										setSimulationSettings({
 											...simulationSettings,
 											selectedItineraries:
 												simulationSettings.selectedItineraries.includes(
-													itinerary
+													currentItin
 												)
 													? simulationSettings.selectedItineraries.filter(
 															(itinerary) =>
-																itinerary.itinerary_id.toString() !==
-																currentValue
+																itinerary.itinerary_id !==
+																currentItin.itinerary_id
 													  )
 													: [
 															...simulationSettings.selectedItineraries,
 															retData?.itineraries!.find(
 																(itinerary) =>
-																	itinerary.itinerary_id.toString() ===
-																	currentValue
+																	itinerary.itinerary_id ===
+																	currentItin.itinerary_id
 															)!
 													  ]
 										});
@@ -308,12 +308,14 @@ const Details = ({
 									<Check
 										className={cn(
 											'mr-2 h-4 w-4',
-											simulationSettings.selectedItineraries.includes(itinerary)
+											simulationSettings.selectedItineraries.includes(
+												currentItin
+											)
 												? 'opacity-100'
 												: 'opacity-0'
 										)}
 									/>
-									{itinerary.itinerary_id}
+									{currentItin.name}
 								</CommandItem>
 							))}
 						</CommandGroup>
