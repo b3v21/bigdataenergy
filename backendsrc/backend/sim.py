@@ -9,9 +9,8 @@ import os
 import sys
 from datetime import time, date, datetime
 from backend.queries import ALLOWED_SUBURBS
+from .itins import INPUT_ITINS
 import time as t
-import requests
-import json
 import numpy as np
 
 
@@ -44,59 +43,11 @@ DEBUG = True
 ROUTE_NAMES = ["BusRoute", "TrainRoute"]
 LOAD_TIMES = {"Train": 0.0025, "Bus": 0.1}
 
-# These are the hardcoded itineraries that will appear on the frontend
-INPUT_ITINS = {}
-INPUT_ITINS["1850"] = [
-    {
-        "itinerary_id": 0,
-        "routes": [
-            {"route_id": "412-3136", "start": "1850", "end": "273"},
-            {"route_id": "walk", "start": "273", "end": "-1"},
-        ],
-    }
-]
-
-INPUT_ITINS["1064"] = [
-    {
-        "itinerary_id": 1,
-        "routes": [
-            {"route_id": "199-3136", "start": "1064", "end": "10802"},
-            {"route_id": "385-3136", "start": "10802", "end": "817"},
-            {"route_id": "walk", "start": "817", "end": "-1"},
-        ],
-    }
-]
-
-
-INPUT_ITINS["2200"] = [
-    {
-        "itinerary_id": 2,
-        "routes": [
-            {"route_id": "444-3136", "start": "2200", "end": "271"},
-            {"route_id": "walk", "start": "271", "end": "-1"},
-        ],
-    }
-]
-
-INPUT_ITINS["600014"] = [
-    {
-        "itinerary_id": 3,
-        "routes": [
-            {"route_id": "BDVL-3124", "start": "600014", "end": "600036"},
-            {"route_id": "walk", "start": "600036", "end": "10793"},
-            {"route_id": "385-3136", "start": "10793", "end": "816"},
-            {"route_id": "walk", "start": "816", "end": "-1"},
-        ],
-    }
-]
-
 
 # THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
 ITINERARIES = []
 STATION_ITINERARY_LOOKUP = {}
-
 STATION_NAMES = {}
-
 
 def convert_date_to_int(time: time) -> int:
     return time.hour * MINUTES_IN_HOUR + time.minute
