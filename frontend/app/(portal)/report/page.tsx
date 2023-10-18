@@ -220,30 +220,169 @@ const Report = () => {
 		}
 	};
 
-	return (
-		<div>
-			<Card className="h-full bg-gray-100/30">
-				<CardHeader>
-					<CardTitle>Simulation Report</CardTitle>
-					<div className="flex gap-2">
-						<Badge
-							variant="outline"
-							className="max-w-fit border-blue-500 bg-blue-500/30 text-blue-500 hover:none"
-						>
-							ID: SIM001
-						</Badge>
-						<Badge
-							variant="outline"
-							className="max-w-fit border-gray-400  text-gray-400 hover:none"
-						>
-							Date: 15/10/2023 | Run Time: 11:00AM | Duration: 120 mins
-						</Badge>
-					</div>
-				</CardHeader>
-				<CardContent>
-					<div className="grid grid-cols-3 gap-4">
-						<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
-							<p className="font-bold cols-span-1"> Fleet </p>
+	return (<div >
+		<Card className="h-full bg-gray-100/30">
+			<CardHeader >
+				<CardTitle>Simulation Report</CardTitle>
+				<div className = 'flex gap-2'>
+				<Badge
+					variant="outline"
+					className="max-w-fit border-blue-500 bg-blue-500/30 text-blue-500 hover:none"
+				>
+					ID: SIM001
+				</Badge>
+				<Badge
+					variant="outline"
+					className="max-w-fit border-gray-400  text-gray-400 hover:none"
+				>
+					Date: 15/10/2023 | Run Time: 11:00AM | Duration: 120 mins
+				</Badge>
+				</div>
+			</CardHeader>
+			<CardContent>
+				<div className="grid grid-cols-3 gap-4">
+					<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
+						<p className="font-bold cols-span-1"> Fleet </p>
+						<div className="col-span-2 flex flex-row font-mono gap-2 items-center text-muted-foreground text-sm">
+						<Plot
+							data={
+								[
+									{
+										...data1
+									}
+								] as PlotParams['data']
+							}
+							layout={layout1}
+							config={config}
+							style={{ width: "100%", height: "150px" }}
+						/>
+						<br></br>
+						</div>
+						<div className="col-span-2 ml-6 mr-6" >
+							<Progress value={71} />
+						</div>
+						<div className="col-span-2 text-right text-xs text-muted-foreground">
+							Total Vehicles Active 1000/2000
+						</div>
+					</Card>
+
+					<Card className="p-2 gap-4 justify-between">
+						<p className="font-bold cols-span-1">Route Utilisation</p>
+						<br></br>
+						<div>
+							<Plot
+							data={data4}
+							layout={layout4}
+							config={config}
+							style={{ width: "100%", height: "290px"}}
+						/>
+						<br>
+						</br>
+						</div>				
+					</Card>
+
+					<Card className="p-2 gap-4 justify-between">
+						<p className="font-bold cols-span-1">Delays</p>
+						<div className="col-span-1 text-right">
+							<Badge
+								variant="outline"
+								className="max-w-fit border-red-500 bg-red-500/30 text-red-500 hover:none"
+							>
+								<span className="w-2 h-2 rounded-full bg-red-500 mr-2" />
+								Significant Delays
+							</Badge>
+							</div>
+						<div>
+							<Plot
+							data={
+								[
+									{
+										...data2
+									}
+								] as PlotParams['data']
+							}
+							layout={layout2}
+							config={config}
+							style={{ width: "100%", height: "180px" }}
+						/>
+						<br>
+						</br>
+						<br></br>
+						</div>
+							<div className="grid grid-cols-3 gap-1 ">
+							<Badge
+								variant="secondary"
+								className="hover:none"
+							>
+								<div className="grid grid-cols-1 gap-1 ">
+								<p className="text-3xl">
+								30.19% 
+								</p>
+								<p>
+								5 min late %
+								</p>
+								</div>
+							</Badge>
+							<Badge
+								variant="secondary"
+								className="hover:none"
+							>
+								<div className="grid grid-cols-1 gap-1 ">
+								<p className="text-3xl">
+								22.56% 
+								</p>
+								<p>
+								10 min late %
+								</p>
+								</div>
+							</Badge>
+							<Badge
+								variant="secondary"
+								className="hover:none"
+							>
+								<div className="grid grid-cols-1 gap-1 ">
+								<p className="text-3xl">
+								10.21%
+								</p>
+								<p>
+								15 min late %
+								</p>
+								</div>
+							</Badge>
+							</div>
+					</Card>
+
+					<Card className="p-2 gap-4 justify-between">
+						<p className="font-bold cols-span-1">CO2 Emissions</p>
+						<div className="col-span-1 text-right">
+							<Badge
+								variant="outline"
+								className="max-w-fit border-orange-500 bg-orange-500/30 text-orange-500 hover:none"
+							>
+								<span className="w-2 h-2 rounded-full bg-red-500 mr-2" />
+								Above Threshold
+							</Badge>
+							</div>
+						<div>
+							<Plot
+							data={
+								[
+									{
+										...data3
+									}
+								] as PlotParams['data']
+							}
+							layout={layout3}
+							config={config}
+							style={{ width: "100%", height: "180px" }}
+						/>
+						<br>
+						</br>
+						</div>			
+					</Card>
+
+					<Card className="p-2 gap-4 grid grid-cols-2 justify-between">
+						<p className="font-bold cols-span-1"> Passengers </p>
 							<div className="col-span-2 flex flex-row font-mono gap-2 items-center text-muted-foreground text-sm">
 								<Plot
 									data={
