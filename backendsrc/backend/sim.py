@@ -711,14 +711,6 @@ class BusRoute(Route):
                         )
                         self.transporters_spawned += 1
                         self.add_bus(new_bus)
-                        # if trip.timetable[0][0] == station:
-                        #     print(
-                        #         f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} started on route {self.name} at station {station_info[0]}"
-                        #     )
-                        # else:
-                        #     print(
-                        #         f"({self.env.now+self.env_start}): Bus {new_bus.get_name()} already on route {self.name} at station {station_info[0]}"
-                        #     )
                         self.env.process(new_bus.bus_instance(self))
                         trips_inited.append(trip)
             for trip in trips_inited:
@@ -769,9 +761,7 @@ class TrainRoute(Route):
     def initiate_route(self) -> None:
         """
         A function to initiate the route. Will spawn trains at stops according to the trip timing
-        data. TODO: will the trip timing data be all that is required to correctly spawn
-        trains? Or will we also need additional information to ensure that trains do not
-        collide?
+        data.
         """
         trips_to_iniate = self.trip_timing_data
         while True:
@@ -796,14 +786,6 @@ class TrainRoute(Route):
                         )
                         self.transporters_spawned += 1
                         self.add_train(new_train)
-                        # if trip.timetable[0][0] == station:
-                        #     print(
-                        #         f"({self.env.now+self.env_start}): Train {new_train.get_name()} started on route {self.name} at station {station_info[0]}"
-                        #     )
-                        # else:
-                        #     print(
-                        #         f"({self.env.now+self.env_start}): Train {new_train.get_name()} already on route {self.name} at station {station_info[0]}"
-                        #     )
                         self.env.process(new_train.train_instance(self))
                         trips_inited.append(trip)
             for trip in trips_inited:
@@ -841,7 +823,7 @@ class Walk(Route):
         self.location_index = location_index
         self.people = people
         self.walk_time_log = {}
-        self.duration = 0  # TODO: implement duration
+        self.duration = 0
 
     def initiate_route(self) -> None:
         return super().initiate_route()
@@ -1648,145 +1630,145 @@ def generate_itins(user_data: dict) -> dict:
     return {"itineraries": itins_collected}
 
 
-#     """
-#     Collects itineraries for given user input data and returns them in the required format for running simulations
-#     Warning: This will call the TripGo API in bulk
-#     """
-#     # format user data how we need it
-#     end_time = convert_epoch(
-#         user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"]
-#     )
-#     start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
-#     active_stations = user_data["active_stations"]
-#     print(start_time, end_time)
+def generate_itins_with_tripgo(user_data: dict) -> dict:
+    """
+    Collects itineraries for given user input data and returns them in the required format for running simulations
+    Warning: This will call the TripGo API in bulk
+    """
+    # format user data how we need it
+    end_time = convert_epoch(
+        user_data["env_start"] + user_data["time_horizon"], user_data["snapshot_date"]
+    )
+    start_time = convert_epoch(user_data["env_start"], user_data["snapshot_date"])
+    active_stations = user_data["active_stations"]
+    print(start_time, end_time)
 
-#     # TODO: move environment variables
-#     modes = ["pt_pub_bus", "wa_"]
-#     api = "https://api.tripgo.com/v1/routing.json"
-#     key = "2286d1ca160dd724a3da27802c7aba91"
-#     endStation = '(-27.46638, 153.01835)"Roma Street Stop 125 at Transit Centre"'
-#     num_itins = 1
+    modes = ["pt_pub_bus", "wa_"]
+    api = "https://api.tripgo.com/v1/routing.json"
+    key = "2286d1ca160dd724a3da27802c7aba91"
+    endStation = '(-27.46638, 153.01835)"Roma Street Stop 125 at Transit Centre"'
+    num_itins = 1
 
-#     # inititalise variables
-#     itin_id = 0
-#     itins_collected = []
-#     failed_stations = []
-#     # collect itineraries for each active station
-#     for station in active_stations:
-#         # Check if itinerary for station is in db
+    # inititalise variables
+    itin_id = 0
+    itins_collected = []
+    failed_stations = []
+    # collect itineraries for each active station
+    for station in active_stations:
+        # Check if itinerary for station is in db
 
-#         parameters = {
-#             "v": "11",
-#             "from": f'({station["lat"]}, {station["long"]})',
-#             "to": endStation,
-#             "modes": modes,
-#             "onlyAllowModes" : modes,
-#             "bestOnly": "true",
-#             "includeStops": "false",
-#             "departAfter": start_time,
-#             "arriveBefore": end_time,
-#         }
-#         headers = {"X-TripGo-Key": key}
-#         data = callTripGoAPI(api, parameters, headers)
-#         print("Data ", data)
-#         format_data = formatItins(
-#             data, num_itins, station["station_id"].zfill(6), itin_id
-#         )
-#         print("Formatted data ", format_data)
-#         if format_data:
-#             itins_collected += format_data
-#             itin_id += num_itins
-#         else:
-#             failed_stations.append(station["station_id"])
+        parameters = {
+            "v": "11",
+            "from": f'({station["lat"]}, {station["long"]})',
+            "to": endStation,
+            "modes": modes,
+            "onlyAllowModes": modes,
+            "bestOnly": "true",
+            "includeStops": "false",
+            "departAfter": start_time,
+            "arriveBefore": end_time,
+        }
+        headers = {"X-TripGo-Key": key}
+        data = callTripGoAPI(api, parameters, headers)
+        print("Data ", data)
+        format_data = formatItins(
+            data, num_itins, station["station_id"].zfill(6), itin_id
+        )
+        print("Formatted data ", format_data)
+        if format_data:
+            itins_collected += format_data
+            itin_id += num_itins
+        else:
+            failed_stations.append(station["station_id"])
 
-#     return {"itineraries": itins_collected, "failed_stations": failed_stations}
-
-
-# def convert_epoch(time: int, date_str: str) -> int:
-#     """
-#     converts a given time in seconds from midnight and a date string of format "yyyy--mm-dd"
-#     to seconds since 1970
-#     """
-#     epoch_date = int(datetime.strptime(date_str, "%Y-%m-%d").timestamp())
-#     epoch_time = epoch_date + time
-#     return epoch_time
+    return {"itineraries": itins_collected, "failed_stations": failed_stations}
 
 
-# def does_contain(itin, itins):
-#     for i in itins:
-#         if i["routes"] == itin["routes"]:
-#             return True
-#     return False
+def convert_epoch(time: int, date_str: str) -> int:
+    """
+    converts a given time in seconds from midnight and a date string of format "yyyy--mm-dd"
+    to seconds since 1970
+    """
+    epoch_date = int(datetime.strptime(date_str, "%Y-%m-%d").timestamp())
+    epoch_time = epoch_date + time
+    return epoch_time
 
 
-# def formatItins(response, num_itins, start_station_id, start_itin_id):
-#     """
-#     Formats itineraries from response of a single api call
-#     """
-#     itins = []
-#     itin_id = start_itin_id
-#     for group in response["groups"]:
-#         options = group["trips"]
-#         options = sorted(options, key=lambda k: k["weightedScore"])
-#         trips_parsed = 0
-#         for trip in options:
-#             exit = False
-#             routes = []
-#             count = 0
-#             for segment in trip["segments"]:
-#                 # Want to find bus/walk route
-#                 hash = segment["segmentTemplateHashCode"]
-#                 # Now find associated segmentTemplate
-#                 template = None
-#                 for segTemp in response["segmentTemplates"]:
-#                     if segTemp["hashCode"] == hash:
-#                         template = segTemp
-#                         break
-#                 route_id = ""
-#                 if "WALK" in template["action"].upper():
-#                     route_id = "walk"
-#                 elif "TAKE" in template["action"].upper():
-#                     route_id = segment["routeID"]
+def does_contain(itin, itins):
+    for i in itins:
+        if i["routes"] == itin["routes"]:
+            return True
+    return False
 
 
-#                 # Now want to get from where to where
-#                 from_station = template["from"]["stopCode"].lstrip('0')
-#                 if count == 0 and from_station != (str(start_station_id).lstrip("0")):
-#                     # Coords where too close to another stop and it tried to make that the start
-#                     print(from_station, str(start_station_id).lstrip("0"), type(start_itin_id))
-#                     exit = True  # for double break
-#                     break
-#                 to_station = template["to"]["stopCode"].lstrip('0')
-#                 route = {"route_id": route_id, "start": from_station, "end": to_station}
-#                 count += 1
-#                 routes.append(route)
-#             if exit:
-#                 exit = False
-#                 continue
-#             itin = {"itinerary_id": itin_id, "routes": routes}
-#             if not does_contain(itin, itins):
-#                 itin_id += 1
-#                 trips_parsed += 1
-#                 itins.append(itin)
-#                 if trips_parsed >= num_itins:
-#                     break
-#     print(itins)
-#     return itins
+def formatItins(response, num_itins, start_station_id, start_itin_id):
+    """
+    Formats itineraries from response of a single api call
+    """
+    itins = []
+    itin_id = start_itin_id
+    for group in response["groups"]:
+        options = group["trips"]
+        options = sorted(options, key=lambda k: k["weightedScore"])
+        trips_parsed = 0
+        for trip in options:
+            exit = False
+            routes = []
+            count = 0
+            for segment in trip["segments"]:
+                # Want to find bus/walk route
+                hash = segment["segmentTemplateHashCode"]
+                # Now find associated segmentTemplate
+                template = None
+                for segTemp in response["segmentTemplates"]:
+                    if segTemp["hashCode"] == hash:
+                        template = segTemp
+                        break
+                route_id = ""
+                if "WALK" in template["action"].upper():
+                    route_id = "walk"
+                elif "TAKE" in template["action"].upper():
+                    route_id = segment["routeID"]
+
+                # Now want to get from where to where
+                from_station = template["from"]["stopCode"].lstrip("0")
+                if count == 0 and from_station != (str(start_station_id).lstrip("0")):
+                    # Coords where too close to another stop and it tried to make that the start
+                    print(
+                        from_station,
+                        str(start_station_id).lstrip("0"),
+                        type(start_itin_id),
+                    )
+                    exit = True  # for double break
+                    break
+                to_station = template["to"]["stopCode"].lstrip("0")
+                route = {"route_id": route_id, "start": from_station, "end": to_station}
+                count += 1
+                routes.append(route)
+            if exit:
+                exit = False
+                continue
+            itin = {"itinerary_id": itin_id, "routes": routes}
+            if not does_contain(itin, itins):
+                itin_id += 1
+                trips_parsed += 1
+                itins.append(itin)
+                if trips_parsed >= num_itins:
+                    break
+    print(itins)
+    return itins
 
 
-# def callTripGoAPI(api, parameters, headers):
-#     """
-#     Calls the TripGoAPI and returns the response
-#     """
-#     response = requests.get(api, params=parameters, headers=headers)
-#     if response.status_code == 200:
-#         print("sucessfully fetched TripGo data")
-#         return response.json()
-#     else:
-#         return f"failed to fetch TripGo data: {response.status_code}"
-
-
-#### TRAIN RELATED TESTS ####
+def callTripGoAPI(api, parameters, headers):
+    """
+    Calls the TripGoAPI and returns the response
+    """
+    response = requests.get(api, params=parameters, headers=headers)
+    if response.status_code == 200:
+        print("sucessfully fetched TripGo data")
+        return response.json()
+    else:
+        return f"failed to fetch TripGo data: {response.status_code}"
 
 
 def test_sim_with_trains_basic():

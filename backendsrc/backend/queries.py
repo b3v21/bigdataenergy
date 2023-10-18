@@ -5,7 +5,7 @@ import os
 import sys
 import json
 from django.db.models import Q
-from rest_framework.response import Response 
+from rest_framework.response import Response
 from .itins import ALLOWED_SUBURBS, ALLOWED_STATIONS
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -13,6 +13,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
 from db.models import Station, ItineraryCache, RouteInItinCache
+
 
 def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     """
