@@ -1,5 +1,7 @@
 # These are the hardcoded itineraries that will appear on the frontend
 INPUT_ITINS = {}
+
+## ST LUCIA ##
 INPUT_ITINS["1850"] = [
     {
         "itinerary_id": 0,
@@ -10,6 +12,8 @@ INPUT_ITINS["1850"] = [
     }
 ]
 
+
+## WEST END ##
 INPUT_ITINS["1064"] = [
     {
         "itinerary_id": 1,
@@ -21,7 +25,7 @@ INPUT_ITINS["1064"] = [
     }
 ]
 
-
+## INDRO ##
 INPUT_ITINS["2200"] = [
     {
         "itinerary_id": 2,
@@ -32,6 +36,7 @@ INPUT_ITINS["2200"] = [
     }
 ]
 
+## FORTITUDE VALLEY ##
 INPUT_ITINS["600014"] = [
     {
         "itinerary_id": 3,
