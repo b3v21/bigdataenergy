@@ -1,17 +1,18 @@
 'use client';
 
-import { useGetSimulationData } from '@/hooks/useGetSimulationData';
-import { useMemo, useState } from 'react';
-import Plot, { PlotParams } from 'react-plotly.js';
-import HoverCard from './components/hover-card';
-import Sidebar from './components/sidebar';
-import { layout, stationSettings, routeSettings, walkSettings } from './plot';
-import { Itineraries, Station, Stations, Suburbs } from '@/@types';
+import { Itineraries, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
-import { PlotMouseEvent } from 'plotly.js';
+import { useToast } from '@/components/ui/use-toast';
+import { useGetSimulationData } from '@/hooks/useGetSimulationData';
 import { StationStatusColour, getStationColourFromWaitTime } from '@/lib/utils';
 import { useTheme } from 'next-themes';
-import { useToast } from '@/components/ui/use-toast';
+import dynamic from 'next/dynamic';
+import { PlotMouseEvent } from 'plotly.js';
+import { useMemo, useState } from 'react';
+import { PlotParams } from 'react-plotly.js';
+import HoverCard from './components/hover-card';
+import Sidebar from './components/sidebar';
+import { layout, routeSettings, stationSettings, walkSettings } from './plot';
 
 export type SimulationSettings = {
 	date: string;
@@ -34,8 +35,14 @@ export type HoverData = {
 const HOVER_OFFSET = { x: 10, y: 10 };
 
 const Simulation = () => {
+	const Plot = useMemo(
+		() => dynamic(() => import('react-plotly.js'), { ssr: false }),
+		[]
+	);
+
 	// Stores information showed on the hover card
 	const [hoverData, setHoverData] = useState<HoverData | null>(null);
+
 	// Stores simulation details
 	const [simulationSettings, setSimulationSettings] =
 		useState<SimulationSettings>({
