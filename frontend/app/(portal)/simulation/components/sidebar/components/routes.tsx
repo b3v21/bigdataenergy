@@ -21,6 +21,7 @@ import { PlotParams } from 'react-plotly.js';
 import { config } from '../../../reports';
 import { DetailsProps } from './details';
 import dynamic from 'next/dynamic';
+import { useTheme } from 'next-themes';
 
 const Routes = ({
 	simulationSettings,
@@ -85,8 +86,6 @@ const Routes = ({
 				})
 		  ]
 		: [];
-	//var bottleneckValues = simulationResult  ?  [Object.values(simulationResult["Stations"]).filter(station => station["bottleneck"] == true).map(station => station["stationName"]),Object.values(simulationResult["Stations"]).filter(station => station["bottleneck"] == true).map(station => station["avg_wait"]),
-	//] : [];
 
 	const graphThreeData = {
 		type: 'table',
@@ -187,6 +186,146 @@ const Routes = ({
 			setGraphTwoStopNames([]);
 			setGraphTwoStopValues([]);
 		}
+	};
+
+	const theme = useTheme();
+	const layout: PlotParams['layout'] = {
+		autosize: true,
+		height: 250,
+		title: {
+			text: '<b>Passenger Flow Over Time <b>',
+			font: {
+				size: 14
+			}
+		},
+		font: {
+			family: 'Arial',
+		},
+		margin: {
+			l: 25,
+			r: 0,
+			b: 20,
+			t: 40,
+			pad: 0
+		},
+		xaxis: {
+			showticklabels: false,
+			title: { text: 'Time (seconds)', standoff: 240 }
+		},
+		font :{
+			color: theme.resolvedTheme === 'dark' ? 'white' : '#020817'
+		},
+		plot_bgcolor: theme.resolvedTheme === 'dark' ? '#020817' : 'white',
+		paper_bgcolor:theme.resolvedTheme === 'dark' ? '#020817' : 'white'
+	};
+
+	
+	const layoutFull: PlotParams['layout'] = {
+		width: 700,
+		height: 700,
+		title: {
+			text: '<b>Passenger Flow Over Time <b>',
+			font: {
+				size: 14
+			}
+		},
+		font: {
+			family: 'Arial',
+		},
+		margin: {
+			l: 25,
+			r: 0,
+			b: 20,
+			t: 40,
+			pad: 0
+		},
+		xaxis: {
+			showticklabels: false,
+			title: { text: 'Time (seconds)', standoff: 700 }
+		},
+		font :{
+			color: theme.resolvedTheme === 'dark' ? 'white' : '#020817'
+		},
+		plot_bgcolor: theme.resolvedTheme === 'dark' ? '#020817' : 'white',
+		paper_bgcolor:theme.resolvedTheme === 'dark' ? '#020817' : 'white'
+	};
+
+	const layoutGraphTwo: PlotParams['layout'] = {
+		autosize: true,
+		height: 250,
+		title: {
+		  text: '<b>Passenger Volume Per Station<b>',
+		  font: {
+			  size: 14
+			},
+		},
+
+		margin: {
+			l: 25,
+			r: 0,
+			b: 20,
+			t: 40,
+			pad: 0
+		},
+		xaxis: {
+			showticklabels: false,
+			title: { text: 'Stations', standoff: 240 },
+			type: 'category'
+		},
+		font :{
+			color: theme.resolvedTheme === 'dark' ? 'white' : '#020817',
+			family: 'Arial',
+		},
+		plot_bgcolor: theme.resolvedTheme === 'dark' ? '#020817' : 'white',
+		paper_bgcolor:theme.resolvedTheme === 'dark' ? '#020817' : 'white'
+	};
+
+	const layoutGraphTwoFull: PlotParams['layout'] = {
+		width: 700,
+		height: 700,
+		title: {
+		  text: '<b>Passenger Volume Per Station<b>',
+		  font: {
+			  size: 14
+			},
+		},
+		margin: {
+			l: 25,
+			r: 0,
+			b: 20,
+			t: 40,
+			pad: 0
+		},
+		xaxis: {
+			showticklabels: false,
+			title: { text: 'Stations', standoff: 700 },
+			type: 'category'
+		},
+		font :{
+			color: theme.resolvedTheme === 'dark' ? 'white' : '#020817',
+			family: 'Arial',
+		},
+		plot_bgcolor: theme.resolvedTheme === 'dark' ? '#020817' : 'white',
+		paper_bgcolor:theme.resolvedTheme === 'dark' ? '#020817' : 'white'
+	};
+
+	const layoutGraphThree: PlotParams['layout'] = {
+		autosize: true,
+		height: 250,
+	
+		font: {
+			family: 'Arial',
+			color: 'black'
+		},
+		margin: {
+			l: 0,
+			r: 0,
+			b: 0,
+			t: 0,
+			pad: 0
+		},
+		plot_bgcolor: theme.resolvedTheme === 'dark' ? '#020817' : 'white',
+		paper_bgcolor:theme.resolvedTheme === 'dark' ? '#020817' : 'white'
 	};
 
 	return (
@@ -370,7 +509,6 @@ const layoutGraphTwo: PlotParams['layout'] = {
 	},
 	font: {
 		family: 'Arial',
-		color: 'black'
 	},
 	margin: {
 		l: 25,
@@ -386,32 +524,6 @@ const layoutGraphTwo: PlotParams['layout'] = {
 	}
 };
 
-const layoutGraphTwoFull: PlotParams['layout'] = {
-	width: 700,
-	height: 700,
-	title: {
-	  text: '<b>Passenger Volume Per Station<b>',
-	  font: {
-		  size: 14
-		},
-	},
-	font: {
-		family: 'Arial',
-		color: 'black'
-	},
-	margin: {
-		l: 25,
-		r: 0,
-		b: 20,
-		t: 40,
-		pad: 0
-	},
-	xaxis: {
-		showticklabels: false,
-		title: { text: 'Stations', standoff: 700 },
-		type: 'category'
-	}
-};
 
   const layoutGraphThree: PlotParams['layout'] = {
 	autosize: true,
@@ -430,59 +542,6 @@ const layoutGraphTwoFull: PlotParams['layout'] = {
 	}
 };
 
-
-
-  const layout: PlotParams['layout'] = {
-	autosize: true,
-	height: 250,
-	title: {
-		text: '<b>Passenger Flow Over Time <b>',
-		font: {
-			size: 14
-		}
-	},
-	font: {
-		family: 'Arial',
-		color: 'black'
-	},
-	margin: {
-		l: 25,
-		r: 0,
-		b: 20,
-		t: 40,
-		pad: 0
-	},
-	xaxis: {
-		showticklabels: false,
-		title: { text: 'Time (seconds)', standoff: 240 }
-	}
-};
-
-const layoutFull: PlotParams['layout'] = {
-	width: 700,
-	height: 700,
-	title: {
-		text: '<b>Passenger Flow Over Time <b>',
-		font: {
-			size: 14
-		}
-	},
-	font: {
-		family: 'Arial',
-		color: 'black'
-	},
-	margin: {
-		l: 25,
-		r: 0,
-		b: 20,
-		t: 40,
-		pad: 0
-	},
-	xaxis: {
-		showticklabels: false,
-		title: { text: 'Time (seconds)', standoff: 700 }
-	}
-};
 
 const ActionCard = ({
 	title,
