@@ -294,7 +294,7 @@ const Report = () => {
 							<div className="grid grid-cols-3 gap-1 ">
 							<Badge
 								variant="secondary"
-								className=" bg-gray-100 hover:none"
+								className="hover:none"
 							>
 								<div className="grid grid-cols-1 gap-1 ">
 								<p className="text-3xl">
@@ -307,7 +307,7 @@ const Report = () => {
 							</Badge>
 							<Badge
 								variant="secondary"
-								className=" bg-gray-100 hover:none"
+								className="hover:none"
 							>
 								<div className="grid grid-cols-1 gap-1 ">
 								<p className="text-3xl">
@@ -320,7 +320,7 @@ const Report = () => {
 							</Badge>
 							<Badge
 								variant="secondary"
-								className=" bg-gray-100 hover:none"
+								className="hover:none"
 							>
 								<div className="grid grid-cols-1 gap-1 ">
 								<p className="text-3xl">

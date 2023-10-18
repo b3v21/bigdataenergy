@@ -307,10 +307,10 @@ const Routes = ({
 };
 
 const layoutGraphTwo: PlotParams['layout'] = {
-	width: 250,
+	autosize: true,
 	height: 250,
 	title: {
-	  text: '<b>Average Passengers Waiting<b>',
+	  text: '<b>Passenger Volume Per Station<b>',
 	  font: {
 		  size: 14
 		},
@@ -340,7 +340,7 @@ const layoutGraphTwo: PlotParams['layout'] = {
 	width: 700,
 	height: 700,
 	title: {
-	  text: '<b>Average Passengers Waiting<b>',
+	  text: '<b>Passenger Volume Per Station<b>',
 	  font: {
 		  size: 14
 		},
@@ -366,7 +366,7 @@ const layoutGraphTwo: PlotParams['layout'] = {
   };
 
   const layoutGraphThree: PlotParams['layout'] = {
-	width: 250,
+	autosize: true,
 	height: 250,
 
 	font: {
@@ -384,7 +384,7 @@ const layoutGraphTwo: PlotParams['layout'] = {
   }
 
   const layout: PlotParams['layout'] = {
-	width: 250,
+	autosize: true,
 	height: 250,
 	title: {
 	  text: '<b>Passenger Flow Over Time <b>',
