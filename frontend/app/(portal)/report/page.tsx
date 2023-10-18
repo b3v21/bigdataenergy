@@ -16,6 +16,7 @@ const Report = () => {
 		[]
 	);
 
+	// generate data and layouts for each unique graph
 	const theme = useTheme();
 	const data1 = {
 		values: [300, 120, 131, 12],

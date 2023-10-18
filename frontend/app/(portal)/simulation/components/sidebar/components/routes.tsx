@@ -31,6 +31,7 @@ const Routes = ({
 }: DetailsProps) => {
 	const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 
+	// variables to control states of dynamic content
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);
 	const [stationSelectorOpen, setStationSelectorOpen] = useState(false);
 	const [routeSelectorOpen, setRouteSelectorOpen] = useState(false);
@@ -53,6 +54,7 @@ const Routes = ({
 	const [graphTwoStopNames, setGraphTwoStopNames] = useState([]);
 	const [graphTwoStopValues, setGraphTwoStopValues] = useState([]);
 
+	// generate data for routes graph
 	const graphTwoData = {
 		x: graphTwoStopNames,
 		y: graphTwoStopValues,
@@ -64,9 +66,8 @@ const Routes = ({
 			'<br><b>Average Passengers at Stop</b>: %{y}<br>'
 	};
 
-	{
-		/* @ts-ignore  */
-	}
+	// parse simulation results to usable data
+	{/* @ts-ignore  */	}
 	const stationWaitTimes = simulationResult
 		? Object.values(simulationResult['Stations']).sort((a, b) => {
 				// Assuming "avg_wait" values are numbers, if not, convert as needed
@@ -87,6 +88,7 @@ const Routes = ({
 		  ]
 		: [];
 
+	// generate data for bottleneck table 
 	const graphThreeData = {
 		type: 'table',
 		header: {
@@ -106,9 +108,8 @@ const Routes = ({
 		}
 	};
 
-	{
-		/* @ts-ignore  */
-	}
+	// logic for handling user selections
+	{/* @ts-ignore  */}
 	const handleSetStation = (station) => {
 		setStation(station);
 		//replot the graph here
@@ -188,6 +189,7 @@ const Routes = ({
 		}
 	};
 
+	// set unique layouts for each graph and full screen graph 
 	const theme = useTheme();
 	const layout: PlotParams['layout'] = {
 		autosize: true,
@@ -498,51 +500,8 @@ const Routes = ({
 	);
 };
 
-const layoutGraphTwo: PlotParams['layout'] = {
-	autosize: true,
-	height: 250,
-	title: {
-	  text: '<b>Passenger Volume Per Station<b>',
-	  font: {
-		  size: 14
-		},
-	},
-	font: {
-		family: 'Arial',
-	},
-	margin: {
-		l: 25,
-		r: 0,
-		b: 20,
-		t: 40,
-		pad: 0
-	},
-	xaxis: {
-		showticklabels: false,
-		title: { text: 'Stations', standoff: 240 },
-		type: 'category'
-	}
-};
 
-
-  const layoutGraphThree: PlotParams['layout'] = {
-	autosize: true,
-	height: 250,
-
-	font: {
-		family: 'Arial',
-		color: 'black'
-	},
-	margin: {
-		l: 0,
-		r: 0,
-		b: 0,
-		t: 0,
-		pad: 0
-	}
-};
-
-
+// card to display graphs etc
 const ActionCard = ({
 	title,
 	children
