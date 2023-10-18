@@ -5,3 +5,4 @@
 *.sqlite3
 *.csv
 !requirements.txt
+*.png
