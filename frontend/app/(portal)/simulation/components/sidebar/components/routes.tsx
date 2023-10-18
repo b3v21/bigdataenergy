@@ -20,6 +20,7 @@ import { useState } from 'react';
 import { PlotParams } from 'react-plotly.js';
 import { config } from '../../../reports';
 import { DetailsProps } from './details';
+import dynamic from 'next/dynamic';
 
 const Routes = ({
 	simulationSettings,

@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { cn, getItineraryColourFromItinName } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
 
 export type ItinProps = {
@@ -27,12 +28,21 @@ const Status = ({ itineraries }: ItinProps) => {
 					{itineraries?.map((itin) => {
 						const endStation =
 							itin.stations[itin.stations.length - 1].stationName;
+
+						const itinColour = getItineraryColourFromItinName(itin.routeName);
 						return (
 							<Card
 								key={itin.routeName}
 								className="p-2 gap-4 grid grid-cols-2 justify-between"
 							>
-								<p className="font-bold cols-span-1">{itin.routeName}</p>
+								<p
+									className="font-bold cols-span-1"
+									style={{
+										color: itinColour
+									}}
+								>
+									{itin.routeName}
+								</p>
 								<div className="col-span-1 text-right">
 									{itin.routeName.toLowerCase().includes('walk') ? (
 										<Badge

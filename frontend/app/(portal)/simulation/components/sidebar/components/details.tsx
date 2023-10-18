@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
 	Command,
 	CommandEmpty,
@@ -17,12 +17,12 @@ import {
 	PopoverTrigger
 } from '@/components/ui/popover';
 
-import { cn } from '@/lib/utils';
-import { useGetSuburbs } from '@/hooks/useGetSuburbs';
-import { SimulationSettings } from '../../../page';
-import { useGetItineraries } from '@/hooks/useGetItineraries';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useGetItineraries } from '@/hooks/useGetItineraries';
+import { useGetSuburbs } from '@/hooks/useGetSuburbs';
+import { cn } from '@/lib/utils';
+import { SimulationSettings } from '../../../page';
 
 type Props = {
 	simLoading: boolean;

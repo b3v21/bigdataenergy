@@ -27,7 +27,7 @@ const routeSettings = {
 	type: 'scattermapbox',
 	showlegend: false,
 	hoverinfo: 'none',
-	mode: 'markers+lines',
+	mode: 'lines',
 	line: {
 		width: 4,
 		color: '#4682B4'
