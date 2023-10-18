@@ -11,7 +11,7 @@ export default function RootLayout({
 	const queryClient = new QueryClient();
 
 	return (
-		<div className="flex-col flex h-screen">
+		<div className="flex-col flex max-h-screen h-screen">
 			<div className="border-b">
 				<div className="flex h-16 items-center px-4">
 					<MainNav className="mx-6" />

@@ -140,7 +140,7 @@ const Simulation = () => {
 	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
 
 	return (
-		<div className="flex flex-row gap-4">
+		<div className="flex flex-row gap-4 h-full">
 			<Sidebar
 				currentTab={sidebarTab}
 				simLoading={simulationDataLoading}
@@ -232,7 +232,7 @@ const Simulation = () => {
 					style={{
 						borderRadius: 'var(--radius)',
 						overflow: 'hidden',
-						minHeight: '800px'
+						height: '100%'
 					}}
 					onHover={(event) => {
 						if (!itins || !simulationResult) return;
