@@ -429,7 +429,7 @@ const layoutGraphTwoFull: PlotParams['layout'] = {
 	}
 };
 
-  }
+
 
   const layout: PlotParams['layout'] = {
 	autosize: true,
