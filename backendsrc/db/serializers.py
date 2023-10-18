@@ -8,14 +8,15 @@ from db.models import (
     Timetable,
     SimulationOutput,
     TravelTimes,
-    BusTimeOut,
+    TransporterTimeOut,
     PassengerChanges,
-    BusOnRouteInfo,
+    TransporterOnRouteInfo,
     StationSim,
     RouteSim,
     ItinerarySim,
-    RouteInItinerary,
+    RouteInItinCache,
     ItineraryCache,
+    WalkSim,
 )
 
 
@@ -67,9 +68,9 @@ class SimulationOutputSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class BusTimeOutSerializer(serializers.ModelSerializer):
+class TransporterTimeOutSerializer(serializers.ModelSerializer):
     class Meta:
-        model = BusTimeOut
+        model = TransporterTimeOut
         fields = "__all__"
 
 
@@ -79,9 +80,9 @@ class PassengerChangesSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class BusOnRouteInfoSerializer(serializers.ModelSerializer):
+class TransporterOnRouteInfoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = BusOnRouteInfo
+        model = TransporterOnRouteInfo
         fields = "__all__"
 
 
@@ -96,7 +97,6 @@ class RouteSimSerializer(serializers.ModelSerializer):
     class Meta:
         model = RouteSim
         fields = "__all__"
-        depth = 2
 
 
 class ItinerarySimSerializer(serializers.ModelSerializer):
@@ -105,15 +105,21 @@ class ItinerarySimSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class RouteInItinerarySerializer(serializers.ModelSerializer):
+class RouteInItinCacheSerializer(serializers.ModelSerializer):
     class Meta:
-        model = RouteInItinerary
+        model = RouteInItinCache
         fields = "__all__"
 
 
 class ItineraryCacheSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ItineraryCache
+        model = RouteInItinCache
+        fields = "__all__"
+
+
+class WalkSim(serializers.ModelSerializer):
+    class Meta:
+        model = WalkSim
         fields = "__all__"
 
 

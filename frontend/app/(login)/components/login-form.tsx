@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { ArrowUp, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -32,7 +32,6 @@ const LoginForm = () => {
 
 	function onSubmit(values: z.infer<typeof formSchema>) {
 		setIsLoading(true);
-		console.log(values)
 
 		// Stubbing login logic
 		setTimeout(() => {
@@ -42,7 +41,7 @@ const LoginForm = () => {
 
 	return (
 		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 				<FormField
 					control={form.control}
 					name="email"
@@ -63,11 +62,20 @@ const LoginForm = () => {
 						</FormItem>
 					)}
 				/>
-				<Button type="submit" className="w-full" disabled={isLoading}>
+				<Button
+					type="submit"
+					className="w-full bg-slate-950 hover:bg-slate-900 text-white"
+					disabled={isLoading}
+				>
 					{isLoading ? (
 						<Loader2 className="animate-spin" size={16} />
 					) : (
-						'continue'
+						<span className="flex flex-row gap-2 items-center">
+							continue
+							<div className="rotate-90">
+								<ArrowUp size={16} className="animate-bounce " />
+							</div>
+						</span>
 					)}
 				</Button>
 			</form>

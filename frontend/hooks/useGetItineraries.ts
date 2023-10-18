@@ -24,12 +24,11 @@ type Data = {
 
 type QueryOptions = Omit<
 	UseQueryOptions<Data, unknown, Data>,
-	'queryKey' | 'queryFn'
+	'queryKey' | 'queryFn' | 'select'
 >;
 
 export function useGetItineraries(payload: Payload, options?: QueryOptions) {
 	return useQuery<Data>({
-		// @ts-ignore
 		queryKey: itineraryKeys.all,
 		queryFn: async () => {
 			const { data }: { data: Data } = await axios.post(
@@ -38,6 +37,13 @@ export function useGetItineraries(payload: Payload, options?: QueryOptions) {
 			);
 			return data;
 		},
+		select: (data) => ({
+			...data,
+			itineraries: data.itineraries.map((itinerary) => ({
+				...itinerary,
+				name: itinerary.routes.map((route) => route.route_id).join(' -> ')
+			}))
+		}),
 		...options
 	});
 }

@@ -58,11 +58,15 @@ class ItinerarySimAdmin(admin.ModelAdmin):
     pass
 
 
-class RouteInItineraryAdmin(admin.ModelAdmin):
+class RouteInItinCacheAdmin(admin.ModelAdmin):
     pass
 
 
 class ItineraryCacheAdmin(admin.ModelAdmin):
+    pass
+
+
+class WalkSimAdmin(admin.ModelAdmin):
     pass
 
 
@@ -75,10 +79,11 @@ admin.site.register(Shape, ShapeAdmin)
 admin.site.register(Calendar, CalendarAdmin)
 admin.site.register(Trip, TripAdmin)
 admin.site.register(PassengerChanges, PassengerChangesAdmin)
-admin.site.register(BusTimeOut, BusTimeAdmin)
-admin.site.register(BusOnRouteInfo, BusOnRouteInfoAdmin)
+admin.site.register(TransporterTimeOut, BusTimeAdmin)
+admin.site.register(TransporterOnRouteInfo, BusOnRouteInfoAdmin)
 admin.site.register(StationSim, StationSimAdmin)
 admin.site.register(RouteSim, RouteSimAdmin)
 admin.site.register(ItinerarySim, ItinerarySimAdmin)
-admin.site.register(RouteInItinerary, RouteInItineraryAdmin)
+admin.site.register(RouteInItinCache, RouteInItinCacheAdmin)
 admin.site.register(ItineraryCache, ItineraryCacheAdmin)
+admin.site.register(WalkSim, WalkSimAdmin)

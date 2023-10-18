@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,10 @@ import { useGetItineraries } from '@/hooks/useGetItineraries';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+type Props = {
+	simLoading: boolean;
+};
+
 export type DetailsProps = {
 	simulationSettings: SimulationSettings;
 	setSimulationSettings: React.Dispatch<
@@ -36,20 +40,25 @@ export type DetailsProps = {
 const Details = ({
 	simulationSettings,
 	setSimulationSettings,
-	fetchSimulationData, 
-	simulationResult
-}: DetailsProps) => {
+	fetchSimulationData,
+	simulationResult,
+	simLoading
+}: DetailsProps & Props) => {
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);
 	const [stationSelectorOpen, setStationSelectorOpen] = useState(false);
 	const [itinerarySelectorOpen, setItinerarySelectorOpen] = useState(false);
 
 	const { data: suburbs, isLoading } = useGetSuburbs();
 
-	const { data: retData, isLoading: itinerariesLoading } = useGetItineraries(
+	const {
+		data: retData,
+		isLoading: itinerariesLoading,
+		refetch: refetchItineraries
+	} = useGetItineraries(
 		{
 			env_start: 355,
-			time_horizon: 30,
-			snapshot_date: '2023-10-10',
+			time_horizon: 120,
+			snapshot_date: simulationSettings.date,
 			active_stations: simulationSettings.selectedStations.map(
 				({ lat, long, id }) => ({
 					station_id: id,
@@ -71,6 +80,12 @@ const Details = ({
 			.map((suburb) => suburb.stations)
 			.flat();
 	}, [suburbs, simulationSettings.selectedSuburbs]);
+
+	useEffect(() => {
+		if (simulationSettings.selectedStations.length > 1) {
+			refetchItineraries();
+		}
+	}, [refetchItineraries, simulationSettings.selectedStations]);
 
 	const handleRunSimulation = () => {
 		fetchSimulationData();
@@ -121,7 +136,6 @@ const Details = ({
 														  ],
 												selectedStations: []
 											});
-											setSuburbSelectorOpen(false);
 										}}
 									>
 										<Check
@@ -163,36 +177,39 @@ const Details = ({
 							<CommandInput placeholder="Search suburbs..." />
 							<CommandEmpty>No stations found.</CommandEmpty>
 							<CommandGroup className="max-h-[200px] overflow-y-scroll">
-								{(stations ?? []).map((station) => (
+								{(stations ?? []).map((currStation) => (
 									<CommandItem
-										key={station.id}
-										onSelect={(currentValue) => {
+										key={currStation.id}
+										onSelect={() => {
 											setSimulationSettings({
 												...simulationSettings,
 												selectedStations:
-													simulationSettings.selectedStations.includes(station)
+													simulationSettings.selectedStations.includes(
+														currStation
+													)
 														? simulationSettings.selectedStations.filter(
-																(station) => station.id !== currentValue
+																(station) => station.id !== currStation.id
 														  )
 														: [
 																...simulationSettings.selectedStations,
 																stations!.find(
-																	(station) => station.id === currentValue
+																	(station) => station.id === currStation.id
 																)!
 														  ]
 											});
-											setStationSelectorOpen(false);
 										}}
 									>
 										<Check
 											className={cn(
 												'mr-2 h-4 w-4',
-												simulationSettings.selectedStations.includes(station)
+												simulationSettings.selectedStations.includes(
+													currStation
+												)
 													? 'opacity-100'
 													: 'opacity-0'
 											)}
 										/>
-										{station.id}
+										{currStation.name}
 									</CommandItem>
 								))}
 							</CommandGroup>
@@ -253,17 +270,16 @@ const Details = ({
 			>
 				<PopoverTrigger asChild>
 					<Button
-						// disabled={
-						// 	!simulationSettings.selectedStations.length || itinerariesLoading
-						// }
-						disabled //todo: Reenable once itineraries are working
+						disabled={
+							!simulationSettings.selectedStations.length || itinerariesLoading
+						}
 						variant="outline"
 						role="combobox"
 						className="w-full justify-between"
 					>
 						{simulationSettings.selectedItineraries.length
 							? simulationSettings.selectedItineraries
-									.map((itinerary) => itinerary.itinerary_id)
+									.map((itinerary) => itinerary.name)
 									.join(', ')
 							: 'Select itineraries...'}
 						<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -274,27 +290,27 @@ const Details = ({
 						<CommandInput placeholder="Search suburbs..." />
 						<CommandEmpty>No itineraries found.</CommandEmpty>
 						<CommandGroup className="max-h-[200px] overflow-y-scroll">
-							{(retData?.itineraries ?? []).map((itinerary) => (
+							{(retData?.itineraries ?? []).map((currentItin) => (
 								<CommandItem
-									key={itinerary.itinerary_id}
-									onSelect={(currentValue) => {
+									key={currentItin.itinerary_id}
+									onSelect={() => {
 										setSimulationSettings({
 											...simulationSettings,
 											selectedItineraries:
 												simulationSettings.selectedItineraries.includes(
-													itinerary
+													currentItin
 												)
 													? simulationSettings.selectedItineraries.filter(
 															(itinerary) =>
-																itinerary.itinerary_id.toString() !==
-																currentValue
+																itinerary.itinerary_id !==
+																currentItin.itinerary_id
 													  )
 													: [
 															...simulationSettings.selectedItineraries,
 															retData?.itineraries!.find(
 																(itinerary) =>
-																	itinerary.itinerary_id.toString() ===
-																	currentValue
+																	itinerary.itinerary_id ===
+																	currentItin.itinerary_id
 															)!
 													  ]
 										});
@@ -304,12 +320,14 @@ const Details = ({
 									<Check
 										className={cn(
 											'mr-2 h-4 w-4',
-											simulationSettings.selectedItineraries.includes(itinerary)
+											simulationSettings.selectedItineraries.includes(
+												currentItin
+											)
 												? 'opacity-100'
 												: 'opacity-0'
 										)}
 									/>
-									{itinerary.itinerary_id}
+									{currentItin.name}
 								</CommandItem>
 							))}
 						</CommandGroup>
@@ -317,11 +335,15 @@ const Details = ({
 				</PopoverContent>
 			</Popover>
 			<Button
-				className="w-full"
-				disabled={!simulationSettings.selectedStations.length}
+				className="w-full capitalize"
+				disabled={!simulationSettings.selectedStations.length || simLoading}
 				onClick={handleRunSimulation}
 			>
-				run simulation
+				{simLoading ? (
+					<Loader2 size={16} className="animate-spin" />
+				) : (
+					'run simulation'
+				)}
 			</Button>
 		</div>
 	);

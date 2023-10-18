@@ -1,33 +1,34 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import * as React from 'react';
-import Plot, { PlotParams } from 'react-plotly.js';
-import { config, data, data1, layout, layout1 } from '../../reports';
 import Details, { DetailsProps } from './components/details';
-import Status from './components/status';
 import Routes from './components/routes';
+import Status, { ItinProps } from './components/status';
+
+type Props = {
+	currentTab: string;
+	setCurrentTab: React.Dispatch<React.SetStateAction<string>>;
+	simLoading: boolean;
+};
 
 const Sidebar = ({
+	currentTab,
+	setCurrentTab,
 	simulationSettings,
 	setSimulationSettings,
 	fetchSimulationData,
-	simulationResult
-}: DetailsProps) => {
+	simulationResult,
+	simLoading,
+	itineraries
+}: DetailsProps & Props & ItinProps) => {
 	return (
 		<div className="w-[300px]">
-			<Tabs defaultValue="details" className="flex flex-col gap-4 h-full">
+			<Tabs
+				value={currentTab}
+				onValueChange={setCurrentTab}
+				className="flex flex-col gap-4 h-full"
+			>
 				<TabsList className="grid grid-cols-3">
 					<TabsTrigger value="details">Details</TabsTrigger>
-					<TabsTrigger value="routes">Status</TabsTrigger>
+					<TabsTrigger value="itineraries">Itineraries</TabsTrigger>
 					<TabsTrigger value="stops">Graphs</TabsTrigger>
 				</TabsList>
 				<TabsContent value="details" className="flex-1">
@@ -36,22 +37,23 @@ const Sidebar = ({
 						setSimulationSettings={setSimulationSettings}
 						fetchSimulationData={fetchSimulationData}
 						simulationResult={simulationResult}
+						simLoading={simLoading}
 					/>
 				</TabsContent>
-				<TabsContent value="routes" className="flex-1">
-					<Status />
+				<TabsContent value="itineraries" className="flex-1">
+					<Status itineraries={itineraries} />
 				</TabsContent>
 				<TabsContent value="stops" className="flex-1">
 					<Routes
-											simulationSettings={simulationSettings}
-											setSimulationSettings={setSimulationSettings}
-											fetchSimulationData={fetchSimulationData}
-											simulationResult={simulationResult} />
+						simulationSettings={simulationSettings}
+						setSimulationSettings={setSimulationSettings}
+						fetchSimulationData={fetchSimulationData}
+						simulationResult={simulationResult}
+					/>
 				</TabsContent>
 			</Tabs>
 		</div>
 	);
 };
-
 
 export default Sidebar;

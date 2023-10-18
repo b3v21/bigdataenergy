@@ -1,19 +1,17 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import { HoverData } from '../page';
 
 type Props = {
-	data: {
-		y: number;
-		x: number;
-		stopName: string;
-	} | null;
+	data: HoverData | null;
 };
 
 const HoverCard = ({ data }: Props) => {
 	if (!data) return null;
 
-	const { x, y, stopName } = data;
+	const { x, y, stationName, avg_wait } = data;
+	const warnWaitTime = !!avg_wait && avg_wait > 10;
 
 	return (
 		<Card
@@ -23,25 +21,37 @@ const HoverCard = ({ data }: Props) => {
 				left: x
 			}}
 		>
-			<p className="font-bold cols-span-1">{stopName}</p>
+			<p className="font-bold cols-span-1">{stationName}</p>
 			<div className="col-span-1 text-right">
 				<Badge
 					variant="outline"
-					className="max-w-fit border-green-500 bg-green-500/30 text-green-500 hover:none"
+					className={cn(
+						'max-w-fit hover:none',
+						warnWaitTime
+							? 'border-red-500 bg-red-500/30 text-red-500'
+							: 'border-green-500 bg-green-500/30 text-green-500'
+					)}
 				>
-					<span className="w-2 h-2 rounded-full bg-green-500 mr-2" />
-					Nominal
+					<span
+						className={cn(
+							'w-2 h-2 rounded-full mr-2',
+							warnWaitTime ? 'bg-red-500' : 'bg-green-500'
+						)}
+					/>
+					{warnWaitTime ? 'High Wait' : 'Nominal'}
 				</Badge>
 			</div>
 
-			<div className="col-span-2">
+			{/* <div className="col-span-2">
 				<p className="font-semibold text-sm">Capacity</p>
 				<Progress value={71} />
 				<div className="text-right text-xs text-muted-foreground">245/345</div>
-			</div>
+			</div> */}
 			<div className="col-span-2 flex flex-row justify-between">
-				<p className="font-semibold text-sm">Travel Time</p>
-				<p className="font-mono text-muted-foreground">69 min</p>
+				<p className="font-semibold text-sm">AVG Wait Time</p>
+				<p className="font-mono text-muted-foreground">
+					{!!avg_wait ? avg_wait.toFixed(0) : 'N/A'} min
+				</p>
 			</div>
 		</Card>
 	);
