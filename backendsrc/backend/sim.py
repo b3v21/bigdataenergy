@@ -1895,5 +1895,5 @@ def test_sim_with_trains_collision():
 
 
 #### UNCOMMENT IF YOU WOULD LIKE TO DO TESTING
-if __name__ == "__main__":
-    test_sim_with_trains_collision()
+# if __name__ == "__main__":
+#     test_sim_with_trains_collision()
