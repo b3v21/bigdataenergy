@@ -15,7 +15,7 @@ ALLOWED_SUBURBS = [
     "Fortitude Valley",
     # "Brisbane City",
     # "Highgate Hill",
-    # "South Brisbane",
+    "South Brisbane",
     # "Kangaroo Point",
     # "East Brisbane",
     # "Dutton Park",
@@ -41,7 +41,7 @@ ALLOWED_SUBURBS = [
     # "Red Hill",
 ]
 
-ALLOWED_STATIONS = ["1850", "1064", "2200", "600014", "1660", "1074", "1076"]
+ALLOWED_STATIONS = ["1850", "1064", "2200", "600014", "1660", "1074", "1076", "1070", "1137"]
 
 # These are the hardcoded itineraries that will appear on the frontend
 INPUT_ITINS = {}
@@ -86,9 +86,48 @@ INPUT_ITINS["1074"] = [
             {"route_id": "385-3136", "start": "10802", "end": "817"},
             {"route_id": "walk", "start": "817", "end": "-1"},
         ],
-    }
+    },    
+    {
+        "itinerary_id": 8,
+        "routes": [
+            {"route_id": "199-3136", "start": "1074", "end": "10802"},
+            {"route_id": "61-3136", "start": "10802", "end": "815"},
+            {"route_id": "walk", "start": "815", "end": "-1"},
+        ],
+    },
 ]
 
+INPUT_ITINS["1137"] = [
+    {
+        "itinerary_id": 10,
+        "routes": [
+            {"route_id": "199-3136", "start": "1137", "end": "10802"},
+            {"route_id": "385-3136", "start": "10802", "end": "817"},
+            {"route_id": "walk", "start": "817", "end": "-1"},
+        ],
+    },    
+    {
+        "itinerary_id": 11,
+        "routes": [
+            {"route_id": "199-3136", "start": "1137", "end": "10802"},
+            {"route_id": "61-3136", "start": "10802", "end": "815"},
+            {"route_id": "walk", "start": "815", "end": "-1"},
+        ],
+    },
+]
+
+INPUT_ITINS["1070"] = [
+    {
+        "itinerary_id": 9,
+        "routes": [
+            {"route_id": "199-3136", "start": "1070", "end": "10802"},
+            {"route_id": "61-3136", "start": "10802", "end": "815"},
+            {"route_id": "walk", "start": "815", "end": "-1"},
+        ],
+    },
+]
+
+## South Brisbane ##
 INPUT_ITINS["1076"] = [
     {
         "itinerary_id": 4,

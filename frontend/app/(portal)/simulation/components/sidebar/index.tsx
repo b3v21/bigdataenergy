@@ -24,7 +24,7 @@ const Sidebar = ({
 			<Tabs
 				value={currentTab}
 				onValueChange={setCurrentTab}
-				className="flex flex-col gap-4 h-full"
+				className="flex flex-col gap-4"
 			>
 				<TabsList className="grid grid-cols-3">
 					<TabsTrigger value="details">Details</TabsTrigger>

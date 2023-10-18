@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { cn, getItineraryColourFromItinName } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
 
 export type ItinProps = {
@@ -9,11 +10,11 @@ export type ItinProps = {
 
 const Status = ({ itineraries }: ItinProps) => {
 	return (
-		<Card className="h-full relative">
+		<Card className="h-full relative max-h-full">
 			<CardHeader>
 				<CardTitle>Itineraries</CardTitle>
 			</CardHeader>
-			<CardContent>
+			<CardContent className="max-h-[70vh] overflow-scroll">
 				{!itineraries && (
 					<div className="inset-0">
 						<div className="absolute inset-0 grid place-content-center">
@@ -23,16 +24,25 @@ const Status = ({ itineraries }: ItinProps) => {
 						</div>
 					</div>
 				)}
-				<div className="flex flex-col gap-4">
+				<div className="flex flex-col gap-4 ">
 					{itineraries?.map((itin) => {
 						const endStation =
 							itin.stations[itin.stations.length - 1].stationName;
+
+						const itinColour = getItineraryColourFromItinName(itin.routeName);
 						return (
 							<Card
 								key={itin.routeName}
 								className="p-2 gap-4 grid grid-cols-2 justify-between"
 							>
-								<p className="font-bold cols-span-1">{itin.routeName}</p>
+								<p
+									className="font-bold cols-span-1"
+									style={{
+										color: itinColour
+									}}
+								>
+									{itin.routeName}
+								</p>
 								<div className="col-span-1 text-right">
 									{itin.routeName.toLowerCase().includes('walk') ? (
 										<Badge

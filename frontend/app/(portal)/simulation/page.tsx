@@ -4,7 +4,11 @@ import { Itineraries, Stations, Suburbs } from '@/@types';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { useGetSimulationData } from '@/hooks/useGetSimulationData';
-import { StationStatusColour, getStationColourFromWaitTime } from '@/lib/utils';
+import {
+	StationStatusColour,
+	getItineraryColourFromItinName,
+	getStationColourFromWaitTime
+} from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { PlotMouseEvent } from 'plotly.js';
@@ -77,6 +81,7 @@ const Simulation = () => {
 		},
 		{
 			enabled: false,
+			retry: false,
 			onSuccess: (data) => {
 				if (
 					Object.values(data.Stations).some((station) => {
@@ -135,7 +140,7 @@ const Simulation = () => {
 	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
 
 	return (
-		<div className="flex flex-row gap-4">
+		<div className="flex flex-row gap-4 h-full">
 			<Sidebar
 				currentTab={sidebarTab}
 				simLoading={simulationDataLoading}
@@ -168,7 +173,11 @@ const Simulation = () => {
 										.map((itin) => ({
 											...routeSettings,
 											lat: itin.shape.map((coord: any) => coord.lat),
-											lon: itin.shape.map((coord: any) => coord.long)
+											lon: itin.shape.map((coord: any) => coord.long),
+											line: {
+												...routeSettings.line,
+												color: getItineraryColourFromItinName(itin.routeName)
+											}
 										})) ?? []),
 
 									// adding walk path if it exists
@@ -223,7 +232,7 @@ const Simulation = () => {
 					style={{
 						borderRadius: 'var(--radius)',
 						overflow: 'hidden',
-						minHeight: '800px'
+						height: '100%'
 					}}
 					onHover={(event) => {
 						if (!itins || !simulationResult) return;
