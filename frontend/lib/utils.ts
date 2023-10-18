@@ -44,15 +44,6 @@ export function getItineraryColourFromItinName(itinName: string) {
 
 	if (itinName.toLowerCase().includes('walk')) return '#FFA500';
 
-	console.log(
-		itinName,
-		possibleColours[
-			Math.floor(
-				getDecimalHashBasedOnItinName(itinName) * possibleColours.length
-			)
-		]
-	);
-
 	return possibleColours[
 		Math.floor(getDecimalHashBasedOnItinName(itinName) * possibleColours.length)
 	];

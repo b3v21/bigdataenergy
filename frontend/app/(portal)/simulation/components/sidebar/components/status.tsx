@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { cn, getItineraryColourFromItinName } from '@/lib/utils';
+import { getItineraryColourFromItinName } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
 
 export type ItinProps = {
