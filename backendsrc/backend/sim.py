@@ -160,7 +160,7 @@ class Station:
         self.log_cur_people()
 
     def busy_level(self) -> int:
-        return ceil(self.num_people() / 100)  # May be tweaked
+        return ceil(self.num_people() / 100)
 
     def log_cur_people(self) -> None:
         self.people_over_time[self.env.now + self.env_start] = self.num_people()
@@ -256,7 +256,7 @@ class Transporter(ABC):
         env_start: int,
         id: int,
         name: str,
-        trip: Trip,  # key = order, value = (Station, Time)
+        trip: Trip,
         route: Route,
         location_index: int = 0,
         people: list[People] = [],
@@ -305,7 +305,6 @@ class Transporter(ABC):
             * ceil(station.busy_level() / 5)
         )
         load_time = 0
-        # print("Load time: ", avg_load_time, std_dev_load_time)
         while (
             load_time <= avg_load_time or load_time > avg_load_time + std_dev_load_time
         ):
@@ -313,7 +312,6 @@ class Transporter(ABC):
                 load_time = avg_load_time
                 break
             load_time = round(np.random.gumbel(avg_load_time, std_dev_load_time), 1)
-        # print("Load time: ", avg_load_time, std_dev_load_time, load_time)
         yield self.env.timeout(load_time)
         self.people += people_to_ride
 
@@ -336,10 +334,8 @@ class Transporter(ABC):
     def deload_passengers(self, station: Station) -> None:
         people_deloading = []
         if self.route.last_stop == station:
-            # Everyone left needs to get off
             people_deloading = self.people
         else:
-            # Only those who want to get off should get off
             people_deloading = self.get_people_deloading(station)
 
         num_passengers_deloaded = sum(p.get_num_people() for p in people_deloading)
@@ -358,7 +354,6 @@ class Transporter(ABC):
             / 5
         )
         deload_time = 0
-        # print("Deload Time: ", avg_load_time, station.busy_level())
         while (
             deload_time <= avg_load_time
             or deload_time > avg_load_time + std_dev_load_time
@@ -367,7 +362,6 @@ class Transporter(ABC):
                 deload_time = avg_load_time
                 break
             deload_time = round(np.random.gumbel(avg_load_time, std_dev_load_time), 1)
-        # print("Deload Time: ", avg_load_time, station.busy_level(), deload_time)
         yield self.env.timeout(deload_time)
 
         if DEBUG:
@@ -485,9 +479,8 @@ class Bus(Transporter):
 
                 std_dev_travel_time = 4 * ceil(
                     previous_stop.busy_level() / 10
-                )  # May tweak this base number
+                )
                 travel_time = 0
-                # print("Travel: ", expected_travel_time, std_dev_travel_time)
                 while (
                     travel_time <= expected_travel_time
                     or travel_time > expected_travel_time + std_dev_travel_time
@@ -498,7 +491,6 @@ class Bus(Transporter):
                     travel_time = ceil(
                         np.random.gumbel(expected_travel_time, std_dev_travel_time)
                     )
-                # print("Travel: ", expected_travel_time, std_dev_travel_time, travel_time)
 
             yield self.env.timeout(travel_time)
             if DEBUG:
@@ -581,7 +573,6 @@ class Train(Transporter):
 
                 if expected_travel_time == 0:
                     # Some train stops have very small distances between, to stop teleportation, make min one
-
                     print("**Had a case where travel time was 0**")
                     expected_travel_time = 1
 
@@ -591,11 +582,8 @@ class Train(Transporter):
                         exit()
                     expected_travel_time = 1
 
-            std_dev_travel_time = 4 * ceil(
-                previous_stop.busy_level() / 10
-            )  # May tweak this base number
+            std_dev_travel_time = 4 * ceil(previous_stop.busy_level() / 10)
             travel_time = 0
-            # print("Train: ", expected_travel_time, std_dev_travel_time)
             while (
                 travel_time <= expected_travel_time
                 or travel_time > expected_travel_time + std_dev_travel_time
@@ -606,7 +594,6 @@ class Train(Transporter):
                 travel_time = ceil(
                     np.random.gumbel(expected_travel_time, std_dev_travel_time)
                 )
-            # print("Train: ", expected_travel_time, std_dev_travel_time, travel_time)
             yield self.env.timeout(travel_time)
             self.time_log[train_route.get_current_stop(self).name] = (
                 self.env.now + self.env_start
@@ -727,10 +714,6 @@ class BusRoute(Route):
     def get_current_stop(self, bus: Bus) -> Station:
         return self.stops[bus.location_index]
 
-    """
-    Returns index of that stop in self.stop
-    """
-
     def get_stop_with_name(self, name: str) -> Station:
         return [stop.name for stop in self.stops].index(name)
 
@@ -841,9 +824,7 @@ class Walk(Route):
         self.walk_time_log[people] = [self.env.now + self.env_start, None]
         self.people.append(people)
         self.stops[0].log_cur_people()
-        expected_walk_time = (
-            self.walk_time() * self.walking_congestion
-        )  # Change this to lookup ---
+        expected_walk_time = (self.walk_time() * self.walking_congestion)
         std_dev_walk_time = expected_walk_time * 1 / 3 * self.get_num_people() / 100
         walk_time = 0
         while (
@@ -1106,11 +1087,6 @@ def process_simulation_output(
             }
             sd["sequence"] = route.stops.index(station)
 
-    """
-    This process isnt entirely perfect, the error will cut out some of the indexing issues.
-    However this dict will still extract info it thinks is about a station even tho its not.
-    This will be fixed by accessing only valid entries from within station parsing.
-    """
     people = People.all_people
     station_waits = {}
     station_groups = {}
@@ -1176,7 +1152,7 @@ def process_simulation_output(
     mean = np.mean(data)
     std = np.std(data)
 
-    threshold = 1  # May need tweaking ---
+    threshold = 1
     outliers = []
     for x in data:
         z = (x - mean) / std
@@ -1444,8 +1420,8 @@ def get_data(
         # Create suburb for each
         if sub_name not in ALLOWED_SUBURBS:
             continue  # Don't gen non allowed
-        distribute_frequency = 10  # Tweak Me
-        max_distributes = 2  # Tweak Me
+        distribute_frequency = 10
+        max_distributes = 2
         stations_in_suburb = StationM.objects.order_by().filter(suburb=sub_name)
         active_stations_in_suburb_id = [
             station["station_id"]
@@ -1460,14 +1436,8 @@ def get_data(
         num_stations = len(active_stations_in_suburb)
         pop_distribution = {}
         active = sub_name in active_suburbs
-        for (
-            station
-        ) in (
-            active_stations_in_suburb
-        ):  # Will need some changes when proper user input changed.
-            pop_distribution[station] = (
-                1 / num_stations
-            ) * 100  # Currently evenly assign to all stations...
+        for station in active_stations_in_suburb:
+            pop_distribution[station] = (1 / num_stations) * 100
         suburb_pop = (
             ceil(
                 1 / len(ALLOWED_SUBURBS) * people_in_attendance
@@ -1632,8 +1602,8 @@ def generate_itins(user_data: dict) -> dict:
 
 def generate_itins_with_tripgo(user_data: dict) -> dict:
     """
-    Collects itineraries for given user input data and returns them in the required format for running simulations
-    Warning: This will call the TripGo API in bulk
+    Collects itineraries for given user input data and returns them in the required format for 
+    running simulations. Warning: This will call the TripGo API in bulk
     """
     # format user data how we need it
     end_time = convert_epoch(
