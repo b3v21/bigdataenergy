@@ -41,7 +41,7 @@ ALLOWED_SUBURBS = [
     # "Red Hill",
 ]
 
-ALLOWED_STATIONS = ["1850", "1064", "2200", "600014", "1660", "1074", "1076", "1070", "1137"]
+ALLOWED_STATIONS = ["1850", "1064", "2200", "600014", "1074", "1076", "1070", "1137"]
 
 # These are the hardcoded itineraries that will appear on the frontend
 INPUT_ITINS = {}
@@ -147,18 +147,6 @@ INPUT_ITINS["2200"] = [
         "routes": [
             {"route_id": "444-3136", "start": "2200", "end": "271"},
             {"route_id": "walk", "start": "271", "end": "-1"},
-        ],
-    }
-]
-
-INPUT_ITINS["1660"] = [
-    {
-        "itinerary_id": 6,
-        "routes": [
-            {"route_id": "walk", "start": "1660", "end": "2200"},
-            {"route_id": "453-3251", "start": "2200", "end": "10792"},
-            {"route_id": "walk", "start": "10792", "end": "125"},
-            {"route_id": "walk", "start": "125", "end": "-1"},
         ],
     }
 ]
