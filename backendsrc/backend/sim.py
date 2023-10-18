@@ -49,6 +49,7 @@ ITINERARIES = []
 STATION_ITINERARY_LOOKUP = {}
 STATION_NAMES = {}
 
+
 def convert_date_to_int(time: time) -> int:
     return time.hour * MINUTES_IN_HOUR + time.minute
 

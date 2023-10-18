@@ -5,59 +5,14 @@ import os
 import sys
 import json
 from django.db.models import Q
-from rest_framework.response import Response
+from rest_framework.response import Response 
+from .itins import ALLOWED_SUBURBS, ALLOWED_STATIONS
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
 from db.models import Station, ItineraryCache, RouteInItinCache
-
-ALLOWED_SUBURBS = [
-    # "Toowong",
-    "Indooroopilly",
-    # "Taringa",
-    "St Lucia",
-    # "Chapel Hill",
-    "West End",
-    # "Bardon",
-    # "Paddington",
-    # "Ashgrove",
-    # "Herston",
-    # "Newstead",
-    # "Teneriffe",
-    # "New Farm",
-    "Fortitude Valley",
-    # "Brisbane City",
-    # "Highgate Hill",
-    # "South Brisbane",
-    # "Kangaroo Point",
-    # "East Brisbane",
-    # "Dutton Park",
-    # "Fairfield",
-    # "Stones Corner",
-    # "Coorparoo",
-    # "Norman Park",
-    # "Seven  Hills",
-    # "Cannon Hill",
-    # "Morningside",
-    # "Hawthorne",
-    # "Balmoral",
-    # "Bulimba",
-    # "Murarrie",
-    # "Hamilton",
-    # "Eagle Farm",
-    # "Ascot",
-    # "Hendra",
-    # "Clayfield",
-    # "Albion",
-    # "Windsor",
-    # "Kelvin Grove",
-    # "Red Hill",
-]
-
-ALLOWED_STATIONS = ["1850", "1064", "2200", "600014"]
-
 
 def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     """
