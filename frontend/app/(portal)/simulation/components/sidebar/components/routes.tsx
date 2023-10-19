@@ -344,7 +344,7 @@ const Routes = ({
 							role="combobox"
 							className="w-full justify-between"
 						>
-							{selectedStation ? selectedStation : 'Select Station...'}
+							{selectedStation ? simulationSettings.selectedStations.filter(station => station.id == selectedStation).map(station => station.name) : 'Select Station...'}
 							<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 						</Button>
 					</PopoverTrigger>
@@ -357,11 +357,11 @@ const Routes = ({
 									<CommandItem
 										key={station.id}
 										onSelect={(currentValue) => {
-											handleSetStation(currentValue);
+											handleSetStation(station.id);
 											setStationSelectorOpen(false);
 										}}
 									>
-										{station.id}
+										{station.name}
 									</CommandItem>
 								))}
 							</CommandGroup>
