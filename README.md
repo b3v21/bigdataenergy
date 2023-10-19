@@ -34,19 +34,18 @@ FYI: If db changes have been made and you are unable to apply any new migrations
 node -v
 ```
 
-2. Install dependencies
+2. In the root directory, run the following command to run the frontend installer
 ```bash
-npm i
+cat frontend-setup.sh | bash
 ```
-
-3. Navigate to the frontend directory and use:
+If you see a `permission denied` error, run:
 ```bash
-npm run dev
+chmod +x install.sh
 ```
+to give the script execution permissions, then try running the script again.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-
-# Local Testing
-In order to test locally with the frontend and backend communicating simply launch both commands to run the backend and frontend local servers, and navigate to the frontend at [http://localhost:3000](http://localhost:3000) with your browser to see the result. Since the backend server is also running it will communicate with the frontend locally.
+# Local Viewing
+In order to test locally with the frontend and backend communicating simply run both commands in separate terminal windows to run the backend and frontend local servers, and navigate to the frontend at [http://localhost:3000](http://localhost:3000) with your browser to see the result. Since the backend server is also running it will communicate with the frontend locally.
 
