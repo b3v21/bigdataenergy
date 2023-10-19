@@ -18,7 +18,6 @@ from db.models import Station, ItineraryCache, RouteInItinCache
 def get_station_suburbs() -> dict[str : list[list[str, str]]]:
     """
     This function returns a dictionary of station, suburb pairings
-
     """
     result = []
 

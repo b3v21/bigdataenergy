@@ -86,7 +86,7 @@ INPUT_ITINS["1074"] = [
             {"route_id": "385-3136", "start": "10802", "end": "817"},
             {"route_id": "walk", "start": "817", "end": "-1"},
         ],
-    },    
+    },
     {
         "itinerary_id": 8,
         "routes": [
@@ -105,7 +105,7 @@ INPUT_ITINS["1137"] = [
             {"route_id": "385-3136", "start": "10802", "end": "817"},
             {"route_id": "walk", "start": "817", "end": "-1"},
         ],
-    },    
+    },
     {
         "itinerary_id": 11,
         "routes": [

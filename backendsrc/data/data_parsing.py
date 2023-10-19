@@ -4,7 +4,7 @@ import csv
 
 # THIS ONLY COLLECTS STATIONS WITHIN ZONES 1 AND 2 IN SEQ
 def parse_stations():
-    # get route_id, name, type from routes.txt -> insert into df
+    """get route_id, name, type from routes.txt -> insert into df"""
     df = None
     path = "./gtfsdata/stops.csv"
     visited_ids = []
@@ -30,7 +30,7 @@ def parse_stations():
 
 
 def parse_routes():
-    # get route_id, name, type from routes.txt -> insert into df
+    """get route_id, name, type from routes.txt -> insert into df"""
     visited_ids = []
 
     stop_times = pd.read_csv("./gtfsdata/stop_times.csv")
@@ -77,8 +77,10 @@ def parse_routes():
 
 
 def parse_trips():
-    # get route_id from routes.txt -> use trip_id from routes.txt to all getstop_ids,
-    # stop_sequence & collect stop_time and add to list from stop_times.txt
+    """
+    get route_id from routes.txt -> use trip_id from routes.txt to all get stop_ids,
+    stop_sequence & collect stop_time and add to list from stop_times.txt
+    """
     path1 = "./gtfsdata/routes.csv"
     path2 = "./gtfsdata/timetables.csv"
     path3 = "./gtfsdata/stop_times.csv"

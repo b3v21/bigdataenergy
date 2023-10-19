@@ -25,40 +25,36 @@ def cacheItinerary():
     return False
 
 
-"""
 def createItineraries(stations: list[Station]):
-    #get cached initeraries where the start station is in the list
-    #to do: create database structure
-    db_itin = ItineraryM.objects.all().filter(start_id__in=list(map(lambda station: station.id, stations)))
+    """get cached initeraries where the start station is in the list"""
+    db_itin = ItineraryM.objects.all().filter(
+        start_id__in=list(map(lambda station: station.id, stations))
+    )
     sim_itineraries = []
 
-    for station in stations: 
+    for station in stations:
         cached = db_itin.filter(start_id=station.id)
         newItin = None
         if cached:
-              #todo: create Itinerary object
-              newItin = Itinerary()
+            # todo: create Itinerary object
+            newItin = Itinerary()
         else:
             stationPos = getStationPos(station)
             parameters = {
                 "v": "11",
-                "from" : stationPos,
-                "to" : endStation,
+                "from": stationPos,
+                "to": endStation,
                 "modes": modes,
                 "bestOnly": "true",
-                "includeStops": "false"
+                "includeStops": "false",
             }
-            headers = {
-                "X-TripGo-Key": key  
-            }
+            headers = {"X-TripGo-Key": key}
             data = callTripGoAPI(api, parameters, headers)
-            #todo: create Itinerary object
+            # todo: create Itinerary object
             newItin = cacheItinerary(data)
         sim_itineraries.append(newItin)
 
     return sim_itineraries
-        
-    """
 
 
 def does_contain(itin, itins):
@@ -68,17 +64,16 @@ def does_contain(itin, itins):
     return False
 
 
-"""
-response -> all raw response data from api call
-num_itins -> num of itins that are generated for each group, which is the different combinatinos of travel methods
-start_station_id -> station_id (ie '001815') for the station that was specified as the start location for api call
-start_itin_id -> the int val to start the id's from
-
-Returns -> array of properly formatted itins
-"""
-
-
 def formatItins(response, num_itins, start_station_id, start_itin_id):
+    """
+    response -> all raw response data from api call
+    num_itins -> num of itins that are generated for each group, which is the different combinatinos of travel methods
+    start_station_id -> station_id (ie '001815') for the station that was specified as the start location for api call
+    start_itin_id -> the int val to start the id's from
+
+    Returns -> array of properly formatted itins
+    """
+
     itins = []
     itin_id = start_itin_id
     for group in response["groups"]:
@@ -127,27 +122,16 @@ def formatItins(response, num_itins, start_station_id, start_itin_id):
     print(itins)
 
 
-# call the api for itinerary of a single trip
-# to do: json data manipulation
-# to do: decide on parameters
 def callTripGoAPI(api, parameters, headers):
+    """call the api for itinerary of a single trip"""
+
     response = requests.get(api, params=parameters, headers=headers)
     if response.status_code == 200:
         print("sucessfully fetched TripGo data")
-        # print(response.json())
-        # print()
-        # print(response.json().get("groups", {})[0].get("trips"))
         return response.json()
     else:
         raise Exception(f"{response.status_code}")
 
-
-"""
-#get the formatted position of a station
-def getStationPos(station: Station):
-    pos = station.pos
-    return(f"{pos[0]}, {pos[1]}")
-"""
 
 if __name__ == "__main__":
     parameters = {
