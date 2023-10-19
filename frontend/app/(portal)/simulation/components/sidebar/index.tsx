@@ -41,7 +41,10 @@ const Sidebar = ({
 					/>
 				</TabsContent>
 				<TabsContent value="itineraries" className="flex-1">
-					<Status itineraries={itineraries} />
+					<Status
+						itineraries={itineraries}
+						simulationResult={simulationResult}
+					/>
 				</TabsContent>
 				<TabsContent value="stops" className="flex-1">
 					<Routes

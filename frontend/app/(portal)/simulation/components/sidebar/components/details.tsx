@@ -102,11 +102,13 @@ const Details = ({
 							role="combobox"
 							className="w-full justify-between"
 						>
-							{simulationSettings.selectedSuburbs.length
-								? simulationSettings.selectedSuburbs
-										.map((suburb) => suburb.suburb)
-										.join(', ')
-								: 'Select suburb...'}
+							<span className="max-w-full whitespace-nowrap overflow-ellipsis overflow-hidden">
+								{simulationSettings.selectedSuburbs.length
+									? simulationSettings.selectedSuburbs
+											.map((suburb) => suburb.suburb)
+											.join(', ')
+									: 'Select suburb...'}
+							</span>
 							<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 						</Button>
 					</PopoverTrigger>

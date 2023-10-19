@@ -2,13 +2,16 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { getItineraryColourFromItinName } from '@/lib/utils';
-import { ArrowRight } from 'lucide-react';
+import { ArrowDown } from 'lucide-react';
 
 export type ItinProps = {
 	itineraries: any[];
 };
 
-const Status = ({ itineraries }: ItinProps) => {
+const Status = ({
+	itineraries,
+	simulationResult
+}: ItinProps & { simulationResult: any }) => {
 	return (
 		<Card className="h-full relative max-h-full">
 			<CardHeader>
@@ -62,10 +65,19 @@ const Status = ({ itineraries }: ItinProps) => {
 										</Badge>
 									)}
 								</div>
-								<div className="col-span-2 flex flex-row font-mono gap-2 items-center text-muted-foreground text-sm">
-									<p>{itin.stations[0].stationName}</p>
-									<ArrowRight size={16} />
-									<p>{endStation == -1 ? 'Destination 🎯' : endStation}</p>
+								<div className="col-span-2 flex flex-col font-mono gap-2 items-center text-muted-foreground text-sm">
+									<p className="max-w-full whitespace-nowrap overflow-hidden overflow-ellipsis">
+										{
+											simulationResult.Stations[itin.stations[0].stationName]
+												.stationName
+										}
+									</p>
+									<ArrowDown size={16} />
+									<p className="max-w-full whitespace-nowrap overflow-hidden overflow-ellipsis">
+										{endStation == -1
+											? 'Destination 🎯'
+											: simulationResult.Stations[endStation].stationName}
+									</p>
 								</div>
 
 								<div className="col-span-2 ">
