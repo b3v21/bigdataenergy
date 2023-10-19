@@ -43,51 +43,51 @@ Translink SEQ GTFS Data: https://www.data.qld.gov.au/dataset/general-transit-fee
 # Reused Software
 Please see requirements.txt for the backend software and source links.
 For frontend software:
-"hookform/resolvers": 
-"radix-ui/react-alert-dialog": 
-"radix-ui/react-avatar": 
-"radix-ui/react-checkbox":
-"radix-ui/react-context-menu": 
-"radix-ui/react-dialog":
-"radix-ui/react-dropdown-menu": 
-"radix-ui/react-hover-card":
-"radix-ui/react-icons": 
-"radix-ui/react-label": 
-"radix-ui/react-menubar": 
-"radix-ui/react-navigation-menu": 
-"radix-ui/react-popover":
-"radix-ui/react-progress": 
-"radix-ui/react-select": 
-"radix-ui/react-separator": 
-"radix-ui/react-slot":
-"radix-ui/react-switch":
-"radix-ui/react-tabs": 
-"radix-ui/react-toast":
-"radix-ui/react-tooltip":
-"tanstack/react-query":
-"types/node":
-"types/react":
-"types/react-dom":
-"autoprefixer":
-"axios":
-"class-variance-authority":
-"clsx":
-"cmdk":
-"eslint":
-"eslint-config-next":
-"lucide-react":
-"next":
-"next-themes":
-"plotly.js":
-"postcss": 
-"react":
-"react-dom":
-"react-hook-form": 
-"react-plotly.js":
-"tailwind-merge":
-"tailwindcss":
-"tailwindcss-animate":
-"typescript":
-"zod":
+@hookform/resolvers: https://www.npmjs.com/package/@hookform/resolvers
+@radix-ui/react-alert-dialog: https://www.npmjs.com/package/@radix-ui/react-alert-dialog
+@radix-ui/react-avatar: https://www.npmjs.com/package/@radix-ui/react-avatar
+@radix-ui/react-checkbox: https://www.npmjs.com/package/@radix-ui/react-checkbox
+@radix-ui/react-context-menu: https://www.npmjs.com/package/@radix-ui/react-context-menu
+@radix-ui/react-dialog: https://www.npmjs.com/package/@radix-ui/react-dialog
+@radix-ui/react-dropdown-menu: https://www.npmjs.com/package/@radix-ui/react-dropdown-menu
+@radix-ui/react-hover-card: https://www.npmjs.com/package/@radix-ui/react-hover-card
+@radix-ui/react-icons: https://www.npmjs.com/package/@radix-ui/react-icons
+@radix-ui/react-label: https://www.npmjs.com/package/@radix-ui/react-label
+@radix-ui/react-menubar: https://www.npmjs.com/package/@radix-ui/react-menubar
+@radix-ui/react-navigation-menu: https://www.npmjs.com/package/@radix-ui/react-navigation-menu
+@radix-ui/react-popover: https://www.npmjs.com/package/@radix-ui/react-popover
+@radix-ui/react-progress: https://www.npmjs.com/package/@radix-ui/react-progress
+@radix-ui/react-select: https://www.npmjs.com/package/@radix-ui/react-select
+@radix-ui/react-separator: https://www.npmjs.com/package/@radix-ui/react-separator
+@radix-ui/react-slot: https://www.npmjs.com/package/@radix-ui/react-slot
+@radix-ui/react-switch: https://www.npmjs.com/package/@radix-ui/react-switch
+@radix-ui/react-tabs: https://www.npmjs.com/package/@radix-ui/react-tabs
+@radix-ui/react-toast: https://www.npmjs.com/package/@radix-ui/react-toast
+@radix-ui/react-tooltip: https://www.npmjs.com/package/@radix-ui/react-tooltip
+@tanstack/react-query: https://www.npmjs.com/package/@tanstack/react-query
+@types/node: https://www.npmjs.com/package/@types/node
+@types/react: https://www.npmjs.com/package/@types/react
+@types/react-dom: https://www.npmjs.com/package/@types/react-dom
+autoprefixer: https://www.npmjs.com/package/autoprefixer
+axios: https://www.npmjs.com/package/axios
+class-variance-authority: https://www.npmjs.com/package/class-variance-authority
+clsx: https://www.npmjs.com/package/clsx
+cmdk: https://www.npmjs.com/package/cmdk
+eslint: https://www.npmjs.com/package/eslint
+eslint-config-next: https://www.npmjs.com/package/eslint-config-next
+lucide-react: https://www.npmjs.com/package/lucide-react
+next: https://www.npmjs.com/package/next
+next-themes: https://www.npmjs.com/package/next-themes
+plotly.js: https://www.npmjs.com/package/plotly.js
+postcss: https://www.npmjs.com/package/postcss
+react: https://www.npmjs.com/package/react
+react-dom: https://www.npmjs.com/package/react-dom
+react-hook-form: https://www.npmjs.com/package/react-hook-form
+react-plotly.js: https://www.npmjs.com/package/react-plotly.js
+tailwind-merge: https://www.npmjs.com/package/tailwind-merge
+tailwindcss: https://www.npmjs.com/package/tailwindcss
+tailwindcss-animate: https://www.npmjs.com/package/tailwindcss-animate
+typescript: https://www.npmjs.com/package/typescript
+zod: https://www.npmjs.com/package/zod
 
 
