@@ -44,10 +44,9 @@ ROUTE_NAMES = ["BusRoute", "TrainRoute"]
 LOAD_TIMES = {"Train": 0.0025, "Bus": 0.1}
 
 
-# THIS IS FOR STORING ITINERARY OBJECTS PRODUCED BY THE SIM
-ITINERARIES = []
-STATION_ITINERARY_LOOKUP = {}
-STATION_NAMES = {}
+ITINERARIES = []  # Stores itinerary objects produced by the sim
+STATION_ITINERARY_LOOKUP = {}  # Stores possible stations for each itinerary.
+STATION_NAMES = {}  # Stores station objects for each station name
 
 
 def convert_date_to_int(time: time) -> int:
@@ -56,7 +55,12 @@ def convert_date_to_int(time: time) -> int:
 
 class Itinerary:
     """
-    Object to store multiple types of travel at a time.
+    Object to store multiple types of travel at a time. An itinerary is a list of
+    tuples, where each tuple contains a Route object and a Station object. The
+    Station object is the station at which the Route object is boarded.
+
+    Itineraries are generated to describe how a group of people will travel from
+    one location to another.
     """
 
     def __init__(
@@ -84,7 +88,10 @@ class Itinerary:
 
 class People:
     """
-    A group of people which will travel along a route.
+    People objects are generated to describe how a group of people will travel from
+    one location to another. Each People object contains a number of people in the group,
+    the time at which they will start their journey, the station at which they will start
+    their journey, and the time at which they will end their journey.
     """
 
     num_in_simulation = 0
@@ -135,7 +142,10 @@ class Station:
     """
     Each Station object contains a SimPy Resource which represents the number of bus
     bays available at the stop. Also a list of People objects representing the people
-    waiting at the bus stop is stored.
+    waiting at the bus stop is stored. The Station object also contains a dictionary
+    which maps the number of people waiting at the bus stop at a given time to the
+    time at which this number was recorded. This is used to generate a graph of the
+    number of people waiting at the bus stop over time.
     """
 
     def __init__(
@@ -173,8 +183,9 @@ class Station:
 
     def board(self, num_people_to_board: int, route: Route) -> list[People]:
         """
-        Given the number of people who are at the stop, this method returns a list
-        'people_to_get' containing the people which a bus can collect from this stop.
+        Given 'num_people_to_board' who are at the stop, and the 'route' of the bus which is stopping
+        this method returns a list 'people_to_get' containing the people which a bus can collect
+        from this stop.
         """
 
         cur_total = 0
@@ -210,6 +221,19 @@ class Station:
         return people_to_get
 
     def put(self, passengers: list[People], from_suburb=False) -> None:
+        """
+        This function is called when a bus arrives at a stop and has the chance to drop off
+        passengers. The list 'passengers' contains the people who are getting off the bus at this
+        stop. These people are added to the list of people waiting at the bus stop. The function
+        also logs the number of people waiting at the bus stop at the current time.
+
+        There are various cases in this function, depending on the position of a group of people
+        within their itinerary. If a group of people is at the last leg of their itinerary then
+        they will be placed at the current station. If a group of people is not at the last leg
+        of their itinerary then they will be placed at the next station in their itinerary, and if
+        their next leg of the itinerary is a walk, then they will be queued up to walk.
+        """
+
         for group in passengers:
             group.log((self.name, self.id))
             print(group.itinerary_index, len(ITINERARIES), ITINERARIES)
@@ -248,7 +272,10 @@ class Station:
 
 
 class Transporter(ABC):
-    """Abstract transporter object"""
+    """
+    Abstract transporter object. Transporter objects such as Buses and Trains are built out of
+    this class.
+    """
 
     def __init__(
         self,
@@ -276,7 +303,11 @@ class Transporter(ABC):
         return f"{self.name}"
 
     def load_passengers(self, station: Station) -> None:
-        """Load passengers from the current stop onto this transporter."""
+        """
+        Loads passengers from the current stop onto this transporter. Given the number of seats
+        left and the people waiting at the stop, this function will load as many people as possible
+        onto the transporter. The function also logs the number of people waiting at the bus stop.
+        """
 
         seats_left = self.capacity - self.passenger_count()
         people_at_stop = sum(group.get_num_people() for group in station.people)
@@ -324,6 +355,10 @@ class Transporter(ABC):
             )
 
     def get_people_deloading(self, station: Station) -> list[People]:
+        """
+        Returns a list of people from this transporter who are getting off at the current stop.
+        """
+
         people = []
         for group in self.people:
             gets_off_at = ITINERARIES[group.itinerary_index].get_current(group)[1]
@@ -332,6 +367,12 @@ class Transporter(ABC):
         return people
 
     def deload_passengers(self, station: Station) -> None:
+        """
+        Given the people who are getting off at the current stop, this function will deload
+        these people from the transporter. The function also logs the number of people waiting
+        at the bus stop.
+        """
+
         people_deloading = []
         if self.route.last_stop == station:
             people_deloading = self.people
@@ -386,7 +427,11 @@ class Transporter(ABC):
 
 
 class Bus(Transporter):
-    """A bus moving through a route"""
+    """
+    A bus transporter. Buses move through a route and pickup/drop off passengers. Buses have a
+    capacity of 50 people by default. Buses will despawn once they reach the last stop in their
+    route.
+    """
 
     def __init__(
         self,
@@ -416,6 +461,13 @@ class Bus(Transporter):
         return STATION_NAMES[self.trip.timetable[self.location_index][0]]
 
     def bus_instance(self, bus_route: BusRoute) -> None:
+        """
+        This is the `driver` function of the bus transporter object. It is called when a bus is
+        spawned and it is responsible for moving the bus through the route and pickup/dropping off
+        passengers. The bus will move through the route until it reaches the last stop, at which
+        point it will despawn.
+        """
+
         self.passenger_changes[self.env.now + self.env_start] = self.passenger_count()
         while True:
             with self.current_stop().bays.request() as req:
@@ -467,7 +519,6 @@ class Bus(Transporter):
                         break
                     index += 1
                 if expected_travel_time == 0:
-                    # Some bus stops have very small distances between, to stop teleportation, make min one
                     print("**Had a case where travel time was 0**")
                     expected_travel_time = 1
 
@@ -477,9 +528,7 @@ class Bus(Transporter):
                         exit()
                     expected_travel_time = 1
 
-                std_dev_travel_time = 4 * ceil(
-                    previous_stop.busy_level() / 10
-                )
+                std_dev_travel_time = 4 * ceil(previous_stop.busy_level() / 10)
                 travel_time = 0
                 while (
                     travel_time <= expected_travel_time
@@ -500,7 +549,11 @@ class Bus(Transporter):
 
 
 class Train(Transporter):
-    """A train moving through a route"""
+    """
+    A train transporter. Trains move through a route and pickup/drop off passengers. Trains have a
+    capacity of 100 people by default. Trains will despawn once they reach the last stop in their
+    route.
+    """
 
     def __init__(
         self,
@@ -527,6 +580,13 @@ class Train(Transporter):
         return f"{self.id}, {self.trip}, {self.location_index}, {self.people}, {self.capacity}"
 
     def train_instance(self, train_route: TrainRoute) -> None:
+        """
+        This is the `driver` function of the train transporter object. It is called when a train is
+        spawned and it is responsible for moving the train through the route and pickup/dropping off
+        passengers. The train will move through the route until it reaches the last stop, at which
+        point it will despawn.
+        """
+
         while True:
             with train_route.get_current_stop(self).bays.request() as req:
                 yield req
@@ -606,7 +666,8 @@ class Train(Transporter):
 
 class Route(ABC):
     """
-    Object to store series of routes, needs to spawn the initial stops transporter spawn process.
+    Abstract route object. Route objects such as BusRoutes, TrainRoutes and Walks are built out of
+    this class.
     """
 
     def __init__(
@@ -644,10 +705,9 @@ class Route(ABC):
 
 class BusRoute(Route):
     """
-    A route of buses. Buses arrive at the bus stop for picking up people.
-
-    The bus then requests one of the bus stops stops pumps and tries to get the
-    desired amount of people from it.
+    A route for buses. This contains a list of stops which buses will travel through. The route
+    also contains a list of Trip objects which describe the timing of the buses along the route.
+    Finally routes contain information about how many buses can be spawned on the route.
     """
 
     def __init__(
@@ -790,7 +850,7 @@ class TrainRoute(Route):
 
 
 class Walk(Route):
-    """A group of people walking through a route"""
+    """A route type object which represents people walking from one stop to another."""
 
     def __init__(
         self,
@@ -813,7 +873,7 @@ class Walk(Route):
 
     def walk_instance(self, people: People, time_to_leave=0) -> None:
         """
-        Walking process
+        Walking process for People walking from one stop to another.
         """
         yield self.env.timeout(time_to_leave)
         try:
@@ -824,7 +884,7 @@ class Walk(Route):
         self.walk_time_log[people] = [self.env.now + self.env_start, None]
         self.people.append(people)
         self.stops[0].log_cur_people()
-        expected_walk_time = (self.walk_time() * self.walking_congestion)
+        expected_walk_time = self.walk_time() * self.walking_congestion
         std_dev_walk_time = expected_walk_time * 1 / 3 * self.get_num_people() / 100
         walk_time = 0
         while (
@@ -847,7 +907,7 @@ class Walk(Route):
 
     def walk_time(self) -> int:
         """
-        Reponsible for calculating the walk time between two locations (use google maps api)
+        Reponsible for calculating the walk time between two locations
         """
         return randint(5, 20)
 
@@ -856,6 +916,10 @@ class Walk(Route):
 
 
 class Suburb:
+    """
+    Suburb class which is responsible for distributing people to stations within the suburb.
+    """
+
     def __init__(
         self,
         env: Environment,
@@ -885,7 +949,7 @@ class Suburb:
 
     def suburb(self) -> None:
         """
-        Every frequency minutes, will distribute random amount of population to nearby
+        Every `frequency` minutes, will distribute random amount of population to nearby
         stations.
         """
         current_distribution = 0
@@ -906,7 +970,7 @@ class Suburb:
 
     def distribute_people(self, num_people: int) -> int:
         """
-        Current assigns random amount of people to each of the active stations within this active suburb.
+        Assigns random amount of people to each of the active stations within this  active suburb.
         """
         people_distributed = 0
         while people_distributed != num_people:
@@ -1123,10 +1187,6 @@ def process_simulation_output(
     num_arrived = destination.num_people()
     num_late = People.num_in_simulation - num_arrived
 
-    """
-    Calculating outliers only looks at stations who HAVE an average waiting time.
-    Stations without one have N/A and would polute data set with impossible to beat times.
-    """
     avg_wait_times = {}
     bottles = {}
     for station in stations:
@@ -1472,6 +1532,10 @@ def get_data(
 
 
 def load_bus_or_train_route_into_db(route, sim_output):
+    """
+    This function loads bus or train routes into the database.
+    """
+
     for station in route.stops:
         for transporter in route.transporters:
             for stop_name, time in transporter.time_log.items():
@@ -1517,6 +1581,10 @@ def load_bus_or_train_route_into_db(route, sim_output):
 
 
 def load_walk_into_db(walk: Walk, sim_output):
+    """
+    This function loads walks into the database.
+    """
+
     walk_sim = WalkSim.objects.create(
         walk_id=walk.id,
         from_station=StationM.objects.filter(
@@ -1590,6 +1658,10 @@ def load_sim_data_into_db(
 
 
 def generate_itins(user_data: dict) -> dict:
+    """
+    This function generates the itineraries.
+    """
+
     itins_collected = []
 
     for station in user_data["active_stations"]:
@@ -1602,7 +1674,7 @@ def generate_itins(user_data: dict) -> dict:
 
 def generate_itins_with_tripgo(user_data: dict) -> dict:
     """
-    Collects itineraries for given user input data and returns them in the required format for 
+    Collects itineraries for given user input data and returns them in the required format for
     running simulations. Warning: This will call the TripGo API in bulk
     """
     # format user data how we need it
