@@ -28,6 +28,9 @@ const stubbedSimulations = [
 	}
 ];
 
+/**
+ * Renders a list of simulations that have been ran in the past.
+ */
 export function SimulationsTable() {
 	return (
 		<div>

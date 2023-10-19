@@ -22,15 +22,35 @@ FYI: If db changes have been made and you are unable to apply any new migrations
 node -v
 ```
 
+## Using Script
 2. In the root directory, run the following command to run the frontend installer
 ```bash
 cat frontend-setup.sh | bash
 ```
 If you see a `permission denied` error, run:
 ```bash
-chmod +x install.sh
+chmod +x frontend-setup.sh
 ```
 to give the script execution permissions, then try running the script again.
+
+## Manual Setup
+If the script fails, please follow the following steps:
+1. Change to the frontend directory
+```bash
+cd frontend
+```
+2. Install dependencies
+```bash
+npm install
+```
+3. Build the app
+```bash
+npm run build
+```
+4. Run tha app
+```bash
+npm run start -p 3000
+```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

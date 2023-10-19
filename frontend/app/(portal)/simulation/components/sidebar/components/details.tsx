@@ -37,6 +37,9 @@ export type DetailsProps = {
 	simulationResult: any;
 };
 
+/**
+ * Renders the details section of the sidebar.
+ */
 const Details = ({
 	simulationSettings,
 	setSimulationSettings,
@@ -44,12 +47,15 @@ const Details = ({
 	simulationResult,
 	simLoading
 }: DetailsProps & Props) => {
+	// State
 	const [suburbSelectorOpen, setSuburbSelectorOpen] = useState(false);
 	const [stationSelectorOpen, setStationSelectorOpen] = useState(false);
 	const [itinerarySelectorOpen, setItinerarySelectorOpen] = useState(false);
 
+	// Getter for suburbs data
 	const { data: suburbs, isLoading } = useGetSuburbs();
 
+	// Getter for itin data
 	const {
 		data: retData,
 		isLoading: itinerariesLoading,
@@ -73,6 +79,7 @@ const Details = ({
 		}
 	);
 
+	// Get all stations from selected suburbs. Memoized.
 	const stations = useMemo(() => {
 		if (!suburbs || !simulationSettings.selectedSuburbs.length) return [];
 
@@ -87,6 +94,7 @@ const Details = ({
 		}
 	}, [refetchItineraries, simulationSettings.selectedStations]);
 
+	// Starts the simulation by activating the simulation getter.
 	const handleRunSimulation = () => {
 		fetchSimulationData();
 	};
@@ -358,6 +366,10 @@ const Details = ({
 		</div>
 	);
 };
+
+/**
+ * Renders a card with a title and applied styling.
+ */
 
 const ActionCard = ({
 	title,

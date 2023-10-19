@@ -7,6 +7,9 @@ type Props = {
 	data: HoverData | null;
 };
 
+/**
+ * Renders the card displayed when hovering over a station
+ */
 const HoverCard = ({ data }: Props) => {
 	if (!data) return null;
 

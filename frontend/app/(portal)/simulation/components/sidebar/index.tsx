@@ -9,6 +9,9 @@ type Props = {
 	simLoading: boolean;
 };
 
+/**
+ * Renders the sidebar. Holds tab switching logic.
+ */
 const Sidebar = ({
 	currentTab,
 	setCurrentTab,

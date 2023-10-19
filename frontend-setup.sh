@@ -24,25 +24,6 @@ else
     exit 2
 fi
 
-# Look up python installations, starting with 3 with a fallback of 2
-if [ -x "$(command -v python3)" ]
-then
-    ehco "Python installed"
-    PY="$(command -v python3)"
-elif [ -x "$(command -v python)" ]
-then
-    ehco "Python installed"
-    PY="$(command -v python)"
-elif [ -x "$(command -v python2)" ]
-then
-    ehco "Python installed"
-    PY="$(command -v python2)"
-else
-    echo "ERROR: No working python installation was found"
-    echo "Please install python and add it to the PATH variable"
-    exit 1
-fi
-
 # change to frtonend directory and run next in prod mode
 cd frontend
 echo "Installing frontend dependencies..."

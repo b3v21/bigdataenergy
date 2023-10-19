@@ -8,6 +8,9 @@ export type ItinProps = {
 	itineraries: any[];
 };
 
+/**
+ * Renders the status sidebar component
+ */
 const Status = ({
 	itineraries,
 	simulationResult

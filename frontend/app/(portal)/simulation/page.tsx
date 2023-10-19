@@ -40,12 +40,20 @@ export type HoverData = {
 
 const HOVER_OFFSET = { x: 10, y: 10 };
 
+
+
+/**
+ * Renders the simulation page and required components. Holds state for simulation settings. 
+ */
 const Simulation = () => {
+	// Dynamically imports plotly so it doesn't break SSR. Memoized so it doesn't re-import every time state changes
 	const Plot = useMemo(
 		() => dynamic(() => import('react-plotly.js'), { ssr: false }),
 		[]
 	);
 
+	// Stores the current tab of the sidebar
+	const [sidebarTab, setSidebarTab] = useState('details');
 	// Stores information showed on the hover card
 	const [hoverData, setHoverData] = useState<HoverData | null>(null);
 
@@ -59,7 +67,6 @@ const Simulation = () => {
 			selectedStations: [],
 			selectedItineraries: []
 		});
-	const [sidebarTab, setSidebarTab] = useState('details');
 
 	const { toast } = useToast();
 	const searchParams = useSearchParams();

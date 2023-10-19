@@ -16,6 +16,9 @@ export const metadata: Metadata = {
 	title: 'Dashboard | Big Data Energy'
 };
 
+/**
+ * Renders the dashboard page
+ */
 export default function DashboardPage() {
 	return (
 		<div className="flex flex-col gap-8">
