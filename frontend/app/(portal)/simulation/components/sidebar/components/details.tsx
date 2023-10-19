@@ -277,17 +277,19 @@ const Details = ({
 						role="combobox"
 						className="w-full justify-between"
 					>
-						{simulationSettings.selectedItineraries.length
-							? simulationSettings.selectedItineraries
-									.map((itinerary) => itinerary.name)
-									.join(', ')
-							: 'Select itineraries...'}
+						<span className="max-w-full whitespace-nowrap overflow-ellipsis overflow-hidden">
+							{simulationSettings.selectedItineraries.length
+								? simulationSettings.selectedItineraries
+										.map((itinerary) => itinerary.name)
+										.join(', ')
+								: 'Select itineraries...'}
+						</span>
 						<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-full p-0">
 					<Command>
-						<CommandInput placeholder="Search suburbs..." />
+						<CommandInput placeholder="Search itineraries..." />
 						<CommandEmpty>No itineraries found.</CommandEmpty>
 						<CommandGroup className="max-h-[200px] overflow-y-scroll">
 							{(retData?.itineraries ?? []).map((currentItin) => (
@@ -327,6 +329,9 @@ const Details = ({
 												: 'opacity-0'
 										)}
 									/>
+									<span className="font-bold text-muted-foreground mr-2">
+										{currentItin.itinerary_id}
+									</span>{' '}
 									{currentItin.name}
 								</CommandItem>
 							))}

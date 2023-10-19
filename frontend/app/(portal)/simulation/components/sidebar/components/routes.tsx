@@ -400,8 +400,9 @@ const Routes = ({
 				<div className="font-mono text-sm">
 					<b> Average Passenger Waiting Time: </b>{' '}
 					{selectedStation
-						? (simulationResult['Stations'][selectedStation]?.avg_wait ||
-								'N/A') + ' mins'
+						? (simulationResult['Stations'][selectedStation]?.avg_wait.toFixed(
+								0
+						  ) || 'N/A') + ' mins'
 						: 'N/A'}
 				</div>
 			</ActionCard>

@@ -14,7 +14,7 @@ const Status = ({ itineraries }: ItinProps) => {
 			<CardHeader>
 				<CardTitle>Itineraries</CardTitle>
 			</CardHeader>
-			<CardContent className="max-h-[70vh] overflow-scroll">
+			<CardContent className="h-[70vh] max-h-[70vh] overflow-scroll">
 				{!itineraries && (
 					<div className="inset-0">
 						<div className="absolute inset-0 grid place-content-center">
