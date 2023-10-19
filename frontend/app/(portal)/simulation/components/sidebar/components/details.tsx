@@ -93,7 +93,7 @@ const Details = ({
 
 	return (
 		<div className="h-full flex flex-col gap-4">
-			<ActionCard title="Location">
+			<ActionCard title="Active Start Stations">
 				<Popover open={suburbSelectorOpen} onOpenChange={setSuburbSelectorOpen}>
 					<PopoverTrigger asChild>
 						<Button
@@ -164,11 +164,14 @@ const Details = ({
 							role="combobox"
 							className="w-full justify-between"
 						>
-							{simulationSettings.selectedStations.length
-								? simulationSettings.selectedStations
-										.map((station) => station.id)
-										.join(', ')
-								: 'Select stations...'}
+							<span className="max-w-full whitespace-nowrap overflow-ellipsis overflow-hidden">
+								{simulationSettings.selectedStations.length
+									? simulationSettings.selectedStations
+											.map((station) => station.name)
+											.join(', ')
+									: 'Select stations...'}
+							</span>
+
 							<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 						</Button>
 					</PopoverTrigger>
@@ -218,7 +221,7 @@ const Details = ({
 				</Popover>
 			</ActionCard>
 
-			<ActionCard title="Time">
+			<ActionCard title="Timing Details">
 				<div>
 					<Label htmlFor="email">Date</Label>
 					<Input
@@ -231,7 +234,7 @@ const Details = ({
 					/>
 				</div>
 				<div>
-					<Label htmlFor="start-time">Start Time</Label>
+					<Label htmlFor="start-time">Start (mins from midnight)</Label>
 					<Input
 						type="number"
 						name="start-time"

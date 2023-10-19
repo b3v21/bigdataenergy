@@ -12,11 +12,13 @@ import {
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { PlotMouseEvent } from 'plotly.js';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PlotParams } from 'react-plotly.js';
 import HoverCard from './components/hover-card';
 import Sidebar from './components/sidebar';
 import { layout, routeSettings, stationSettings, walkSettings } from './plot';
+import { useSearchParams } from 'next/navigation';
+import { stubbedSim } from './stubbedSim';
 
 export type SimulationSettings = {
 	date: string;
@@ -60,6 +62,7 @@ const Simulation = () => {
 	const [sidebarTab, setSidebarTab] = useState('details');
 
 	const { toast } = useToast();
+	const searchParams = useSearchParams();
 
 	// Retrieves the simulation data
 	const {
@@ -102,6 +105,7 @@ const Simulation = () => {
 
 	const theme = useTheme();
 
+	// Memoizes the plot layout so it doesn't flash graph every time state changes
 	const plotLayot = useMemo(
 		() => ({
 			...layout,
@@ -136,6 +140,20 @@ const Simulation = () => {
 		});
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [simulationData?.Routes]);
+
+	// Load in stubbed "previous sim" data
+	useEffect(() => {
+		const loadSim = searchParams.get('loadSim');
+
+		if (!loadSim) return;
+
+		setSimulationSettings(JSON.parse(JSON.stringify(stubbedSim)));
+
+		setTimeout(() => {
+			fetchSimulationData();
+		}, 1000);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const focusStop = (event: Readonly<PlotMouseEvent>) => {};
 

@@ -8,6 +8,7 @@ import {
 	TableRow
 } from '@/components/ui/table';
 import { Delete, ExternalLink, Import } from 'lucide-react';
+import Link from 'next/link';
 
 const stubbedSimulations = [
 	{
@@ -50,9 +51,11 @@ export function SimulationsTable() {
 								align="right"
 								className="flex flex-row gap-2 items-center"
 							>
-								<Button size="icon" className="gap-2">
-									<ExternalLink />
-								</Button>
+								<Link passHref href="/simulation?loadSim=1">
+									<Button size="icon" className="gap-2">
+										<ExternalLink />
+									</Button>
+								</Link>
 								<Button size="icon" variant="destructive" className="gap-2">
 									<Delete />
 								</Button>
