@@ -42,5 +42,52 @@ Translink SEQ GTFS Data: https://www.data.qld.gov.au/dataset/general-transit-fee
 
 # Reused Software
 Please see requirements.txt for the backend software and source links.
+For frontend software:
+"hookform/resolvers": 
+"radix-ui/react-alert-dialog": 
+"radix-ui/react-avatar": 
+"radix-ui/react-checkbox":
+"radix-ui/react-context-menu": 
+"radix-ui/react-dialog":
+"radix-ui/react-dropdown-menu": 
+"radix-ui/react-hover-card":
+"radix-ui/react-icons": 
+"radix-ui/react-label": 
+"radix-ui/react-menubar": 
+"radix-ui/react-navigation-menu": 
+"radix-ui/react-popover":
+"radix-ui/react-progress": 
+"radix-ui/react-select": 
+"radix-ui/react-separator": 
+"radix-ui/react-slot":
+"radix-ui/react-switch":
+"radix-ui/react-tabs": 
+"radix-ui/react-toast":
+"radix-ui/react-tooltip":
+"tanstack/react-query":
+"types/node":
+"types/react":
+"types/react-dom":
+"autoprefixer":
+"axios":
+"class-variance-authority":
+"clsx":
+"cmdk":
+"eslint":
+"eslint-config-next":
+"lucide-react":
+"next":
+"next-themes":
+"plotly.js":
+"postcss": 
+"react":
+"react-dom":
+"react-hook-form": 
+"react-plotly.js":
+"tailwind-merge":
+"tailwindcss":
+"tailwindcss-animate":
+"typescript":
+"zod":
 
 
