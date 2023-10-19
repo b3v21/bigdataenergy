@@ -117,10 +117,10 @@ const Routes = ({
 			simulationResult &&
 			simulationResult['Stations'] &&
 			station &&
-			simulationResult['Stations'][station]
+			simulationResult['Stations'][station.id]
 		) {
 			const peopleChanges =
-				simulationResult['Stations'][station]['PeopleChangesOverTime'];
+				simulationResult['Stations'][station.id]['PeopleChangesOverTime'];
 			{
 				/* @ts-ignore  */
 			}
@@ -344,7 +344,7 @@ const Routes = ({
 							role="combobox"
 							className="w-full justify-between"
 						>
-							{selectedStation ? simulationSettings.selectedStations.filter(station => station.id == selectedStation).map(station => station.name) : 'Select Station...'}
+							{selectedStation ? selectedStation.name : 'Select Station...'}
 							<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 						</Button>
 					</PopoverTrigger>
@@ -357,7 +357,7 @@ const Routes = ({
 									<CommandItem
 										key={station.id}
 										onSelect={(currentValue) => {
-											handleSetStation(station.id);
+											handleSetStation(station);
 											setStationSelectorOpen(false);
 										}}
 									>
@@ -400,7 +400,7 @@ const Routes = ({
 				<div className="font-mono text-sm">
 					<b> Average Passenger Waiting Time: </b>{' '}
 					{selectedStation
-						? (simulationResult['Stations'][selectedStation]?.avg_wait.toFixed(
+						? (simulationResult['Stations'][selectedStation.id]?.avg_wait.toFixed(
 								0
 						  ) || 'N/A') + ' mins'
 						: 'N/A'}
